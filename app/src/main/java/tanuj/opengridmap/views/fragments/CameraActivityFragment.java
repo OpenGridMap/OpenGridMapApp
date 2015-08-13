@@ -1,0 +1,799 @@
+package tanuj.opengridmap.views.fragments;
+
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.RectF;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.location.Location;
+import android.media.Image;
+import android.media.ImageReader;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
+import android.util.Log;
+import android.util.Size;
+import android.util.SparseIntArray;
+import android.view.LayoutInflater;
+import android.view.Surface;
+import android.view.TextureView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import tanuj.opengridmap.R;
+import tanuj.opengridmap.TagSelectionActivity;
+import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
+
+@SuppressLint("NewApi")
+public class CameraActivityFragment extends Fragment implements View.OnClickListener {
+
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
+    private static final String TAG = CameraActivityFragment.class.getSimpleName();
+
+    private static final int STATE_PREVIEW = 0;
+
+    private static final int STATE_WAITING_LOCK = 1;
+
+    private static final int STATE_WAITING_PRECAPTURE = 2;
+
+    private static final int STATE_WATING_NON_PRECAPTURE = 3;
+
+    private static final int STATE_PICTURE_TAKEN = 4;
+
+    private final TextureView.SurfaceTextureListener mSurfaceTextureListener =
+            new TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+                    openCamera(width, height);
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+                    configureTransform(width, height);
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                    return true;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
+            };
+
+    private String mCameraId;
+
+    private AutoFitTextureView mTextureView;
+
+    private CameraCaptureSession mCaptureSession;
+
+    private CameraDevice mCameraDevice;
+
+    private Size mPreviewSize;
+
+    private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(CameraDevice camera) {
+            mCameraOpenClosedLock.release();
+            mCameraDevice = camera;
+            createCameraPreviewSession();
+        }
+
+        @Override
+        public void onDisconnected(CameraDevice camera) {
+            mCameraOpenClosedLock.release();
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+
+        @Override
+        public void onError(CameraDevice camera, int error) {
+            mCameraOpenClosedLock.release();
+            mCameraDevice.close();
+            Activity activity = getActivity();
+            if (null != activity) {
+                activity.finish();
+            }
+        }
+    };
+
+    private HandlerThread mBackgroundThread;
+
+    private Handler mBackgroundHandler;
+
+    private ImageReader mImageReader;
+
+    private File mFile;
+
+    private String mFileName;
+
+    private final ImageReader.OnImageAvailableListener mOnImageAvailableListener =
+            new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage(), mFile));
+                }
+            };
+
+    private CaptureRequest.Builder mPreviewRequestBuidler;
+
+    private CaptureRequest mPreviewRequest;
+
+    private int mState = STATE_PREVIEW;
+
+    private Semaphore mCameraOpenClosedLock = new Semaphore(1);
+
+    private static TextView latitudeTextView;
+    private static TextView longitudeTextView;
+    private static TextView accuracyTextView;
+    private static TextView bearingTextView;
+
+    private long startTime;
+    private long finishTime;
+
+    private Submission submission = null;
+
+    private static Location currentLocation = null;
+
+    private tanuj.opengridmap.models.Image image = null;
+
+    private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
+
+    private CameraCaptureSession.CaptureCallback mCaptureCallback =
+            new CameraCaptureSession.CaptureCallback() {
+
+                private void process(CaptureResult result) {
+//                    Log.d(TAG, result.toString());
+                    switch (mState){
+                        case STATE_PREVIEW: {
+//                            Log.d(TAG, "Process : STATE_PREVIEW");
+                            break;
+                        }
+                        case STATE_WAITING_LOCK: {
+                            Log.d(TAG, "Process : STATE_WAITING_LOCK");
+                            int afState = result.get(CaptureResult.CONTROL_AF_STATE);
+
+                            if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                                    CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                                Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+
+                                if (aeState == null ||
+                                        aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                                    aeState = STATE_WATING_NON_PRECAPTURE;
+                                } else {
+                                    runPrecaptureSequence();
+                                }
+                            }
+                            break;
+                        }
+                        case STATE_WAITING_PRECAPTURE: {
+                            Log.d(TAG, "Process : STATE_WAITING_PRECAPTURE");
+                            Integer aestate = result.get(CaptureResult.CONTROL_AE_STATE);
+
+                            if (aestate == null ||
+                                    aestate == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                                    aestate == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                                mState = STATE_WATING_NON_PRECAPTURE;
+                            }
+                            break;
+                        }
+                        case STATE_WATING_NON_PRECAPTURE: {
+                            Log.d(TAG, "Process : STATE_WATING_NON_PRECAPTURE");
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+
+                            if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                                captureStillImage();
+                                mState = STATE_PICTURE_TAKEN;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                @Override
+                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request, long timestamp, long frameNumber) {
+                    super.onCaptureStarted(session, request, timestamp, frameNumber);
+                }
+
+                @Override
+                public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
+                    process(partialResult);
+                }
+
+                @Override
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                    process(result);
+                }
+            };
+
+    private Handler mMessageHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            Activity activity = getActivity();
+            if (activity != null) {
+                Toast.makeText(activity, (String) msg.obj, Toast.LENGTH_SHORT).show();
+            }
+//            super.handleMessage(msg);
+        }
+    };
+
+    private void showText(String text) {
+        Message message = Message.obtain();
+        message.obj = text;
+        mMessageHandler.sendMessage(message);
+    }
+
+    private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
+        List<Size> bigEnoough = new ArrayList<Size>();
+        int w = aspectRatio.getWidth();
+        int h = aspectRatio.getHeight();
+
+        Log.d(TAG, "Len Choices : " + choices.length);
+
+//        for (Size option: choices) {
+//            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width &&
+//                    option.getHeight() >= height) {
+//
+//            }
+//        }
+
+        for (Size option : choices) {
+            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width &&
+                    option.getHeight() >= height) {
+                bigEnoough.add(option);
+                Log.d(TAG, "Height : " + option.getHeight() + " Width : " + option.getWidth());
+                Log.d(TAG, "Diff Height : " + (option.getHeight() - height) + " Width : " +
+                        (option.getWidth() - width));
+            }
+        }
+
+        if (bigEnoough.size() > 0) {
+            Size optimalSize = Collections.min(bigEnoough, new CompareSizesByArea());
+            Log.d(TAG, "Chosen Size | Height : " + optimalSize.getHeight() + " Width : " +
+                    optimalSize.getWidth());
+            return optimalSize;
+        } else {
+            Log.e(TAG, "Coudn't find any suitable preview area");
+            return choices[0];
+        }
+    };
+
+    public static CameraActivityFragment newInstance() {
+        CameraActivityFragment fragment = new CameraActivityFragment();
+        fragment.setRetainInstance(true);
+        return fragment;
+    }
+
+    public CameraActivityFragment() {}
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+//        showText("Hello");
+        View view = inflater.inflate(R.layout.fragment_camera, container, false);
+
+        latitudeTextView = (TextView) view.findViewById(R.id.latitude);
+        longitudeTextView = (TextView) view.findViewById(R.id.longitude);
+        accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
+        bearingTextView = (TextView) view.findViewById(R.id.bearing);
+
+        ImageButton confirmButon = (ImageButton) view.findViewById(R.id.camera_confirm_button);
+
+        confirmButon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (images.isEmpty()) {
+                    showText("No Pics Taken");
+                } else {
+                    Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
+                    intent.putExtra("SubmissionId", submission.getId());
+                    startActivity(intent);
+                }
+            }
+        });
+
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        view.findViewById(R.id.camera_shutter_button).setOnClickListener(this);
+        mTextureView = (AutoFitTextureView) view.findViewById(R.id.camera_texture);
+//        super.onViewCreated(view, savedInstanceState);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+    }
+
+    @Override
+    public void onPause() {
+        closeCamera();
+        stopBackgroundProcess();
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        startBackgroundThread();
+
+        if (mTextureView.isAvailable()) {
+            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        } else {
+            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+        }
+    }
+
+    private void setUpCameraOptions(int width, int height) {
+        Activity activity = getActivity();
+
+        CameraManager cameraManager = (CameraManager)
+                activity.getSystemService(Context.CAMERA_SERVICE);
+
+        try {
+            for (String cameraId : cameraManager.getCameraIdList()) {
+                CameraCharacteristics cameraCharacteristics =
+                        cameraManager.getCameraCharacteristics(cameraId);
+
+                if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
+                        CameraCharacteristics.LENS_FACING_FRONT) {
+                    continue;
+                }
+
+                StreamConfigurationMap map = cameraCharacteristics.get(
+                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+                Size largest = Collections.max(
+                        Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+                        new CompareSizesByArea());
+
+                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
+                        ImageFormat.JPEG, 2);
+
+                mImageReader.setOnImageAvailableListener(mOnImageAvailableListener,
+                        mBackgroundHandler);
+
+                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), width,
+                        height, largest);
+
+                int orientation = getResources().getConfiguration().orientation;
+
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                } else {
+                    mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+                }
+
+                mCameraId = cameraId;
+
+                return;
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            new ErrorDialog().show(getFragmentManager(), "dialog");
+            e.printStackTrace();
+        }
+    }
+
+    private void openCamera(int width, int height) {
+        setUpCameraOptions(width, height);
+        configureTransform(width, height);
+
+        Activity activity = getActivity();
+        CameraManager cameraManager = (CameraManager) activity.getSystemService(
+                Context.CAMERA_SERVICE);
+
+        try {
+            if (!mCameraOpenClosedLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
+                throw new RuntimeException("Time out waiting to lck camera open");
+            }
+            cameraManager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeCamera() {
+        try {
+            mCameraOpenClosedLock.acquire();
+            if (null != mCaptureSession) {
+                mCaptureSession.close();
+                mCaptureSession = null;
+            }
+
+            if (null != mCameraDevice) {
+                mCameraDevice.close();
+                mCameraDevice = null;
+            }
+
+            if (null != mImageReader) {
+                mImageReader.close();
+                mImageReader = null;
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            mCameraOpenClosedLock.release();
+        }
+    }
+
+    private void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("CameraBackground");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+    }
+
+    private void stopBackgroundProcess() {
+        mBackgroundThread.quitSafely();
+
+        try {
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createCameraPreviewSession() {
+        try {
+            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+
+            assert texture != null;
+
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
+            Surface surface =  new Surface(texture);
+
+            mPreviewRequestBuidler = mCameraDevice.createCaptureRequest(
+                    CameraDevice.TEMPLATE_PREVIEW);
+
+            mPreviewRequestBuidler.addTarget(surface);
+
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
+                    new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(CameraCaptureSession session) {
+                            if (null == mCameraDevice) {
+                                return;
+                            }
+                            Log.d(TAG, "Configured");
+
+                            mCaptureSession = session;
+
+                            try {
+                                mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_MODE,
+                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_MODE,
+                                        CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
+                                mPreviewRequest = mPreviewRequestBuidler.build();
+                                mCaptureSession.setRepeatingRequest(mPreviewRequest,
+                                        mCaptureCallback, mBackgroundHandler);
+                            } catch (CameraAccessException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(CameraCaptureSession session) {
+                            showText("Failed");
+                        }
+                    }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void configureTransform(int viewWidth, int viewHeight) {
+        Activity activity = getActivity();
+
+        if (null == mTextureView || null == mPreviewSize || null == activity) {
+            return;
+        }
+
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+        Matrix matrix = new Matrix();
+        RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
+        RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
+
+        float centerX = viewRect.centerX();
+        float centerY = viewRect.centerY();
+
+        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerX());
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+            float scale = Math.max(
+                    (float) viewHeight / mPreviewSize.getHeight(),
+                    (float) viewWidth / mPreviewSize.getWidth()
+            );
+
+            matrix.postScale(scale, scale, centerX, centerY);
+            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+        }
+
+        mTextureView.setTransform(matrix);
+    }
+
+    private void takePicture() {
+        lockFocus();
+    }
+
+    private void lockFocus() {
+        try {
+            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CameraMetadata.CONTROL_AF_TRIGGER_START);
+
+            mState = STATE_WAITING_LOCK;
+
+            mCaptureSession.setRepeatingRequest(mPreviewRequestBuidler.build(), mCaptureCallback,
+                    mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void runPrecaptureSequence() {
+        try {
+            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+
+            mState = STATE_WAITING_PRECAPTURE;
+            mCaptureSession.capture(mPreviewRequestBuidler.build(), mCaptureCallback,
+                    mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void captureStillImage() {
+        if (!checkLocationStatus())
+            return;
+
+        try {
+            final Activity activity = getActivity();
+
+            if (null == activity || null == mCameraDevice) {
+                return;
+            }
+
+            final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(
+                    CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(mImageReader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
+            int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+
+            CameraCaptureSession.CaptureCallback captureCallback = new
+                    CameraCaptureSession.CaptureCallback() {
+                        @Override
+                        public void onCaptureCompleted(CameraCaptureSession session,
+                                                       CaptureRequest request,
+                                                       TotalCaptureResult result) {
+                            image = new tanuj.opengridmap.models.Image(mFile.getPath(),
+                                            currentLocation);
+                            if (submission == null) {
+                                submission = new Submission(activity);
+                                submission.addPowerElementById(activity.getIntent().getExtras()
+                                        .getInt("PowerElementId", -1));
+                            }
+
+                            submission.addImage(image);
+                            images.add(image);
+                            Log.d(TAG, "Image Saved : " + mFile.getPath());
+
+                            showText("Success");
+                            unlockFocus();
+//                    super.onCaptureCompleted(session, request, result);
+                        }
+                    };
+
+            mCaptureSession.stopRepeating();
+            mCaptureSession.capture(captureBuilder.build(), captureCallback, null);
+
+            finishTime = System.currentTimeMillis();
+
+            Log.d(TAG, "Time taken for pic capture : " + (finishTime - startTime));
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void unlockFocus() {
+        try {
+            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
+            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+            mCaptureSession.capture(mPreviewRequestBuidler.build(), mCaptureCallback,
+                    mBackgroundHandler);
+
+            mState = STATE_PREVIEW;
+            mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
+                    mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.camera_shutter_button: {
+//                takePicture();
+                startTime = System.currentTimeMillis();
+                mFileName = Long.toString(startTime) + ".jpg";
+                mFile = new File(getActivity().getExternalFilesDir(
+                        tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
+                runPrecaptureSequence();
+                break;
+            }
+            case R.id.camera_confirm_button: {
+                if (images.isEmpty()) {
+                    showText("No Pics Taken");
+                } else {
+                    Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
+                    intent.putExtra("SubmissionId", submission.getId());
+                    getActivity().finish();
+                    startActivity(intent);
+                }
+                break;
+            }
+        }
+    }
+
+    public static void updateUi(Location location) {
+        if (null == latitudeTextView) {
+            return;
+        }
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        float accuracy = location.getAccuracy();
+        float bearing = location.getBearing();
+
+        latitudeTextView.setText("Latitude : " + String.valueOf(latitude));
+        longitudeTextView.setText("Longitude : " + String.valueOf(longitude));
+        accuracyTextView.setText("Accuracy : " + String.valueOf(accuracy) + "m");
+        bearingTextView.setText("Bearing : " + String.valueOf(bearing));
+    }
+
+    private static class ImageSaver implements Runnable {
+        private final Image mImage;
+        private final File mFile;
+
+        private ImageSaver(Image mImage, File mFile) {
+            this.mImage = mImage;
+            this.mFile = mFile;
+        }
+
+        @Override
+        public void run() {
+            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            FileOutputStream outputStream = null;
+
+            try {
+                outputStream = new FileOutputStream(mFile);
+                outputStream.write(bytes);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                mImage.close();
+                if (null != outputStream) {
+                    try {
+                        outputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    static class CompareSizesByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                    (long) rhs.getWidth() * rhs.getHeight());
+        }
+    }
+
+    public static class ErrorDialog extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final Activity activity = getActivity();
+
+            return new AlertDialog.Builder(activity)
+                    .setMessage("The device does not support Camera2 API")
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            activity.finish();
+                        }
+                    }).create();
+        }
+    }
+
+    public void disableCamera() {
+
+    }
+
+    public void enableCamera() {
+
+    }
+
+    private boolean checkLocationStatus() {
+        if (null == currentLocation) {
+            showText("Location not Available");
+            return false;
+        } else if (currentLocation.getAccuracy() > 200.0) {
+            showText("Location not Accurate");
+            return false;
+        }
+        return true;
+    }
+
+    public static void setLocation(Location location) {
+        currentLocation = location;
+    }
+}

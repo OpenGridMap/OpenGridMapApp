@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#fc0"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:layout_margin="0dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="80">
+
+        <tanuj.opengridmap.views.custom_views.AutoFitTextureView
+            android:id="@+id/camera_texture"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="20"
+        android:padding="0dp"
+        android:background="#80000000" >
+
+
+        <!--<ImageButton-->
+        <!--android:id="@+id/info"-->
+        <!--style="@android:style/Widget.Material.Light.Button.Borderless"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal|bottom"-->
+        <!--android:contentDescription="@string/description_info"-->
+        <!--android:padding="20dp"-->
+        <!--android:src="@drawable/ic_action_info" />-->
+
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/holo_orange_dark">
+            <TextView
+                android:id="@+id/latitude"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/latitude"
+                android:text="Lat"/>
+            <TextView
+                android:id="@+id/longitude"
+                android:layout_below="@id/latitude"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/accuracy"
+                android:layout_below="@id/longitude"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/bearing"
+                android:layout_below="@id/accuracy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"/>
+        </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/camera_shutter_button"
+            style="?android:borderlessButtonStyle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="0dp"
+            android:layout_gravity="center"
+            android:src="@drawable/camera_shutter"
+            android:scaleType="fitXY"/>
+
+        <ImageButton
+            android:id="@+id/camera_confirm_button"
+            style="?android:borderlessButtonStyle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="0dp"
+            android:layout_gravity="center_vertical|right"
+            android:src="@drawable/iconmonstr_check_mark_6_icon_256"
+            android:scaleType="fitXY"/>
+    </FrameLayout>
+</LinearLayout>
+
+<!--<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:background="#fc0">-->
+
+    <!--<tanuj.opengridmap.views.custom_views.AutoFitTextureView-->
+        <!--android:id="@+id/camera_texture"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_alignParentTop="true" />-->
+
+    <!--<FrameLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:padding="20dp"-->
+        <!--android:layout_alignParentBottom="true"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_below="@id/camera_texture"-->
+        <!--android:background="#80000000" >-->
+
+        <!--<ImageButton-->
+            <!--android:id="@+id/camera_shutter_button"-->
+            <!--android:layout_width="50dp"-->
+            <!--android:layout_height="50dp"-->
+            <!--android:padding="20dp"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:src="@drawable/camera_shutter"-->
+            <!--android:scaleType="fitXY"/>-->
+
+        <!--&lt;!&ndash;<ImageButton&ndash;&gt;-->
+        <!--&lt;!&ndash;android:id="@+id/info"&ndash;&gt;-->
+        <!--&lt;!&ndash;style="@android:style/Widget.Material.Light.Button.Borderless"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_gravity="center_horizontal|bottom"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:contentDescription="@string/description_info"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:padding="20dp"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:src="@drawable/ic_action_info" />&ndash;&gt;-->
+
+
+        <!--<RelativeLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:background="@android:color/holo_orange_dark">-->
+            <!--<TextView-->
+                <!--android:id="@+id/latitude"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_below="@id/latitude"-->
+                <!--android:text="Lat"/>-->
+            <!--<TextView-->
+                <!--android:id="@+id/longitude"-->
+                <!--android:layout_below="@id/latitude"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
+            <!--<TextView-->
+                <!--android:id="@+id/accuracy"-->
+                <!--android:layout_below="@id/longitude"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
+            <!--<TextView-->
+                <!--android:id="@+id/bearing"-->
+                <!--android:layout_below="@id/accuracy"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_alignParentBottom="true"/>-->
+        <!--</RelativeLayout>-->
+    <!--</FrameLayout>-->
+<!--</RelativeLayout>-->
