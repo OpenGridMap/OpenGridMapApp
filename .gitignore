@@ -26,6 +26,11 @@ proguard/
 # Log Files
 *.log
 
+# Android Studio and Eclipse
 .idea
 .DS_Store
+Thumbs.db
 /captures
+.classpath
+.project
+*.iml
