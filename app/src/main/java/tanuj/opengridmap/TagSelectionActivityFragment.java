@@ -1,5 +1,6 @@
 package tanuj.opengridmap;
 
+import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -127,12 +128,15 @@ public class TagSelectionActivityFragment extends Fragment {
     private View.OnClickListener confirmButtonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            Context context = getActivity();
             if (submission != null && taggedPowerElements.size() > 0) {
-                OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
+                OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
                 for (PowerElement powerElement : taggedPowerElements) {
                     dbHelper.addPowerElementToSubmission(powerElement, submission);
                 }
+
+                submission.addToUploadQueue(context);
             }
             getActivity().finish();
         }

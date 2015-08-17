@@ -29,7 +29,7 @@ proguard/
 # Android Studio and Eclipse
 .idea
 .DS_Store
-Thumbs.db
+*Thumbs.db
 /captures
 .classpath
 .project

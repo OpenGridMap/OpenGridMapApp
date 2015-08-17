@@ -10,6 +10,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Objects;
@@ -28,13 +29,17 @@ public class Image {
 
     public static final String IMAGE_GRID_THUMBNAILS_PATH = IMAGE_STORE_BASE_PATH + "grid_thumbs/";
 
-    private final int LIST_THUMB_WIDTH = 100;
+    public static final String TYPE_LIST = "list";
 
-    private final int LIST_THUMB_HEIGHT = 100;
+    private static final int LIST_THUMB_WIDTH = 100;
 
-    private final int GRID_THUMB_WIDTH = 200;
+    private static final int LIST_THUMB_HEIGHT = 100;
 
-    private final int GRID_THUMB_HEIGHT = 200;
+    public static final String TYPE_GRID = "grid";
+
+    private static final int GRID_THUMB_WIDTH = 200;
+
+    private static final int GRID_THUMB_HEIGHT = 200;
 
     private int id;
 
@@ -46,7 +51,7 @@ public class Image {
         this.id = id;
     }
 
-    private int submissionId;
+    private long submissionId;
 
     private String externalDirectoryPath;
 
@@ -72,11 +77,16 @@ public class Image {
         this.src = src;
     }
 
-    public int getSubmissionId() {
+    public Image(Timestamp createdTimestamp, Timestamp updatedTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+        this.updatedTimestamp = updatedTimestamp;
+    }
+
+    public long getSubmissionId() {
         return submissionId;
     }
 
-    public void setSubmissionId(int submissionId) {
+    public void setSubmissionId(long submissionId) {
         this.submissionId = submissionId;
     }
 
@@ -100,17 +110,17 @@ public class Image {
         return createdTimestamp;
     }
 
-    public void setCreatedTimestamp(Timestamp createdTimestamp) {
-        this.createdTimestamp = createdTimestamp;
-    }
+//    public void setCreatedTimestamp(Timestamp createdTimestamp) {
+//        this.createdTimestamp = createdTimestamp;
+//    }
 
     public Timestamp getUpdatedTimestamp() {
         return updatedTimestamp;
     }
 
-    public void setUpdatedTimestamp(Timestamp updatedTimestamp) {
-        this.updatedTimestamp = updatedTimestamp;
-    }
+//    public void setUpdatedTimestamp(Timestamp updatedTimestamp) {
+//        this.updatedTimestamp = updatedTimestamp;
+//    }
 
     public Bitmap getImageBitmap() {
         File file = new File(src);
@@ -126,15 +136,31 @@ public class Image {
         File file = null;
         int width = 0, height = 0;
 
-        if (type.equals("list")) {
-            width = LIST_THUMB_WIDTH;
-            height= LIST_THUMB_HEIGHT;
-        } else if (type.equals("grid")) {
-            width = GRID_THUMB_WIDTH;
-            height= GRID_THUMB_HEIGHT;
-        } else {
-            return bitmap;
+        switch (type) {
+            case TYPE_LIST: {
+                width = LIST_THUMB_WIDTH;
+                height= LIST_THUMB_HEIGHT;
+                break;
+            }
+            case TYPE_GRID: {
+                width = GRID_THUMB_WIDTH;
+                height= GRID_THUMB_HEIGHT;
+                break;
+            }
+            default: {
+                return bitmap;
+            }
         }
+
+//        if (type.equals(TYPE_LIST)) {
+//            width = LIST_THUMB_WIDTH;
+//            height= LIST_THUMB_HEIGHT;
+//        } else if (type.equals(TYPE_GRID)) {
+//            width = GRID_THUMB_WIDTH;
+//            height= GRID_THUMB_HEIGHT;
+//        } else {
+//            return bitmap;
+//        }
 
         file = getThumbnailFile(type, context);
 
@@ -181,11 +207,22 @@ public class Image {
         String fileName = file.getName();
         String subPath = null;
 
-        if (type.equals("list")) {
-            subPath = "/" + IMAGE_LIST_THUMBNAILS_PATH;
-        } else if (type.equals("grid")){
-            subPath = "/" + IMAGE_GRID_THUMBNAILS_PATH;
+        switch (type) {
+            case TYPE_LIST: {
+                subPath = "/" + IMAGE_LIST_THUMBNAILS_PATH;
+                break;
+            }
+            case TYPE_GRID: {
+                subPath = "/" + IMAGE_GRID_THUMBNAILS_PATH;
+                break;
+            }
         }
+
+//        if (type.equals("list")) {
+//            subPath = "/" + IMAGE_LIST_THUMBNAILS_PATH;
+//        } else if (type.equals("grid")){
+//            subPath = "/" + IMAGE_GRID_THUMBNAILS_PATH;
+//        }
 
         thumbnailFile = new File(context.getExternalFilesDir(subPath), fileName);
 

@@ -63,29 +63,6 @@ public class CameraActivity extends Activity implements
         buildGoogleApiClient();
     }
 
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_camera, menu);
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -133,7 +110,6 @@ public class CameraActivity extends Activity implements
         Log.d(TAG, "Location Updated, location : " + location.toString());
 
         if (null != location) {
-//            fragment.updateUi(location);
             CameraActivityFragment.updateUi(location);
             CameraActivityFragment.setLocation(location);
         }

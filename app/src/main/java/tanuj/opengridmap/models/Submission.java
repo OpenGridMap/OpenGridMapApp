@@ -2,6 +2,7 @@ package tanuj.opengridmap.models;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -14,11 +15,16 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
  * Created by Tanuj on 09-06-2015.
  */
 public class Submission {
-    private static final int STATUS_IMAGE_CAPTURE_PENDING = -1;
-    private static final int STATUS_UPLOAD_PENDING = 0;
-    private static final int STATUS_SUBMITTED_PENDING_REVIEW = 1;
-    private static final int STATUS_SUBMITTED_APPROVED = 2;
-    private static final int STATUS_SUBMITTED_REJECTED = 3;
+    private static final String TAG = Submission.class.getSimpleName();
+
+    private static final int STATUS_INVALID = -3;
+    private static final int STATUS_IMAGE_CAPTURE_PENDING = -2;
+    private static final int STATUS_IMAGE_CAPTURE_IN_PROGRESS = -1;
+    private static final int STATUS_SUBMISSION_CONFIRMED = 0;
+    private static final int STATUS_UPLOAD_PENDING = 1;
+    private static final int STATUS_SUBMITTED_PENDING_REVIEW = 2;
+    private static final int STATUS_SUBMITTED_APPROVED = 3;
+    private static final int STATUS_SUBMITTED_REJECTED = 4;
 
     private long id;
 
@@ -98,7 +104,6 @@ public class Submission {
         powerElements.add(powerElement);
 
         dbHelper.addPowerElementToSubmission(powerElement, this);
-        Log.d("POWER", powerElements.toString());
     }
 
     public void addPowerElementById(int id) {
@@ -127,5 +132,24 @@ public class Submission {
         images.add(image);
 
         dbHelper.addImageToSubmission(image, this);
+
+        if (status == STATUS_IMAGE_CAPTURE_PENDING) {
+            dbHelper.updateSubmissionStatus(this, STATUS_IMAGE_CAPTURE_IN_PROGRESS);
+        }
+    }
+
+    public void confirmSubmission() {
+        if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
+            dbHelper.updateSubmissionStatus(this, STATUS_SUBMISSION_CONFIRMED);
+        }
+    }
+
+    public boolean addToUploadQueue(Context context) {
+        if (status == STATUS_SUBMISSION_CONFIRMED) {
+            new UploadQueueItem(context, this);
+            dbHelper.updateSubmissionStatus(this, STATUS_UPLOAD_PENDING);
+            return true;
+        }
+        return false;
     }
 }

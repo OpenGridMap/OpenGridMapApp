@@ -689,6 +689,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 if (images.isEmpty()) {
                     showText("No Pics Taken");
                 } else {
+                    submission.confirmSubmission();
+
                     Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
                     intent.putExtra("SubmissionId", submission.getId());
                     getActivity().finish();

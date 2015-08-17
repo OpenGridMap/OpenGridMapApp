@@ -67,7 +67,7 @@ public class ImageAdapter extends BaseAdapter {
         }
 
 //        Bitmap bitmap = getItem(position).getGridThumbnailBitmap();
-        Bitmap bitmap = getItem(position).getThumbnailBitmap("grid", context);
+        Bitmap bitmap = getItem(position).getThumbnailBitmap(Image.TYPE_GRID, context);
 
         if(bitmap != null){
             imageView.setImageBitmap(bitmap);

@@ -26,6 +26,18 @@ public class PowerElement implements Parcelable{
         this.imageId = parcel.readInt();
     }
 
+    public static final Creator<PowerElement> CREATOR = new Creator<PowerElement>() {
+        @Override
+        public PowerElement createFromParcel(Parcel in) {
+            return new PowerElement(in);
+        }
+
+        @Override
+        public PowerElement[] newArray(int size) {
+            return new PowerElement[size];
+        }
+    };
+
     public int getId() {
         return id;
     }
