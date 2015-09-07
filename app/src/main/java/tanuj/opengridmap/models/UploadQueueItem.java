@@ -1,6 +1,7 @@
 package tanuj.opengridmap.models;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.sql.Struct;
 import java.sql.Time;
@@ -13,6 +14,8 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
  * Created by Tanuj on 14/8/2015.
  */
 public class UploadQueueItem {
+    private static final String TAG = UploadQueueItem.class.getSimpleName();
+
     private static final int STATUS_QUEUED = 0;
     private static final int STATUS_UPLOAD_STARTED = 1;
     private static final int STATUS_UPLOAD_FINISHED = 2;
@@ -46,6 +49,7 @@ public class UploadQueueItem {
         this.createdAtTimestamp = timestamp;
         this.updatedAtTimestamp = timestamp;
         this.id = dbHelper.addQueueItem(this);
+        Log.d(TAG, Long.toString(id));
     }
 
     public UploadQueueItem(Context context, long id) {

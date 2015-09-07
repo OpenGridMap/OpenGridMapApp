@@ -10,10 +10,8 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.Objects;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -29,13 +27,13 @@ public class Image {
 
     public static final String IMAGE_GRID_THUMBNAILS_PATH = IMAGE_STORE_BASE_PATH + "grid_thumbs/";
 
-    public static final String TYPE_LIST = "list";
+    public static final int TYPE_LIST = 0;
 
     private static final int LIST_THUMB_WIDTH = 100;
 
     private static final int LIST_THUMB_HEIGHT = 100;
 
-    public static final String TYPE_GRID = "grid";
+    public static final int TYPE_GRID = 1;
 
     private static final int GRID_THUMB_WIDTH = 200;
 
@@ -110,17 +108,13 @@ public class Image {
         return createdTimestamp;
     }
 
-//    public void setCreatedTimestamp(Timestamp createdTimestamp) {
-//        this.createdTimestamp = createdTimestamp;
-//    }
-
     public Timestamp getUpdatedTimestamp() {
         return updatedTimestamp;
     }
 
-//    public void setUpdatedTimestamp(Timestamp updatedTimestamp) {
-//        this.updatedTimestamp = updatedTimestamp;
-//    }
+    public void setUpdatedTimestamp(Timestamp updatedTimestamp) {
+        this.updatedTimestamp = updatedTimestamp;
+    }
 
     public Bitmap getImageBitmap() {
         File file = new File(src);
@@ -131,7 +125,7 @@ public class Image {
         return bitmap;
     }
 
-    public Bitmap getThumbnailBitmap(String type, Context context) {
+    public Bitmap getThumbnailBitmap(Context context, int type) {
         Bitmap bitmap = null;
         File file = null;
         int width = 0, height = 0;
@@ -139,12 +133,12 @@ public class Image {
         switch (type) {
             case TYPE_LIST: {
                 width = LIST_THUMB_WIDTH;
-                height= LIST_THUMB_HEIGHT;
+                height = LIST_THUMB_HEIGHT;
                 break;
             }
             case TYPE_GRID: {
                 width = GRID_THUMB_WIDTH;
-                height= GRID_THUMB_HEIGHT;
+                height = GRID_THUMB_HEIGHT;
                 break;
             }
             default: {
@@ -152,56 +146,89 @@ public class Image {
             }
         }
 
-//        if (type.equals(TYPE_LIST)) {
-//            width = LIST_THUMB_WIDTH;
-//            height= LIST_THUMB_HEIGHT;
-//        } else if (type.equals(TYPE_GRID)) {
-//            width = GRID_THUMB_WIDTH;
-//            height= GRID_THUMB_HEIGHT;
-//        } else {
-//            return bitmap;
-//        }
-
-        file = getThumbnailFile(type, context);
+        file = getThumbnailFile(context, type);
 
         if (file.exists()) {
             bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
             Log.d(TAG, "Using Cached Thumbnail : " + file.getPath());
         } else {
-            File originalImageFile = new File(src);
-            bitmap = getResizedBitmap(originalImageFile, width, height);
-
-            saveToFile(bitmap, file);
-
-            Log.d(TAG, "Generating thumbnail : " + file.getPath());
+            bitmap = generateThumbnail(file, width, height);
         }
 
         return bitmap;
     }
 
-//    public Bitmap getGridThumbnailBitmap() {
-//        File file = getThumbnailFile("grid");
+    public void generateThumbnails(final Context context) {
+//        Runnable runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+
+                File file;
+
+                int[] types = {TYPE_LIST, TYPE_GRID};
+
+                for (int type : types) {
+                    file = getThumbnailFile(context, type);
+
+                    if (file.exists()) {
+                        Log.d(TAG, "Thumbnail Already exists");
+                    } else {
+                        generateThumbnail(file, type);
+                        Log.d(TAG, "Thumbnail Generated");
+                    }
+                }
+//            }
+//        };
+
+//        Thread thread = new Thread(runnable);
 //
-//        Bitmap bitmap = null;
-//        if (file.exists()) {
-//            bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-//            Log.d(TAG, "Thumbnail loaded from thumb : " + file.getPath());
-//        } else {
-//            File originalImageFile = new File(src);
-//            bitmap = getResizedBitmap(originalImageFile, GRID_THUMB_WIDTH, GRID_THUMB_HEIGHT);
-//
-//            saveToFile(bitmap, file);
-//        }
-//
-//        return bitmap;
-//    }
+//        thread.start();
+    }
+
+    private Bitmap generateThumbnail(File file, int type) {
+        Bitmap bitmap;
+        File originalImageFile = new File(src);
+        int width = 0, height = 0;
+
+        switch (type) {
+            case TYPE_LIST: {
+                width = LIST_THUMB_WIDTH;
+                height = LIST_THUMB_HEIGHT;
+                break;
+            }
+            case TYPE_GRID: {
+                width = GRID_THUMB_WIDTH;
+                height = GRID_THUMB_HEIGHT;
+                break;
+            }
+        }
+
+        bitmap = getResizedBitmap(originalImageFile, width, height);
+
+        saveToFile(bitmap, file);
+
+        Log.d(TAG, "Generating thumbnail : " + file.getPath());
+        return bitmap;
+    }
+
+    private Bitmap generateThumbnail(File file, int width, int height) {
+        Bitmap bitmap;
+        File originalImageFile = new File(src);
+        bitmap = getResizedBitmap(originalImageFile, width, height);
+
+        saveToFile(bitmap, file);
+
+        Log.d(TAG, "Generating thumbnail : " + file.getPath());
+        return bitmap;
+    }
 
     private Bitmap getResizedBitmap(File file, int width, int height) {
         return ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(file.getAbsolutePath()),
                 width, height);
     }
 
-    private File getThumbnailFile(String type, Context context) {
+    private File getThumbnailFile(Context context, int type) {
         File thumbnailFile = null;
         File file = new File(src);
         String fileName = file.getName();
@@ -218,16 +245,7 @@ public class Image {
             }
         }
 
-//        if (type.equals("list")) {
-//            subPath = "/" + IMAGE_LIST_THUMBNAILS_PATH;
-//        } else if (type.equals("grid")){
-//            subPath = "/" + IMAGE_GRID_THUMBNAILS_PATH;
-//        }
-
         thumbnailFile = new File(context.getExternalFilesDir(subPath), fileName);
-
-//        thumbnailFile = new File(file.getParentFile().getParentFile().getParentFile()
-//                .getAbsolutePath() + subPath, fileName);
 
         return thumbnailFile;
     }

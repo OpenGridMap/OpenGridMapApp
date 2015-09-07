@@ -1,6 +1,7 @@
 package tanuj.opengridmap;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -57,11 +58,17 @@ public class TagSelectionActivityFragment extends Fragment {
             notTaggedPowerElements = savedInstanceState.getParcelableArrayList(NOT_TAGGED_POWER_ELEMENTS_KEY);
         } else {
             OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
-            submission = dbHelper.getSubmission((int) getActivity().getIntent()
-                    .getLongExtra("SubmissionId", -1));
 
-            taggedPowerElements = submission.getPowerElements();
-            notTaggedPowerElements = dbHelper.getNotTaggedPowerElements(submission);
+            long submissionId = getActivity().getIntent().getLongExtra("SubmissionId", -1);
+
+            if (submissionId > -1) {
+                submission = dbHelper.getSubmission(submissionId);
+            }
+
+            if (null != submission) {
+                taggedPowerElements = submission.getPowerElements();
+                notTaggedPowerElements = dbHelper.getNotTaggedPowerElements(submission);
+            }
         }
 
 
@@ -137,6 +144,10 @@ public class TagSelectionActivityFragment extends Fragment {
                 }
 
                 submission.addToUploadQueue(context);
+
+                Intent serviceIntent = new Intent(context, ThumbnailGenerationService.class);
+                serviceIntent.putExtra("SubmissionId", submission.getId());
+                context.startService(serviceIntent);
             }
             getActivity().finish();
         }

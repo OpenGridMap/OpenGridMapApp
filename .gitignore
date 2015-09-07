@@ -34,3 +34,5 @@ proguard/
 .classpath
 .project
 *.iml
+app/src/main/res/drawable/Thumbs.db
+app/src/main/res/drawable/Thumbs.db

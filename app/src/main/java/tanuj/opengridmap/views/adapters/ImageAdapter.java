@@ -3,7 +3,6 @@ package tanuj.opengridmap.views.adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +14,6 @@ import java.util.List;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.models.Image;
-import tanuj.opengridmap.models.Submission;
 
 /**
  * Created by Tanuj on 26/6/2015.
@@ -67,7 +65,7 @@ public class ImageAdapter extends BaseAdapter {
         }
 
 //        Bitmap bitmap = getItem(position).getGridThumbnailBitmap();
-        Bitmap bitmap = getItem(position).getThumbnailBitmap(Image.TYPE_GRID, context);
+        Bitmap bitmap = getItem(position).getThumbnailBitmap(context, Image.TYPE_GRID);
 
         if(bitmap != null){
             imageView.setImageBitmap(bitmap);

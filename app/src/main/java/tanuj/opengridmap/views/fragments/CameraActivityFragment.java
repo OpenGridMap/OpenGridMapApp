@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -41,6 +42,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,9 +56,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.TagSelectionActivity;
 import tanuj.opengridmap.models.Submission;
@@ -157,9 +162,41 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage(), mFile));
+                    final Context context = getActivity();
+                    final Activity activity = getActivity();
+
+                    startTime = System.currentTimeMillis();
+                    mFileName = Long.toString(startTime) + ".jpg";
+
+                    mFile = new File(getActivity().getExternalFilesDir(
+                            tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
+
+                    boolean res = mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage()
+                            , mFile));
+
+                    if (submission == null) {
+                        submission = new Submission(context);
+                        noSavedImages = 0;
+
+                        long powerElementId = activity.getIntent().getExtras()
+                                .getInt("PowerElementId", -1);
+
+                        if (powerElementId != -1) {
+                            submission.addPowerElementById(context, powerElementId);
+                        }
+                    }
+
+//                    if (res) {
+                        image = new tanuj.opengridmap.models.Image(mFile.getPath(),
+                                currentLocation);
+                        submission.addImage(context, image);
+                        images.add(image);
+                        Log.d(TAG, "Image Saved : " + mFile.getPath());
+//                    }
                 }
             };
+
+    private static int noSavedImages = 0;
 
     private CaptureRequest.Builder mPreviewRequestBuidler;
 
@@ -174,6 +211,14 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static TextView accuracyTextView;
     private static TextView bearingTextView;
 
+    private ImageButton cameraShutterButton = null;
+
+    private ImageButton confirmButton = null;
+
+    private LinearLayout cameraDialogBoxLayout = null;
+
+    private CardView cameraDialogCardView = null;
+
     private long startTime;
     private long finishTime;
 
@@ -185,14 +230,14 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
 
+    private Context mContext = null;
+
     private CameraCaptureSession.CaptureCallback mCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
 
                 private void process(CaptureResult result) {
-//                    Log.d(TAG, result.toString());
                     switch (mState){
                         case STATE_PREVIEW: {
-//                            Log.d(TAG, "Process : STATE_PREVIEW");
                             break;
                         }
                         case STATE_WAITING_LOCK: {
@@ -270,36 +315,29 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
-        List<Size> bigEnoough = new ArrayList<Size>();
+        List<Size> bigEnough = new ArrayList<Size>();
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
 
         Log.d(TAG, "Len Choices : " + choices.length);
 
-//        for (Size option: choices) {
-//            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width &&
-//                    option.getHeight() >= height) {
-//
-//            }
-//        }
-
         for (Size option : choices) {
             if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width &&
                     option.getHeight() >= height) {
-                bigEnoough.add(option);
+                bigEnough.add(option);
                 Log.d(TAG, "Height : " + option.getHeight() + " Width : " + option.getWidth());
                 Log.d(TAG, "Diff Height : " + (option.getHeight() - height) + " Width : " +
                         (option.getWidth() - width));
             }
         }
 
-        if (bigEnoough.size() > 0) {
-            Size optimalSize = Collections.min(bigEnoough, new CompareSizesByArea());
+        if (bigEnough.size() > 0) {
+            Size optimalSize = Collections.max(bigEnough, new CompareSizesByArea());
             Log.d(TAG, "Chosen Size | Height : " + optimalSize.getHeight() + " Width : " +
                     optimalSize.getWidth());
             return optimalSize;
         } else {
-            Log.e(TAG, "Coudn't find any suitable preview area");
+            Log.e(TAG, "Could not find any suitable preview area");
             return choices[0];
         }
     };
@@ -315,36 +353,28 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-//        showText("Hello");
         View view = inflater.inflate(R.layout.fragment_camera, container, false);
 
-        latitudeTextView = (TextView) view.findViewById(R.id.latitude);
-        longitudeTextView = (TextView) view.findViewById(R.id.longitude);
-        accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
-        bearingTextView = (TextView) view.findViewById(R.id.bearing);
+        if (BuildConfig.DEBUG) {
+            latitudeTextView = (TextView) view.findViewById(R.id.latitude);
+            longitudeTextView = (TextView) view.findViewById(R.id.longitude);
+            accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
+            bearingTextView = (TextView) view.findViewById(R.id.bearing);
+        }
 
-        ImageButton confirmButon = (ImageButton) view.findViewById(R.id.camera_confirm_button);
+        confirmButton = (ImageButton) view.findViewById(R.id.camera_confirm_button);
+        cameraShutterButton = (ImageButton) view.findViewById(R.id.camera_shutter_button);
+        mTextureView = (AutoFitTextureView) view.findViewById(R.id.camera_texture);
 
-        confirmButon.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (images.isEmpty()) {
-                    showText("No Pics Taken");
-                } else {
-                    Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
-                    intent.putExtra("SubmissionId", submission.getId());
-                    startActivity(intent);
-                }
-            }
-        });
+        cameraDialogBoxLayout = (LinearLayout) view.findViewById(R.id.camera_dialog_box);
 
         return view;
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        view.findViewById(R.id.camera_shutter_button).setOnClickListener(this);
-        mTextureView = (AutoFitTextureView) view.findViewById(R.id.camera_texture);
+        cameraShutterButton.setOnClickListener(this);
+        confirmButton.setOnClickListener(this);
 //        super.onViewCreated(view, savedInstanceState);
     }
 
@@ -554,7 +584,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         float centerY = viewRect.centerY();
 
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
-            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerX());
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
             float scale = Math.max(
                     (float) viewHeight / mPreviewSize.getHeight(),
@@ -627,19 +657,27 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         public void onCaptureCompleted(CameraCaptureSession session,
                                                        CaptureRequest request,
                                                        TotalCaptureResult result) {
-                            image = new tanuj.opengridmap.models.Image(mFile.getPath(),
-                                            currentLocation);
-                            if (submission == null) {
-                                submission = new Submission(activity);
-                                submission.addPowerElementById(activity.getIntent().getExtras()
-                                        .getInt("PowerElementId", -1));
-                            }
+//                            final Context context = getActivity();
+//                            if (submission == null) {
+//                                submission = new Submission(context);
+//                                noSavedImages = 0;
+//
+//                                long powerElementId = activity.getIntent().getExtras()
+//                                        .getInt("PowerElementId", -1);
+//                                if (powerElementId != -1) {
+//                                    submission.addPowerElementById(context, powerElementId);
+//                                }
+//                            }
 
-                            submission.addImage(image);
-                            images.add(image);
-                            Log.d(TAG, "Image Saved : " + mFile.getPath());
+                            mContext = getActivity();
 
-                            showText("Success");
+//                            image = new tanuj.opengridmap.models.Image(mFile.getPath(),
+//                                    currentLocation);
+//                            submission.addImage(context, image);
+//                            images.add(image);
+//                            Log.d(TAG, "Image Saved : " + mFile.getPath());
+
+//                            showText("Success");
                             unlockFocus();
 //                    super.onCaptureCompleted(session, request, result);
                         }
@@ -678,10 +716,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         switch (v.getId()) {
             case R.id.camera_shutter_button: {
 //                takePicture();
-                startTime = System.currentTimeMillis();
-                mFileName = Long.toString(startTime) + ".jpg";
-                mFile = new File(getActivity().getExternalFilesDir(
-                        tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
+//                startTime = System.currentTimeMillis();
+//                mFileName = Long.toString(startTime) + ".jpg";
+//                mFile = new File(getActivity().getExternalFilesDir(
+//                        tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
+
                 runPrecaptureSequence();
                 break;
             }
@@ -689,12 +728,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 if (images.isEmpty()) {
                     showText("No Pics Taken");
                 } else {
-                    submission.confirmSubmission();
-
-                    Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
-                    intent.putExtra("SubmissionId", submission.getId());
-                    getActivity().finish();
-                    startActivity(intent);
+                    confirmSubmission();
                 }
                 break;
             }
@@ -735,6 +769,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             try {
                 outputStream = new FileOutputStream(mFile);
                 outputStream.write(bytes);
+                if (null == bytes) {
+                    throw new IOException();
+                }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -746,6 +783,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         outputStream.close();
                     } catch (IOException e) {
                         e.printStackTrace();
+                    }
+                    finally {
+                        noSavedImages++;
+                        Log.d(TAG, String.valueOf(noSavedImages));
                     }
                 }
             }
@@ -776,14 +817,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
-    public void disableCamera() {
-
-    }
-
-    public void enableCamera() {
-
-    }
-
     private boolean checkLocationStatus() {
         if (null == currentLocation) {
             showText("Location not Available");
@@ -798,4 +831,50 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     public static void setLocation(Location location) {
         currentLocation = location;
     }
+
+    public void disableCamera() {
+        cameraShutterButton.setClickable(false);
+    }
+
+    public void enableCamera() {
+        cameraShutterButton.setClickable(false);
+    }
+
+    private void confirmSubmission() {
+        if (images.isEmpty()) {
+            showText("No Pics Taken");
+        } else {
+            disableCamera();
+            Log.d(TAG, "No of Submitted Images : " + submission.getImages().size());
+            Log.d(TAG, "No of Saved Images : " + noSavedImages);
+
+            if (noSavedImages != submission.getImages().size()) {
+                Log.d(TAG, "Saving Images" + (noSavedImages - submission.getImages().size()));
+                ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
+
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        confirmSubmission();
+                    }
+                };
+
+                worker.schedule(runnable, 200, TimeUnit.MILLISECONDS);
+                return;
+            }
+
+            final Context context = getActivity();
+            submission.confirmSubmission(context);
+
+            Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
+            intent.putExtra("SubmissionId", submission.getId());
+
+            submission = null;
+            image = null;
+            images = new ArrayList<tanuj.opengridmap.models.Image>();
+
+            startActivity(intent);
+        }
+    }
+
 }

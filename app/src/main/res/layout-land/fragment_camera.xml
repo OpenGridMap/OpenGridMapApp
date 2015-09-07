@@ -7,29 +7,35 @@
     android:padding="0dp"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#fff"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="0dp"
-        android:layout_margin="0dp">
+        android:layout_margin="0dp"
+        android:layout_gravity="start|top"
+        android:gravity="start|top"
+        android:baselineAligned="false">
 
         <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
             android:layout_weight="80">
 
             <tanuj.opengridmap.views.custom_views.AutoFitTextureView
                 android:id="@+id/camera_texture"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:layout_margin="0dp"
+                android:padding="0dp"/>
         </FrameLayout>
 
 
         <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
             android:layout_weight="20"
             android:padding="0dp"
             android:background="#80000000" >
@@ -63,8 +69,8 @@
             <ImageButton
                 android:id="@+id/camera_shutter_button"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="250dp"
-                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
                 android:layout_margin="0dp"
                 android:paddingTop="10dp"
                 android:paddingBottom="10dp"
@@ -77,19 +83,17 @@
             <ImageButton
                 android:id="@+id/camera_confirm_button"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="70dp"
-                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
                 android:padding="0dp"
-                android:layout_gravity="center_vertical|right"
+                android:layout_gravity="center_horizontal|top"
                 android:src="@drawable/iconmonstr_check_mark_6_icon_256"
                 android:scaleType="fitCenter"
-                android:paddingRight="21dp"
-                android:paddingEnd="21dp"
-                android:layout_marginRight="21dp"
-                android:layout_marginEnd="21dp"
+                android:paddingTop="21dp"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
+                android:clickable="false"
                 android:contentDescription="@string/submission_confirm_button_description" />
 
         </FrameLayout>
@@ -99,23 +103,23 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="0dp"
         android:layout_margin="0dp">
 
         <LinearLayout
             android:id="@+id/camera_dialog_box"
-            android:layout_width="wrap_content"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
             android:layout_weight="80"
             android:orientation="vertical"
-            android:gravity="center" >
+            android:gravity="center">
             <include layout="@layout/camera_dialog_box" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
             android:layout_weight="20"
             android:gravity="center">
         </LinearLayout>
@@ -124,17 +128,18 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginLeft="10dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginBottom="10dp">
+        android:layout_marginRight="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:gravity="end|bottom"
+        android:layout_gravity="end|right">
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
             android:layout_weight="80"
             android:orientation="vertical"
-            android:gravity="end|bottom">
+            android:gravity="end">
             <ImageView
                 android:layout_width="60dp"
                 android:layout_height="60dp"
@@ -143,8 +148,8 @@
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="0dip"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
             android:layout_weight="20"
             android:gravity="center">
         </LinearLayout>

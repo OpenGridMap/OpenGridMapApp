@@ -13,4 +13,6 @@
     <string name="title_section2">Images</string>
     <string name="title_section3">Tags</string>
     <string name="title_activity_tag_selection">TagSelectionActivity</string>
+    <string name="camera_shutter_image_button_description">Camera Shutter Button</string>
+    <string name="submission_confirm_button_description">Submission confirmation button</string>
 </resources>

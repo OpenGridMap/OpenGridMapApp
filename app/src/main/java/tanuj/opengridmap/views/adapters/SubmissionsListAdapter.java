@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Random;
 
 import tanuj.opengridmap.R;
+import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
 
 public class SubmissionsListAdapter extends BaseAdapter {
@@ -61,7 +62,7 @@ public class SubmissionsListAdapter extends BaseAdapter {
 
         Submission submission = submissions.get(position);
 
-        Bitmap bitmap = submission.getImage(0).getThumbnailBitmap("list", context);
+        Bitmap bitmap = submission.getImage(0).getThumbnailBitmap(context, Image.TYPE_LIST);
 
         if(bitmap != null){
             submissionsImage.setImageBitmap(bitmap);

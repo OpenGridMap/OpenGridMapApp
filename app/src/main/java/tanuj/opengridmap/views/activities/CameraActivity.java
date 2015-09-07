@@ -28,21 +28,37 @@ public class CameraActivity extends Activity implements
         GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = CameraActivity.class.getSimpleName();
 
-    private static final long INTERVAL = 10;
-    private static final long FASTEST_INTERVAL = 5;
-    private static final int LOCATION_STATUS_UNAVAILABLE = 0;
+    private static final long INTERVAL = 5;
+
+    private static final long FASTEST_INTERVAL = 1;
+
+    private static final int LOCATION_STATUS_OUTDATED = -2;
+
     private static final int LOCATION_STATUS_ACCURACY_UNACCEPTABLE = -1;
+
+    private static final int LOCATION_STATUS_UNAVAILABLE = 0;
+
     private static final int LOCATION_STATUS_OK = 1;
 
-    private int locationStatus;
+    private static final int STATUS_SAVING_IMAGE = 2;
+
+    private static final int STATUS_SAVING_SUBMISSION = 3;
+
+    private static final int STATUS_SUBMISSION_SAVED = 5;
 
     private FusedLocationProviderApi fusedLocationProviderApi = LocationServices.FusedLocationApi;
+
     private GoogleApiClient googleApiClient;
+
     private LocationRequest locationRequest;
+
     private Location currentLocation;
+
     private String lastLoctionUpdateTime;
 
     private CameraActivityFragment fragment;
+
+    private long startTime;
 
     @SuppressLint("NewApi")
     @Override
@@ -59,8 +75,12 @@ public class CameraActivity extends Activity implements
         FragmentManager fragmentManager = getFragmentManager();
         fragment = (CameraActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
 
+        isGooglePlayServicesAvailable();
+
         createLocationRequest();
         buildGoogleApiClient();
+
+        startTime = System.currentTimeMillis();
     }
 
     @Override
@@ -113,6 +133,8 @@ public class CameraActivity extends Activity implements
             CameraActivityFragment.updateUi(location);
             CameraActivityFragment.setLocation(location);
         }
+
+        processCameraState();
     }
 
     @Override
@@ -176,13 +198,49 @@ public class CameraActivity extends Activity implements
     private int getLocationStatus() {
         if (null == currentLocation) {
             return LOCATION_STATUS_UNAVAILABLE;
-        }
-
-        if (currentLocation.getAccuracy() > 200.0) {
+        } else if (System.currentTimeMillis() - currentLocation.getTime() > 5000){
+            return LOCATION_STATUS_OUTDATED;
+        } else if (currentLocation.getAccuracy() > 200.0) {
             return LOCATION_STATUS_ACCURACY_UNACCEPTABLE;
         }
 
         return LOCATION_STATUS_OK;
+    }
+
+    public void processCameraState() {
+        if (null == fragment) {
+            return;
+        }
+
+        int locationStatus = getLocationStatus();
+
+        switch (locationStatus) {
+            case LOCATION_STATUS_UNAVAILABLE: {
+                Log.d(TAG, "LOCATION_STATUS_UNAVAILABLE");
+                disableCamera();
+                showLocationErrorDialog();
+                break;
+            }
+            case LOCATION_STATUS_OUTDATED: {
+                Log.d(TAG, "LOCATION_STATUS_OUTDATED");
+                showLocationAcquisitionDialog();
+                break;
+            }
+            case LOCATION_STATUS_ACCURACY_UNACCEPTABLE: {
+                Log.d(TAG, "LOCATION_STATUS_ACCURACY_UNACCEPTABLE");
+                disableCamera();
+                showLocationInaccurateDialog();
+                break;
+            }
+            case LOCATION_STATUS_OK: {
+                Log.d(TAG, "LOCATION_STATUS_OK");
+                hideLocationErrorDialog();
+                hideLocationInaccurateDialog();
+                hideLocationAcquisitionDialog();
+                enableCamera();
+                break;
+            }
+        }
     }
 
     private void setCameraOpCondition() {
@@ -204,5 +262,23 @@ public class CameraActivity extends Activity implements
         if (null != fragment) {
             fragment.enableCamera();
         }
+    }
+
+    private void showLocationErrorDialog() {
+    }
+
+    private void hideLocationErrorDialog() {
+    }
+
+    private void showLocationInaccurateDialog() {
+    }
+
+    private void hideLocationInaccurateDialog() {
+    }
+
+    private void showLocationAcquisitionDialog() {
+    }
+
+    private void hideLocationAcquisitionDialog() {
     }
 }

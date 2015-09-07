@@ -38,9 +38,9 @@ public class Submission {
 
     private Timestamp updatedTimestamp;
 
-    private Context context;
+//    private Context context;
 
-    private OpenGridMapDbHelper dbHelper = null;
+//    private OpenGridMapDbHelper dbHelper = null;
 
     public Submission() {
         Timestamp timestamp = new Timestamp(new Date().getTime());
@@ -54,9 +54,8 @@ public class Submission {
 
     public Submission(Context context) {
         this();
-        this.context = context;
 
-        dbHelper = new OpenGridMapDbHelper(this.context);
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         this.id = dbHelper.addSubmission(this);
     }
 
@@ -72,24 +71,24 @@ public class Submission {
         return status;
     }
 
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
     public Timestamp getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Timestamp createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
     }
 
     public Timestamp getUpdatedTimestamp() {
         return updatedTimestamp;
     }
 
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
     public void setUpdatedTimestamp(Timestamp updatedTimestamp) {
         this.updatedTimestamp = updatedTimestamp;
-    }
-
-    public void setCreatedTimestamp(Timestamp createdTimestamp) {
-        this.createdTimestamp = createdTimestamp;
     }
 
     public ArrayList<PowerElement> getPowerElements() {
@@ -100,15 +99,19 @@ public class Submission {
         this.powerElements = powerElements;
     }
 
-    public void addPowerElement(PowerElement powerElement) {
+    public void addPowerElement(Context context, PowerElement powerElement) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
         powerElements.add(powerElement);
 
         dbHelper.addPowerElementToSubmission(powerElement, this);
     }
 
-    public void addPowerElementById(int id) {
+    public void addPowerElementById(Context context, long id) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
         PowerElement powerElement = dbHelper.getPowerElement(id);
-        this.addPowerElement(powerElement);
+        this.addPowerElement(context, powerElement);
         dbHelper.addPowerElementToSubmission(powerElement, this);
     }
 
@@ -128,26 +131,36 @@ public class Submission {
 //        return dbHelper.getImagesBySubmissionId(this.id);
 //    }
 
-    public void addImage(Image image) {
-        images.add(image);
+    public void addImage(Context context, Image image) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
+        images.add(image);
         dbHelper.addImageToSubmission(image, this);
+//        image.generateThumbnails(context);
 
         if (status == STATUS_IMAGE_CAPTURE_PENDING) {
             dbHelper.updateSubmissionStatus(this, STATUS_IMAGE_CAPTURE_IN_PROGRESS);
         }
     }
 
-    public void confirmSubmission() {
+    public void confirmSubmission(Context context) {
         if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
+            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+//            for (Image image : images) {
+//                image.generateThumbnails(context);
+//            }
+
             dbHelper.updateSubmissionStatus(this, STATUS_SUBMISSION_CONFIRMED);
         }
     }
 
     public boolean addToUploadQueue(Context context) {
         if (status == STATUS_SUBMISSION_CONFIRMED) {
-            new UploadQueueItem(context, this);
+            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
             dbHelper.updateSubmissionStatus(this, STATUS_UPLOAD_PENDING);
+            new UploadQueueItem(context, this);
             return true;
         }
         return false;
