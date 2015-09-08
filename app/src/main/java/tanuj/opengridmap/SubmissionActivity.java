@@ -1,9 +1,7 @@
 package tanuj.opengridmap;
 
-import java.util.List;
 import java.util.Locale;
 
-import android.content.Intent;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -13,7 +11,6 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,14 +18,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.adapters.ImageAdapter;
 import tanuj.opengridmap.views.adapters.PowerElementTagsAdapter;
-import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
 
 
 public class SubmissionActivity extends AppCompatActivity implements ActionBar.TabListener {
@@ -154,11 +150,11 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
             Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
-                    return getString(R.string.title_section1).toUpperCase(l);
+                    return getString(R.string.title_section1);
                 case 1:
-                    return getString(R.string.title_section2).toUpperCase(l);
+                    return getString(R.string.title_section2);
                 case 2:
-                    return getString(R.string.title_section3).toUpperCase(l);
+                    return getString(R.string.title_section3);
             }
             return null;
         }
@@ -199,32 +195,59 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
 
             OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
 
-            submission = dbHelper.getSubmission((int) getActivity().getIntent()
-                    .getLongExtra("SubmissionId", -1));
+            long submissionId = getActivity().getIntent().getLongExtra(getString(
+                    R.string.key_submission_id), -1);
+
+            if (submissionId > -1) {
+                submission = dbHelper.getSubmission(submissionId);
+            }
 
             switch (tabIndex) {
                 case 1: {
-                    view = inflater.inflate(R.layout.fragment_submission, container, false);
+                    view = inflater.inflate(R.layout.fragment_submission_tab_1, container, false);
+
+                    Image bestImage = submission.getBestImageByLocationAccuracy();
+                    Image worstImage = submission.getBestImageByLocationAccuracy();
+
+                    bestImage.getLocationInDegrees();
+
+                    TextView submissionStatusTextView = (TextView) view.findViewById(
+                            R.id.submission_status);
+                    TextView noOfImagesTextView = (TextView) view.findViewById(R.id.no_of_images);
+                    TextView submissionBestLocationLatitudeTextView = (TextView) view.findViewById(
+                            R.id.latitude);
+                    TextView submissionBestLocationLongitudeTextView = (TextView) view.findViewById(
+                            R.id.best_submission_longitude);
+                    TextView submissionBestLocationAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_best_accuracy);
+                    TextView submissionAverageLocationAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_average_accuracy);
+                    TextView submissionWorstLocationAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_worst_accuracy);
+
+//                    submissionBestLocationLongitudeTextView.setText(Double.toString(bestImage
+//                            .getLocation().getLongitude()));
+//                    submissionBestLocationLatitudeTextView.setText(Double.toString(bestImage
+//                            .getLocation().getLatitude()));
+
                     break;
                 }
                 case 2: {
                     view = inflater.inflate(R.layout.fragment_submission_tab_2, container, false);
-                    GridView gridView = (GridView) view.findViewById(R.id.image_gridview);
+                    GridView gridView = (GridView) view.findViewById(R.id.submission_images_grid);
 
                     gridView.setAdapter(new ImageAdapter(getActivity(), submission.getImages()));
-//                    gridView.setOnItemClickListener(onItemClickListener);
                     break;
                 }
                 case 3: {
                     view = inflater.inflate(R.layout.fragment_submission_tab_3, container, false);
 
-                    ListView listView = (ListView) view.findViewById(R.id.submission_power_element_tag_list);
+                    ListView listView = (ListView) view.findViewById(R.id.submission_power_elements_list);
                     listView.setAdapter(new PowerElementTagsAdapter(getActivity(), submission.getPowerElements(), PowerElementTagsAdapter.TAGGED));
                     break;
                 }
             }
 
-//            view = inflater.inflate(R.layout.fragment_submission, container, false);
             return view;
         }
     }

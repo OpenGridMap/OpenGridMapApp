@@ -104,6 +104,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 ImageEntry._ID + TYPE_INTEGER + CONSTRAINT_PRIMARY_KEY + CONSTRAINT_AUTOINCREMENT + "," +
                 UploadQueueEntry.COLUMN_SUBMISSION_ID + TYPE_INTEGER + ", " +
                 UploadQueueEntry.COLUMN_STATUS + TYPE_TEXT  + CONSTRAINT_NOT_NULL + ", " +
+                UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED + TYPE_INTEGER + ", " +
                 UploadQueueEntry.COLUMN_CREATED_TIMESTAMP + TYPE_TEXT + CONSTRAINT_NOT_NULL + ", " +
                 UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP + TYPE_TEXT + CONSTRAINT_NOT_NULL + ", " +
                 CONSTRAINT_FOREIGN_KEY + " (" + UploadQueueEntry.COLUMN_SUBMISSION_ID  + ") " + CONSTRAINT_FOREIGN_KEY_REFERENCES +

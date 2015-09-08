@@ -83,6 +83,15 @@
             android:enabled="true"
             android:exported="false" >
         </service>
+
+        <activity
+            android:name=".AltSubmissionActivity"
+            android:label="@string/title_activity_alt_submission"
+            android:parentActivityName=".views.activities.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="tanuj.opengridmap.views.activities.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

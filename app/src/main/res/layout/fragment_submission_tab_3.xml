@@ -6,9 +6,12 @@
     android:padding="20dp">
 
     <ListView
-        android:id="@+id/submission_power_element_tag_list"
+        android:id="@+id/submission_power_elements_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp">
+        android:padding="10dp"
+        android:layout_margin="10dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="10.0sp" >
     </ListView>
 </LinearLayout>

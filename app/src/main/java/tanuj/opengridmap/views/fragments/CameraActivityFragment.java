@@ -179,7 +179,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         noSavedImages = 0;
 
                         long powerElementId = activity.getIntent().getExtras()
-                                .getInt("PowerElementId", -1);
+                                .getInt(String.valueOf(R.string.key_power_element_id), -1);
 
                         if (powerElementId != -1) {
                             submission.addPowerElementById(context, powerElementId);
@@ -230,7 +230,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
 
-    private Context mContext = null;
+//    private Context mContext = null;
 
     private CameraCaptureSession.CaptureCallback mCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
@@ -669,7 +669,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 //                                }
 //                            }
 
-                            mContext = getActivity();
+//                            mContext = getActivity();
 
 //                            image = new tanuj.opengridmap.models.Image(mFile.getPath(),
 //                                    currentLocation);
@@ -845,11 +845,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             showText("No Pics Taken");
         } else {
             disableCamera();
+            showText("Saving Images...");
             Log.d(TAG, "No of Submitted Images : " + submission.getImages().size());
             Log.d(TAG, "No of Saved Images : " + noSavedImages);
 
-            if (noSavedImages != submission.getImages().size()) {
-                Log.d(TAG, "Saving Images" + (noSavedImages - submission.getImages().size()));
+            if (noSavedImages != submission.getNoOfImages()) {
+                Log.d(TAG, "No of Pending Images" + (submission.getImages().size() - noSavedImages));
                 ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
 
                 Runnable runnable = new Runnable() {
@@ -867,7 +868,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             submission.confirmSubmission(context);
 
             Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
-            intent.putExtra("SubmissionId", submission.getId());
+            intent.putExtra(String.valueOf(R.string.key_submission_id), submission.getId());
 
             submission = null;
             image = null;

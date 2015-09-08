@@ -1,5 +1,6 @@
 package tanuj.opengridmap;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.Fragment;
@@ -59,7 +60,8 @@ public class TagSelectionActivityFragment extends Fragment {
         } else {
             OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
 
-            long submissionId = getActivity().getIntent().getLongExtra("SubmissionId", -1);
+            long submissionId = getActivity().getIntent().getLongExtra(String.valueOf(
+                    R.string.key_submission_id), -1);
 
             if (submissionId > -1) {
                 submission = dbHelper.getSubmission(submissionId);
@@ -146,10 +148,10 @@ public class TagSelectionActivityFragment extends Fragment {
                 submission.addToUploadQueue(context);
 
                 Intent serviceIntent = new Intent(context, ThumbnailGenerationService.class);
-                serviceIntent.putExtra("SubmissionId", submission.getId());
+                serviceIntent.putExtra(getString(R.string.key_submission_id), submission.getId());
                 context.startService(serviceIntent);
             }
-            getActivity().finish();
+            ((Activity) context).finish();
         }
     };
 

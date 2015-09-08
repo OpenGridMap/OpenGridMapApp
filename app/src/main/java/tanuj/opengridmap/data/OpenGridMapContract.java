@@ -55,6 +55,7 @@ public class OpenGridMapContract {
 
         public static final String COLUMN_SUBMISSION_ID = "submission_id";
         public static final String COLUMN_STATUS = "status";
+        public static final String COLUMN_PAYLOADS_UPLOADED = "payloads_uploaded";
         public static final String COLUMN_CREATED_TIMESTAMP = "created_on";
         public static final String COLUMN_UPDATED_TIMESTAMP = "updated_on";
     }

@@ -3,6 +3,7 @@ package tanuj.opengridmap.views.adapters;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -48,21 +50,33 @@ public class SubmissionsListAdapter extends BaseAdapter {
     public View getView(int position, View view, ViewGroup parent) {
 
 //        View currentView;
-        layoutInflater = ((Activity) context).getLayoutInflater();
 
         if (view == null) {
+            layoutInflater = ((Activity) context).getLayoutInflater();
             view = layoutInflater.inflate(R.layout.submissions_list_item, parent, false);
         }
 
         ImageView submissionsImage = (ImageView) view.findViewById(R.id.submission_image);
-        TextView submissionTypeTextView = (TextView) view.findViewById(R.id.submission_type);
+        TextView powerElementTagsTextView = (TextView) view.findViewById(
+                R.id.submission_power_elements);
         TextView submissionNoImagesTextView = (TextView) view.findViewById(R.id.no_of_images);
-        TextView submissionCoordsTextView = (TextView) view.findViewById(R.id.submission_coordinates);
-        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.submission_upload_progress_bar);
+
+//        TextView submissionCoordsTextView = (TextView) view.findViewById(R.id.submission_coordinates);
+
+        TextView latitudeTextView = (TextView) view.findViewById(R.id.latitude);
+        TextView longitudeTextView = (TextView) view.findViewById(R.id.longitude);
+        TextView accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
+
+        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.upload_progress_bar);
 
         Submission submission = submissions.get(position);
 
-        Bitmap bitmap = submission.getImage(0).getThumbnailBitmap(context, Image.TYPE_LIST);
+
+        Image image = submission.getImage(0);
+        Bitmap bitmap = image.getThumbnailBitmap(context, Image.TYPE_LIST);
+        Location location = image.getLocation();
+        ArrayList<String> powerElementNames = submission.getPowerElementNames();
+        String powerElementNamesString = "";
 
         if(bitmap != null){
             submissionsImage.setImageBitmap(bitmap);
@@ -70,18 +84,28 @@ public class SubmissionsListAdapter extends BaseAdapter {
             submissionsImage.setBackgroundResource(R.drawable.camera_shutter);
         }
 
-        submissionTypeTextView.setText((submission.getPowerElements().get(0).getName()));
-        submissionNoImagesTextView.setText(
-                "No of Images : " +
-                submission.getImages().size());
-        submissionCoordsTextView.setText(
-                "Lat : " +
-                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
-                        "\nLon : " +
-                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
-                        "\nAccuracy : " +
-                        Float.toString(submission.getImage(0).getLocation().getAccuracy())
-        );
+        for (String name: powerElementNames) {
+            if (powerElementNamesString == "")
+                powerElementNamesString += name;
+            else
+                powerElementNamesString += ", " + name;
+        }
+
+        powerElementTagsTextView.setText(powerElementNamesString);
+        submissionNoImagesTextView.setText(String.valueOf(submission.getNoOfImages()));
+
+        latitudeTextView.setText(Double.toString(location.getLatitude()));
+        longitudeTextView.setText(Double.toString(location.getLongitude()));
+        accuracyTextView.setText(String.format("%.2f", location.getAccuracy()));
+
+//        submissionCoordsTextView.setText(
+//                "Latitude : " +
+//                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
+//                        "\tLongitude : " +
+//                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
+//                        "\nAccuracy : " +
+//                        Float.toString(submission.getImage(0).getLocation().getAccuracy())
+//        );
         progressBar.setProgress(new Random().nextInt(95));
 
         return view;

@@ -58,9 +58,9 @@ public class MainActivityFragment extends Fragment {
     private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//            Toast.makeText(getActivity(), "Hello", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(getActivity(), CameraActivity.class);
-            intent.putExtra("PowerElementId", powerElements.get(position).getId());
+            intent.putExtra(String.valueOf(R.string.key_power_element_id), powerElements
+                    .get(position).getId());
             startActivity(intent);
         }
     };

@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import java.util.List;
 
+import tanuj.opengridmap.AltSubmissionActivity;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.SubmissionActivity;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
@@ -46,9 +47,10 @@ public class SubmissionsActivityFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Intent intent = new Intent(getActivity(), SubmissionActivity.class);
-            intent.putExtra("SubmissionId", submissions.get(position).getId());
-            intent.putExtra(Intent.EXTRA_TEXT, "Hello World");
-            Toast.makeText(getActivity(), submissions.get(position).getId() + "", Toast.LENGTH_SHORT).show();
+//            Intent intent = new Intent(getActivity(), AltSubmissionActivity.class);
+
+            intent.putExtra(getString(R.string.key_submission_id), submissions.get(position)
+                    .getId());
             startActivity(intent);
         }
     };

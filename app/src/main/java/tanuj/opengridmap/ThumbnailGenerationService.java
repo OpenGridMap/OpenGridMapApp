@@ -18,8 +18,6 @@ public class ThumbnailGenerationService extends Service {
 
     private static final String TAG = ThumbnailGenerationService.class.getSimpleName();
 
-    private ArrayList<UploadQueueItem> queueItems;
-
     private OpenGridMapDbHelper dbHelper;
 
     public ThumbnailGenerationService() {
@@ -28,17 +26,11 @@ public class ThumbnailGenerationService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "OnCreate");
-
-        dbHelper = new OpenGridMapDbHelper(this);
-
-        queueItems = dbHelper.getQueue();
+        dbHelper = new OpenGridMapDbHelper(getApplicationContext());
     }
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        Log.d(TAG, "OnStartCmd");
-
         final Context context = getApplicationContext();
 
         long time = System.currentTimeMillis();
@@ -48,8 +40,7 @@ public class ThumbnailGenerationService extends Service {
             public void run() {
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
 
-                long submissionId = intent.getLongExtra("SubmissionId", -1);
-
+                long submissionId = intent.getLongExtra(getString(R.string.key_submission_id), -1);
                 Submission submission = null;
 
                 if (submissionId > -1) {

@@ -5,12 +5,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.media.ThumbnailUtils;
+import android.os.*;
+import android.util.Base64;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.sql.Timestamp;
+import java.util.Comparator;
 import java.util.Date;
 
 /**
@@ -162,7 +166,7 @@ public class Image {
 //        Runnable runnable = new Runnable() {
 //            @Override
 //            public void run() {
-//                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+//                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT);
 
                 File file;
 
@@ -261,5 +265,39 @@ public class Image {
         } catch(Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String getBase64EncodedImage() {
+        Bitmap bitmap = getImageBitmap();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+        byte[] imageByteArray = outputStream.toByteArray();
+
+        return Base64.encodeToString(imageByteArray, Base64.DEFAULT);
+    }
+
+    public String[] getLocationInDegrees() {
+        String[] coords = {null, null};
+
+        Double latitude = location.getLatitude();
+        Double longitude = location.getLongitude();
+
+        coords[0] = Location.convert(latitude, Location.FORMAT_SECONDS);
+        coords[1] = Location.convert(longitude, Location.FORMAT_SECONDS);
+
+//        for (String c: coords) {
+//            String[] crds = c.split(":");
+//
+//            c = crds[0] + " " + crds[]
+//        }
+
+        String[] coord = coords[0].split(":");
+
+        Log.d(TAG, "Lat : " + coords[0] + " Lon : " + coords[1]);
+        for (String str: coord) {
+            Log.d(TAG, "coord : " + str);
+        }
+
+        return coords;
     }
 }
