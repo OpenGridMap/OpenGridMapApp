@@ -59,7 +59,7 @@ public class MainActivityFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             Intent intent = new Intent(getActivity(), CameraActivity.class);
-            intent.putExtra(String.valueOf(R.string.key_power_element_id), powerElements
+            intent.putExtra(getString(R.string.key_power_element_id), powerElements
                     .get(position).getId());
             startActivity(intent);
         }

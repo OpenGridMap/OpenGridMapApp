@@ -2,6 +2,7 @@ package tanuj.opengridmap;
 
 import java.util.Locale;
 
+import android.content.Context;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -19,6 +20,8 @@ import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
@@ -204,31 +207,46 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
 
             switch (tabIndex) {
                 case 1: {
+                    final Context context = getActivity();
                     view = inflater.inflate(R.layout.fragment_submission_tab_1, container, false);
 
                     Image bestImage = submission.getBestImageByLocationAccuracy();
                     Image worstImage = submission.getBestImageByLocationAccuracy();
-
-                    bestImage.getLocationInDegrees();
+                    String[] coordinates = bestImage.getLocationInDegrees(context);
 
                     TextView submissionStatusTextView = (TextView) view.findViewById(
                             R.id.submission_status);
-                    TextView noOfImagesTextView = (TextView) view.findViewById(R.id.no_of_images);
-                    TextView submissionBestLocationLatitudeTextView = (TextView) view.findViewById(
-                            R.id.latitude);
-                    TextView submissionBestLocationLongitudeTextView = (TextView) view.findViewById(
-                            R.id.best_submission_longitude);
-                    TextView submissionBestLocationAccuracyTextView = (TextView) view.findViewById(
-                            R.id.submission_best_accuracy);
-                    TextView submissionAverageLocationAccuracyTextView = (TextView) view.findViewById(
-                            R.id.submission_average_accuracy);
-                    TextView submissionWorstLocationAccuracyTextView = (TextView) view.findViewById(
+                    TextView noImagesTextView = (TextView) view.findViewById(R.id.
+                            submission_no_of_images);
+                    TextView submissionLatitudeTextView = (TextView) view.findViewById(
+                            R.id.submission_latitude);
+                    TextView submissionLongitudeTextView = (TextView) view.findViewById(
+                            R.id.submission_longitude);
+                    TextView submissionAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_accuracy);
+                    TextView submissionWorstAccuracyTextView = (TextView) view.findViewById(
                             R.id.submission_worst_accuracy);
+                    TextView submissionMeanAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_mean_accuracy);
+                    TextView submissionBestAccuracyTextView = (TextView) view.findViewById(
+                            R.id.submission_best_accuracy);
+                    TextView submissionMeanDistanceTextView = (TextView) view.findViewById(
+                            R.id.submission_mean_distance);
 
-//                    submissionBestLocationLongitudeTextView.setText(Double.toString(bestImage
-//                            .getLocation().getLongitude()));
-//                    submissionBestLocationLatitudeTextView.setText(Double.toString(bestImage
-//                            .getLocation().getLatitude()));
+                    submissionStatusTextView.setText(submission.getSubmisisionStatus(context));
+                    noImagesTextView.setText(Integer.toString(submission.getNoOfImages()));
+                    submissionLatitudeTextView.setText(coordinates[0]);
+                    submissionLongitudeTextView.setText(coordinates[1]);
+                    submissionAccuracyTextView.setText(String.format("%.2f", submission
+                            .getBestAccuracy()));
+                    submissionWorstAccuracyTextView.setText(String.format("%.2f", submission
+                            .getWorstAccuracy()));
+                    submissionMeanAccuracyTextView.setText(String.format("%.2f", submission
+                            .getMeanAccuracy()));
+                    submissionBestAccuracyTextView.setText(String.format("%.2f", submission
+                            .getBestAccuracy()));
+                    submissionMeanDistanceTextView.setText(String.format("%.2f", submission
+                            .getMeanDistanceBetweenImages()));
 
                     break;
                 }

@@ -37,8 +37,7 @@
             android:layout_width="0dip"
             android:layout_height="match_parent"
             android:layout_weight="20"
-            android:padding="0dp"
-            android:background="#80000000" >
+            android:padding="0dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -141,10 +140,10 @@
             android:orientation="vertical"
             android:gravity="end">
             <ImageView
+                android:id="@+id/camera_preview"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:src="@drawable/pv"
-                android:scaleType="centerCrop"/>
+                android:scaleType="centerCrop" />
         </LinearLayout>
 
         <LinearLayout

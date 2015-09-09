@@ -53,13 +53,13 @@
 
     <!-- Misc -->
     <string name="ok">OK</string>
-    <string name="degree">\u2109</string>
+    <string name="degree">°</string>
     <string name="minute">\'</string>
     <string name="seconds">\"</string>
-    <string name="North">N</string>
-    <string name="South">S</string>
-    <string name="East">E</string>
-    <string name="West">W</string>
+    <string name="north">N</string>
+    <string name="south">S</string>
+    <string name="east">E</string>
+    <string name="west">W</string>
     <string name="unit_metre">m</string>
 
     <!-- Labels -->
@@ -73,5 +73,24 @@
     <string name="label_best_accuracy">Best Accuracy</string>
     <string name="label_no_of_images">No. of Images : </string>
     <string name="label_status">Status : </string>
-    <string name="label_mean_distance">Average Distance between Images : </string>
+    <string name="label_mean_distance">Mean Distance between Images : </string>
+
+    <!-- Submission Status's -->
+    <string name="submission_status_invalid">Invalid Submission</string>
+    <string name="submission_status_capture_pending">Image Capture Pending</string>
+    <string name="submission_status_capture_in_progress">Image Capture in Progress</string>
+    <string name="submission_status_confirmed">Submission Confirmed</string>
+    <string name="submission_status_upload_pending">Submission Confirmed, Upload pending</string>
+    <string name="submission_status_upload_in_progress">Upload in Progress</string>
+    <string name="submission_status_submitted_pending_review">Submission Uploaded Successfully, pendind review</string>
+    <string name="submission_status_submitted_approved">Submission Approved</string>
+    <string name="submission_status_submitted_rejected">Submission Rejected</string>
+
+    <!-- Location Messages -->
+    <string name="location_message_acquiring">Acquiring Location</string>
+    <string name="location_message_lost">Location lost, Acquiring Location</string>
+    <string name="location_message_error">Location lost, Reacquiring</string>
+
+    <!-- Camera State Messages -->
+    <string name="camera_message_saving_images">Saving Images</string>
 </resources>

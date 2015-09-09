@@ -27,9 +27,10 @@ public class Submission {
     private static final int STATUS_IMAGE_CAPTURE_IN_PROGRESS = -1;
     private static final int STATUS_SUBMISSION_CONFIRMED = 0;
     private static final int STATUS_UPLOAD_PENDING = 1;
-    private static final int STATUS_SUBMITTED_PENDING_REVIEW = 2;
-    private static final int STATUS_SUBMITTED_APPROVED = 3;
-    private static final int STATUS_SUBMITTED_REJECTED = 4;
+    private static final int STATUS_UPLOAD_IN_PROGRESS = 2;
+    private static final int STATUS_SUBMITTED_PENDING_REVIEW = 3;
+    private static final int STATUS_SUBMITTED_APPROVED = 4;
+    private static final int STATUS_SUBMITTED_REJECTED = 5;
 
     private long id;
 
@@ -236,7 +237,7 @@ public class Submission {
         Location previousLocation = getImage(0).getLocation();
 
         for (int i = 1; i < this.getNoOfImages(); i++) {
-            float[] res = new float[0];
+            float[] res = new float[3];
             Location currentLocation = getImage(i).getLocation();
             Location.distanceBetween(previousLocation.getLatitude(), previousLocation.getLongitude(),
                     currentLocation.getLatitude(), currentLocation.getLongitude(), res);
@@ -249,6 +250,10 @@ public class Submission {
     }
 
     public Float getMeanDistanceBetweenImages() {
+        if (getNoOfImages() == 1) {
+            return Float.valueOf(0);
+        }
+
         float meanDistance = 0;
 
         ArrayList<Float> distances = getConsecutivePointDistances();
@@ -266,5 +271,63 @@ public class Submission {
             return Long.signum((long) lhs.getLocation().getAccuracy() -
                     (long) rhs.getLocation().getAccuracy());
         }
+    }
+
+    public String getPowerElementTagsString() {
+        String powerElementNamesString = "";
+        ArrayList<String> powerElementNames = getPowerElementNames();
+
+        for (String name: powerElementNames) {
+            if (powerElementNamesString == "")
+                powerElementNamesString += name;
+            else
+                powerElementNamesString += ", " + name;
+        }
+
+        return powerElementNamesString;
+    }
+
+    public String getSubmisisionStatus(final Context context) {
+        String status = null;
+
+        switch (this.status) {
+            case STATUS_INVALID: {
+                status = context.getString(R.string.submission_status_invalid);
+                break;
+            }
+            case STATUS_IMAGE_CAPTURE_PENDING: {
+                status = context.getString(R.string.submission_status_capture_pending);
+                break;
+            }
+            case STATUS_IMAGE_CAPTURE_IN_PROGRESS: {
+                status = context.getString(R.string.submission_status_capture_in_progress);
+                break;
+            }
+            case STATUS_SUBMISSION_CONFIRMED: {
+                status = context.getString(R.string.submission_status_confirmed);
+                break;
+            }
+            case STATUS_UPLOAD_PENDING: {
+                status = context.getString(R.string.submission_status_upload_pending);
+                break;
+            }
+            case STATUS_UPLOAD_IN_PROGRESS: {
+                status = context.getString(R.string.submission_status_upload_in_progress);
+                break;
+            }
+            case STATUS_SUBMITTED_PENDING_REVIEW: {
+                status = context.getString(R.string.submission_status_submitted_pending_review);
+                break;
+            }
+            case STATUS_SUBMITTED_APPROVED: {
+                status = context.getString(R.string.submission_status_submitted_approved);
+                break;
+            }
+            case STATUS_SUBMITTED_REJECTED: {
+                status = context.getString(R.string.submission_status_submitted_rejected);
+                break;
+            }
+        }
+        return status;
     }
 }

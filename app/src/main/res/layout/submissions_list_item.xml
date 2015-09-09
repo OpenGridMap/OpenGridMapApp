@@ -46,8 +46,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/label_no_of_images"
-                        android:labelFor="@id/no_of_images"/>
+                        android:text="@string/label_no_of_images" />
 
                     <TextView
                         android:id="@+id/no_of_images"

@@ -32,20 +32,6 @@ public class CameraActivity extends Activity implements
 
     private static final long FASTEST_INTERVAL = 1;
 
-    private static final int LOCATION_STATUS_OUTDATED = -2;
-
-    private static final int LOCATION_STATUS_ACCURACY_UNACCEPTABLE = -1;
-
-    private static final int LOCATION_STATUS_UNAVAILABLE = 0;
-
-    private static final int LOCATION_STATUS_OK = 1;
-
-    private static final int STATUS_SAVING_IMAGE = 2;
-
-    private static final int STATUS_SAVING_SUBMISSION = 3;
-
-    private static final int STATUS_SUBMISSION_SAVED = 5;
-
     private FusedLocationProviderApi fusedLocationProviderApi = LocationServices.FusedLocationApi;
 
     private GoogleApiClient googleApiClient;
@@ -127,14 +113,9 @@ public class CameraActivity extends Activity implements
         this.currentLocation = location;
         lastLoctionUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
-        Log.d(TAG, "Location Updated, location : " + location.toString());
-
-        if (null != location) {
-            CameraActivityFragment.updateUi(location);
-            CameraActivityFragment.setLocation(location);
+        if (null != currentLocation) {
+            CameraActivityFragment.setLocation(currentLocation, getApplicationContext());
         }
-
-        processCameraState();
     }
 
     @Override
@@ -193,92 +174,5 @@ public class CameraActivity extends Activity implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-    }
-
-    private int getLocationStatus() {
-        if (null == currentLocation) {
-            return LOCATION_STATUS_UNAVAILABLE;
-        } else if (System.currentTimeMillis() - currentLocation.getTime() > 5000){
-            return LOCATION_STATUS_OUTDATED;
-        } else if (currentLocation.getAccuracy() > 200.0) {
-            return LOCATION_STATUS_ACCURACY_UNACCEPTABLE;
-        }
-
-        return LOCATION_STATUS_OK;
-    }
-
-    public void processCameraState() {
-        if (null == fragment) {
-            return;
-        }
-
-        int locationStatus = getLocationStatus();
-
-        switch (locationStatus) {
-            case LOCATION_STATUS_UNAVAILABLE: {
-                Log.d(TAG, "LOCATION_STATUS_UNAVAILABLE");
-                disableCamera();
-                showLocationErrorDialog();
-                break;
-            }
-            case LOCATION_STATUS_OUTDATED: {
-                Log.d(TAG, "LOCATION_STATUS_OUTDATED");
-                showLocationAcquisitionDialog();
-                break;
-            }
-            case LOCATION_STATUS_ACCURACY_UNACCEPTABLE: {
-                Log.d(TAG, "LOCATION_STATUS_ACCURACY_UNACCEPTABLE");
-                disableCamera();
-                showLocationInaccurateDialog();
-                break;
-            }
-            case LOCATION_STATUS_OK: {
-                Log.d(TAG, "LOCATION_STATUS_OK");
-                hideLocationErrorDialog();
-                hideLocationInaccurateDialog();
-                hideLocationAcquisitionDialog();
-                enableCamera();
-                break;
-            }
-        }
-    }
-
-    private void setCameraOpCondition() {
-        int locationStatus = getLocationStatus();
-        if (locationStatus == LOCATION_STATUS_UNAVAILABLE ||
-                locationStatus == LOCATION_STATUS_ACCURACY_UNACCEPTABLE) {
-            disableCamera();
-        }
-        enableCamera();
-    }
-
-    private void disableCamera() {
-        if (null != fragment) {
-            fragment.disableCamera();
-        }
-    }
-
-    private void enableCamera() {
-        if (null != fragment) {
-            fragment.enableCamera();
-        }
-    }
-
-    private void showLocationErrorDialog() {
-    }
-
-    private void hideLocationErrorDialog() {
-    }
-
-    private void showLocationInaccurateDialog() {
-    }
-
-    private void hideLocationInaccurateDialog() {
-    }
-
-    private void showLocationAcquisitionDialog() {
-    }
-
-    private void hideLocationAcquisitionDialog() {
     }
 }

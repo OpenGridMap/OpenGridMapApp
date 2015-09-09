@@ -42,8 +42,7 @@
         android:horizontalSpacing="10dp"
         android:stretchMode="columnWidth"
         android:gravity="center"
-        android:padding="7dp"
-        android:animateLayoutChanges="true" />
+        android:padding="7dp" />
 
     <LinearLayout
         android:layout_width="match_parent"

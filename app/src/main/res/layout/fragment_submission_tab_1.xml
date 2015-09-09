@@ -23,17 +23,15 @@
                 android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="@string/label_status" />
+                android:text="@string/label_status"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
                 android:id="@+id/submission_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
+                android:textAppearance="?android:attr/textAppearanceMedium" />
         </LinearLayout>
-
-        <include layout="@layout/divider_hr" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,12 +41,15 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/label_no_of_images" />
+                android:text="@string/label_no_of_images"
+                android:labelFor="@id/submission_no_of_images"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/no_of_images"
+                android:id="@+id/submission_no_of_images"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
         </LinearLayout>
 
@@ -115,6 +116,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
+                <include layout="@layout/unit_metre" />
+
             </LinearLayout>
 
             <include layout="@layout/divider_hr" />
@@ -142,12 +145,17 @@
                         android:layout_height="wrap_content"
                         android:text="@string/label_worst_accuracy" />
 
-                    <TextView
-                        android:id="@+id/submission_worst_accuracy"
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/submission_worst_accuracy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
 
-                    <include layout="@layout/unit_metre" />
+                        <include layout="@layout/unit_metre" />
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -158,16 +166,22 @@
                     android:orientation="vertical" >
 
                     <TextView
+
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/label_mean_accuracy" />
 
-                    <TextView
-                        android:id="@+id/submission_average_accuracy"
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/submission_mean_accuracy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
 
-                    <include layout="@layout/unit_metre" />
+                        <include layout="@layout/unit_metre" />
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -182,12 +196,18 @@
                         android:layout_height="wrap_content"
                         android:text="@string/label_best_accuracy" />
 
-                    <TextView
-                        android:id="@+id/submission_best_accuracy"
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/submission_best_accuracy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
 
-                    <include layout="@layout/unit_metre" />
+                        <include layout="@layout/unit_metre" />
+                    </LinearLayout>
+
 
                 </LinearLayout>
 

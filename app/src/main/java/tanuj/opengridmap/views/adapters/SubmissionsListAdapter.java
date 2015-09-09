@@ -48,9 +48,6 @@ public class SubmissionsListAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View view, ViewGroup parent) {
-
-//        View currentView;
-
         if (view == null) {
             layoutInflater = ((Activity) context).getLayoutInflater();
             view = layoutInflater.inflate(R.layout.submissions_list_item, parent, false);
@@ -75,8 +72,8 @@ public class SubmissionsListAdapter extends BaseAdapter {
         Image image = submission.getImage(0);
         Bitmap bitmap = image.getThumbnailBitmap(context, Image.TYPE_LIST);
         Location location = image.getLocation();
-        ArrayList<String> powerElementNames = submission.getPowerElementNames();
-        String powerElementNamesString = "";
+        String[] coordinates = image.getLocationInDegrees(context);
+        String powerElementNamesString = submission.getPowerElementTagsString();
 
         if(bitmap != null){
             submissionsImage.setImageBitmap(bitmap);
@@ -84,28 +81,12 @@ public class SubmissionsListAdapter extends BaseAdapter {
             submissionsImage.setBackgroundResource(R.drawable.camera_shutter);
         }
 
-        for (String name: powerElementNames) {
-            if (powerElementNamesString == "")
-                powerElementNamesString += name;
-            else
-                powerElementNamesString += ", " + name;
-        }
 
         powerElementTagsTextView.setText(powerElementNamesString);
         submissionNoImagesTextView.setText(String.valueOf(submission.getNoOfImages()));
-
-        latitudeTextView.setText(Double.toString(location.getLatitude()));
-        longitudeTextView.setText(Double.toString(location.getLongitude()));
+        latitudeTextView.setText(coordinates[0]);
+        longitudeTextView.setText(coordinates[1]);
         accuracyTextView.setText(String.format("%.2f", location.getAccuracy()));
-
-//        submissionCoordsTextView.setText(
-//                "Latitude : " +
-//                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
-//                        "\tLongitude : " +
-//                        Double.toString(submission.getImage(0).getLocation().getLatitude()) +
-//                        "\nAccuracy : " +
-//                        Float.toString(submission.getImage(0).getLocation().getAccuracy())
-//        );
         progressBar.setProgress(new Random().nextInt(95));
 
         return view;

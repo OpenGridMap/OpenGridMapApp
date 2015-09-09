@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.RectF;
@@ -42,7 +43,9 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -69,6 +72,7 @@ import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
 
 @SuppressLint("NewApi")
 public class CameraActivityFragment extends Fragment implements View.OnClickListener {
+    private static final String TAG = CameraActivityFragment.class.getSimpleName();
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -79,7 +83,22 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    private static final String TAG = CameraActivityFragment.class.getSimpleName();
+
+    private static final int LOCATION_STATUS_OUTDATED = -2;
+
+    private static final int LOCATION_STATUS_ACCURACY_UNACCEPTABLE = -1;
+
+    private static final int LOCATION_STATUS_UNAVAILABLE = 0;
+
+    private static final int LOCATION_STATUS_OK = 1;
+
+    private static final int STATUS_SAVING_IMAGES = 2;
+
+    private static final int STATUS_SUBMISSION_SAVED = 3;
+
+    private static int status = LOCATION_STATUS_UNAVAILABLE;
+
+    private static boolean cameraState = false;
 
     private static final int STATE_PREVIEW = 0;
 
@@ -179,9 +198,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         noSavedImages = 0;
 
                         long powerElementId = activity.getIntent().getExtras()
-                                .getInt(String.valueOf(R.string.key_power_element_id), -1);
+                                .getInt(getString(R.string.key_power_element_id), -1);
 
-                        if (powerElementId != -1) {
+                        if (powerElementId > -1) {
                             submission.addPowerElementById(context, powerElementId);
                         }
                     }
@@ -211,13 +230,23 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static TextView accuracyTextView;
     private static TextView bearingTextView;
 
-    private ImageButton cameraShutterButton = null;
+    private ImageView cameraPreviewImageView = null;
+
+    private static boolean previewAvailable = false;
+
+    private static ImageButton cameraShutterButton = null;
 
     private ImageButton confirmButton = null;
 
     private LinearLayout cameraDialogBoxLayout = null;
 
-    private CardView cameraDialogCardView = null;
+    private static CardView cameraDialogBoxCardView = null;
+
+    private static ProgressBar cameraDialogBoxProgressBar = null;
+
+    private static ImageView cameraDialogBoxImageView = null;
+
+    private static TextView camreaDialogBoxTextView = null;
 
     private long startTime;
     private long finishTime;
@@ -227,6 +256,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static Location currentLocation = null;
 
     private tanuj.opengridmap.models.Image image = null;
+
+    private static tanuj.opengridmap.models.Image lastSavedImage = null;
 
     private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
 
@@ -278,6 +309,13 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                             }
                             break;
                         }
+                    }
+
+                    if (previewAvailable) {
+                        updatePreview(image.getThumbnailBitmap(getActivity(),
+                                tanuj.opengridmap.models.Image.TYPE_LIST));
+                        lastSavedImage = image;
+                        previewAvailable = false;
                     }
                 }
 
@@ -367,6 +405,16 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.camera_texture);
 
         cameraDialogBoxLayout = (LinearLayout) view.findViewById(R.id.camera_dialog_box);
+        cameraPreviewImageView = (ImageView) view.findViewById(R.id.camera_preview);
+        cameraDialogBoxCardView = (CardView) view.findViewById(R.id.camera_dialog_box_card);
+        cameraDialogBoxProgressBar = (ProgressBar) view.findViewById(R.id.card_progress_spinner);
+        cameraDialogBoxImageView = (ImageView) view.findViewById(R.id.card_image);
+        camreaDialogBoxTextView = (TextView) view.findViewById(R.id.card_text);
+
+        if (noSavedImages > 0) {
+            cameraPreviewImageView.setImageBitmap(lastSavedImage.getThumbnailBitmap(getActivity(),
+                    tanuj.opengridmap.models.Image.TYPE_LIST));
+        }
 
         return view;
     }
@@ -401,6 +449,15 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        noSavedImages = 0;
+//        cameraPreviewImageView.setImageBitmap(null);
+//        cameraPreviewImageView = null;
     }
 
     private void setUpCameraOptions(int width, int height) {
@@ -735,19 +792,17 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
-    public static void updateUi(Location location) {
-        if (null == latitudeTextView) {
+    public void updatePreview(final Bitmap bitmap) {
+        if (null == cameraPreviewImageView) {
             return;
         }
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
-        float accuracy = location.getAccuracy();
-        float bearing = location.getBearing();
 
-        latitudeTextView.setText("Latitude : " + String.valueOf(latitude));
-        longitudeTextView.setText("Longitude : " + String.valueOf(longitude));
-        accuracyTextView.setText("Accuracy : " + String.valueOf(accuracy) + "m");
-        bearingTextView.setText("Bearing : " + String.valueOf(bearing));
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                cameraPreviewImageView.setImageBitmap(bitmap);
+            }
+        });
     }
 
     private static class ImageSaver implements Runnable {
@@ -786,6 +841,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     }
                     finally {
                         noSavedImages++;
+                        previewAvailable = true;
                         Log.d(TAG, String.valueOf(noSavedImages));
                     }
                 }
@@ -828,24 +884,13 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         return true;
     }
 
-    public static void setLocation(Location location) {
-        currentLocation = location;
-    }
-
-    public void disableCamera() {
-        cameraShutterButton.setClickable(false);
-    }
-
-    public void enableCamera() {
-        cameraShutterButton.setClickable(false);
-    }
-
     private void confirmSubmission() {
         if (images.isEmpty()) {
             showText("No Pics Taken");
         } else {
             disableCamera();
-            showText("Saving Images...");
+            showSavingImagesDialog(getActivity());
+
             Log.d(TAG, "No of Submitted Images : " + submission.getImages().size());
             Log.d(TAG, "No of Saved Images : " + noSavedImages);
 
@@ -878,4 +923,107 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
+    public static void setLocation(Location location, Context context) {
+        currentLocation = location;
+        updateUi(location);
+        processCameraState(context);
+    }
+
+    public static void updateUi(Location location) {
+        if (null == latitudeTextView) {
+            return;
+        }
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        float accuracy = location.getAccuracy();
+        float bearing = location.getBearing();
+
+        latitudeTextView.setText("Latitude : " + String.valueOf(latitude));
+        longitudeTextView.setText("Longitude : " + String.valueOf(longitude));
+        accuracyTextView.setText("Accuracy : " + String.valueOf(accuracy) + "m");
+        bearingTextView.setText("Bearing : " + String.valueOf(bearing));
+    }
+
+    private static int getLocationStatus() {
+        if (null == currentLocation) {
+            return LOCATION_STATUS_UNAVAILABLE;
+        } else if (System.currentTimeMillis() - currentLocation.getTime() > 5000){
+            return LOCATION_STATUS_OUTDATED;
+        } else if (currentLocation.getAccuracy() > 200.0) {
+            return LOCATION_STATUS_ACCURACY_UNACCEPTABLE;
+        }
+
+        return LOCATION_STATUS_OK;
+    }
+
+    public static void processCameraState(final Context context) {
+        status = getLocationStatus();
+
+        switch (status) {
+            case LOCATION_STATUS_UNAVAILABLE: {
+                Log.d(TAG, "LOCATION_STATUS_UNAVAILABLE");
+                disableCamera();
+                break;
+            }
+            case LOCATION_STATUS_OUTDATED: {
+                Log.d(TAG, "LOCATION_STATUS_OUTDATED");
+                disableCamera();
+                showLocationAcquisitionDialog(context);
+                break;
+            }
+            case LOCATION_STATUS_ACCURACY_UNACCEPTABLE: {
+                Log.d(TAG, "LOCATION_STATUS_ACCURACY_UNACCEPTABLE");
+                disableCamera();
+                showLocationAcquisitionDialog(context);
+                break;
+            }
+            case LOCATION_STATUS_OK: {
+                hideLocationAcquisitionDialog();
+                enableCamera();
+                break;
+            }
+        }
+    }
+
+    public static void disableCamera() {
+        if (null == cameraShutterButton) {
+            return;
+        }
+        if (cameraShutterButton.isClickable()) {
+            cameraShutterButton.setClickable(false);
+            cameraState = false;
+            Log.d(TAG, "Disabled Camera Shutter Button");
+        }
+    }
+
+    public static void enableCamera() {
+        if (null == cameraShutterButton) {
+            return;
+        }
+        if (!cameraShutterButton.isClickable()) {
+            cameraShutterButton.setClickable(false);
+            cameraState = true;
+            Log.d(TAG, "Enabled Camera Shutter Button");
+        }
+    }
+
+    private static void showLocationAcquisitionDialog(final Context context) {
+        camreaDialogBoxTextView.setText(context.getString(R.string.location_message_acquiring));
+        cameraDialogBoxImageView.setVisibility(View.GONE);
+        cameraDialogBoxCardView.setVisibility(View.VISIBLE);
+        cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
+    }
+
+    private static void hideLocationAcquisitionDialog() {
+        cameraDialogBoxImageView.setVisibility(View.GONE);
+        cameraDialogBoxCardView.setVisibility(View.GONE);
+        cameraDialogBoxProgressBar.setVisibility(View.GONE);
+    }
+
+    private static void showSavingImagesDialog(final Context context) {
+        camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_images));
+        cameraDialogBoxImageView.setVisibility(View.GONE);
+        cameraDialogBoxCardView.setVisibility(View.VISIBLE);
+        cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
+    }
 }

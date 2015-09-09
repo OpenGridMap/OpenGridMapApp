@@ -110,7 +110,9 @@
             android:layout_weight="80"
             android:orientation="vertical"
             android:gravity="center" >
+
             <include layout="@layout/camera_dialog_box" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -136,10 +138,10 @@
             android:orientation="vertical"
             android:gravity="end|bottom">
             <ImageView
+                android:id="@+id/camera_preview"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:src="@drawable/pv"
-                android:scaleType="centerCrop"/>
+                android:scaleType="centerCrop" />
         </LinearLayout>
 
         <LinearLayout

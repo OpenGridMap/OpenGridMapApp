@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.media.ThumbnailUtils;
-import android.os.*;
 import android.util.Base64;
 import android.util.Log;
 
@@ -14,8 +13,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.sql.Timestamp;
-import java.util.Comparator;
 import java.util.Date;
+
+import tanuj.opengridmap.R;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -163,31 +163,20 @@ public class Image {
     }
 
     public void generateThumbnails(final Context context) {
-//        Runnable runnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT);
+        File file;
 
-                File file;
+        int[] types = {TYPE_LIST, TYPE_GRID};
 
-                int[] types = {TYPE_LIST, TYPE_GRID};
+        for (int type : types) {
+            file = getThumbnailFile(context, type);
 
-                for (int type : types) {
-                    file = getThumbnailFile(context, type);
-
-                    if (file.exists()) {
-                        Log.d(TAG, "Thumbnail Already exists");
-                    } else {
-                        generateThumbnail(file, type);
-                        Log.d(TAG, "Thumbnail Generated");
-                    }
-                }
-//            }
-//        };
-
-//        Thread thread = new Thread(runnable);
-//
-//        thread.start();
+            if (file.exists()) {
+                Log.d(TAG, "Thumbnail Already exists");
+            } else {
+                generateThumbnail(file, type);
+                Log.d(TAG, "Thumbnail Generated");
+            }
+        }
     }
 
     private Bitmap generateThumbnail(File file, int type) {
@@ -276,7 +265,7 @@ public class Image {
         return Base64.encodeToString(imageByteArray, Base64.DEFAULT);
     }
 
-    public String[] getLocationInDegrees() {
+    public String[] getLocationInDegrees(final Context context) {
         String[] coords = {null, null};
 
         Double latitude = location.getLatitude();
@@ -285,18 +274,18 @@ public class Image {
         coords[0] = Location.convert(latitude, Location.FORMAT_SECONDS);
         coords[1] = Location.convert(longitude, Location.FORMAT_SECONDS);
 
-//        for (String c: coords) {
-//            String[] crds = c.split(":");
-//
-//            c = crds[0] + " " + crds[]
-//        }
+        for (int i = 0; i < 2; i++) {
+            String[] crds = coords[i].split(":");
 
-        String[] coord = coords[0].split(":");
-
-        Log.d(TAG, "Lat : " + coords[0] + " Lon : " + coords[1]);
-        for (String str: coord) {
-            Log.d(TAG, "coord : " + str);
+            coords[i] = crds[0] + context.getString(R.string.degree) + " " + crds[1] +
+                    context.getString(R.string.minute) + " " + crds[2] +
+                    context.getString(R.string.seconds) + " ";
         }
+
+        coords[0] += latitude >= 0 ? context.getString(R.string.north) : context.getString(
+                R.string.south);
+        coords[1] += longitude >= 0 ? context.getString(R.string.east) : context.getString(
+                R.string.west);
 
         return coords;
     }
