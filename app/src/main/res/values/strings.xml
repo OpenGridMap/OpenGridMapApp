@@ -17,10 +17,10 @@
     <string name="submission_confirm_button_description">Submission confirmation button</string>
 
     <!-- Submissions Activity -->
-    <string name="title_activity_submissions">SubmissionsActivity</string>
+    <string name="title_activity_submissions">All of your Submissions</string>
 
     <!-- Submission Activity -->
-    <string name="title_activity_submission">SubmissionActivity</string>
+    <string name="title_activity_submission">Submission Overview</string>
     <string name="no_of_images">No. of Images</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
@@ -30,7 +30,7 @@
     <string name="title_section3">Tags</string>
 
     <!-- Tag Selection Activity -->
-    <string name="title_activity_tag_selection">TagSelectionActivity</string>
+    <string name="title_activity_tag_selection">Select any additional tags if any</string>
 
     <!-- Activity extras -->
     <string name="key_power_element_id">power_element_id</string>
@@ -93,4 +93,5 @@
 
     <!-- Camera State Messages -->
     <string name="camera_message_saving_images">Saving Images</string>
+    <string name="camera_message_saving_image">Saving Image</string>
 </resources>

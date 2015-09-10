@@ -22,15 +22,15 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
 public class Submission {
     private static final String TAG = Submission.class.getSimpleName();
 
-    private static final int STATUS_INVALID = -3;
-    private static final int STATUS_IMAGE_CAPTURE_PENDING = -2;
-    private static final int STATUS_IMAGE_CAPTURE_IN_PROGRESS = -1;
-    private static final int STATUS_SUBMISSION_CONFIRMED = 0;
-    private static final int STATUS_UPLOAD_PENDING = 1;
-    private static final int STATUS_UPLOAD_IN_PROGRESS = 2;
-    private static final int STATUS_SUBMITTED_PENDING_REVIEW = 3;
-    private static final int STATUS_SUBMITTED_APPROVED = 4;
-    private static final int STATUS_SUBMITTED_REJECTED = 5;
+    public static final int STATUS_INVALID = -3;
+    public static final int STATUS_IMAGE_CAPTURE_PENDING = -2;
+    public static final int STATUS_IMAGE_CAPTURE_IN_PROGRESS = -1;
+    public static final int STATUS_SUBMISSION_CONFIRMED = 0;
+    public static final int STATUS_UPLOAD_PENDING = 1;
+    public static final int STATUS_UPLOAD_IN_PROGRESS = 2;
+    public static final int STATUS_SUBMITTED_PENDING_REVIEW = 3;
+    public static final int STATUS_SUBMITTED_APPROVED = 4;
+    public static final int STATUS_SUBMITTED_REJECTED = 5;
 
     private long id;
 
@@ -59,6 +59,7 @@ public class Submission {
 
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         this.id = dbHelper.addSubmission(this);
+        dbHelper.close();
     }
 
     public long getId() {
@@ -75,6 +76,10 @@ public class Submission {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public int getNoOfImages() {
+        return images.size();
     }
 
     public Timestamp getCreatedTimestamp() {
@@ -116,6 +121,7 @@ public class Submission {
 
         powerElements.add(powerElement);
         dbHelper.addPowerElementToSubmission(powerElement, this);
+        dbHelper.close();
     }
 
     public void addPowerElementById(Context context, long id) {
@@ -124,6 +130,7 @@ public class Submission {
 
         this.addPowerElement(context, powerElement);
         dbHelper.addPowerElementToSubmission(powerElement, this);
+        dbHelper.close();
     }
 
     public List<Image> getImages() {
@@ -138,43 +145,49 @@ public class Submission {
         return images.get(index);
     }
 
+    private void updateStatus(Context context, int newStatus) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+        status = newStatus;
+        dbHelper.updateSubmissionStatus(this, status);
+
+        dbHelper.close();
+    }
+
     public void addImage(Context context, Image image) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
         images.add(image);
         dbHelper.addImageToSubmission(image, this);
+        dbHelper.close();
 
         if (status == STATUS_IMAGE_CAPTURE_PENDING) {
-            dbHelper.updateSubmissionStatus(this, STATUS_IMAGE_CAPTURE_IN_PROGRESS);
+            updateStatus(context, STATUS_IMAGE_CAPTURE_IN_PROGRESS);
         }
     }
 
     public void confirmSubmission(Context context) {
         if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
-            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-            dbHelper.updateSubmissionStatus(this, STATUS_SUBMISSION_CONFIRMED);
+            updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
         }
     }
 
     public boolean addToUploadQueue(Context context) {
         if (status == STATUS_SUBMISSION_CONFIRMED) {
-            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-
-            dbHelper.updateSubmissionStatus(this, STATUS_UPLOAD_PENDING);
             new UploadQueueItem(context, this);
+            updateStatus(context, STATUS_UPLOAD_PENDING);
             return true;
         }
         return false;
     }
 
-    public int getNoOfImages() {
-        return images.size();
-    }
-
     public ArrayList<String> getUploadPayloads(Context context) {
         ArrayList<String> payloads = new ArrayList<String>();
-
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+        if (status == STATUS_UPLOAD_PENDING) {
+            updateStatus(context, STATUS_UPLOAD_IN_PROGRESS);
+        }
 
         for (Image image : images) {
             JSONObject json = new JSONObject();
@@ -202,7 +215,27 @@ public class Submission {
             payloads.add(json.toString());
         }
 
+        dbHelper.close();
+
         return payloads;
+    }
+
+    public void uploadComplete(Context context) {
+        if (status == STATUS_UPLOAD_IN_PROGRESS) {
+            updateStatus(context, STATUS_SUBMITTED_PENDING_REVIEW);
+        }
+    }
+
+    public void submissionApproved(Context context) {
+        if (status == STATUS_SUBMITTED_PENDING_REVIEW) {
+            updateStatus(context, STATUS_SUBMITTED_APPROVED);
+        }
+    }
+
+    public void submissionRejected(Context context) {
+        if (status == STATUS_SUBMITTED_PENDING_REVIEW) {
+            updateStatus(context, STATUS_SUBMITTED_REJECTED);
+        }
     }
 
     public float getBestAccuracy() {
@@ -287,7 +320,7 @@ public class Submission {
         return powerElementNamesString;
     }
 
-    public String getSubmisisionStatus(final Context context) {
+    public String getSubmissionStatus(final Context context) {
         String status = null;
 
         switch (this.status) {

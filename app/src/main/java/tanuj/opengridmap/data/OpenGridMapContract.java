@@ -27,6 +27,7 @@ public class OpenGridMapContract {
 
     public static final class PowerElementSubmissionEntry {
         public static final String TABLE_NAME = "power_element_submission";
+
         public static final String COLUMN_POWER_ELEMENT_ID = "power_element_id";
         public static final String COLUMN_SUBMISSION_ID = "submission_id";
     }

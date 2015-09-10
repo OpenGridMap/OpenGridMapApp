@@ -190,7 +190,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return submission;
     }
 
-    public List<Submission> getSubmissions() {
+    public List<Submission> getSubmissions(int minStatus) {
         SQLiteDatabase db = this.getReadableDatabase();
 
         final String[] columns = {
@@ -199,7 +199,9 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 SubmissionEntry.COLUMN_CREATED_TIMESTAMP,
                 SubmissionEntry.COLUMN_UPDATED_TIMESTAMP};
 
-        Cursor cursor = db.query(SubmissionEntry.TABLE_NAME, columns, null, null, null, null, SubmissionEntry.COLUMN_CREATED_TIMESTAMP + DESC);
+        Cursor cursor = db.query(SubmissionEntry.TABLE_NAME, columns, SubmissionEntry.COLUMN_STATUS
+                + " >= ?", new String[] {Integer.toString(minStatus)}, null, null,
+                SubmissionEntry.COLUMN_CREATED_TIMESTAMP + DESC);
 
         List<Submission> submissions = new ArrayList<Submission>();
 

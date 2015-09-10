@@ -1,5 +1,6 @@
 package tanuj.opengridmap.views.fragments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -8,16 +9,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.List;
 
-import tanuj.opengridmap.AltSubmissionActivity;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.SubmissionActivity;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
-import tanuj.opengridmap.views.activities.CameraActivity;
 import tanuj.opengridmap.views.adapters.SubmissionsListAdapter;
 
 
@@ -33,12 +31,14 @@ public class SubmissionsActivityFragment extends Fragment {
 
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
 
-        submissions = dbHelper.getSubmissions();
+        submissions = dbHelper.getSubmissions(Submission.STATUS_SUBMISSION_CONFIRMED);
 
         ListView listView = (ListView) view.findViewById(R.id.listview_contributions);
 
         listView.setAdapter(new SubmissionsListAdapter(getActivity(), submissions));
         listView.setOnItemClickListener(onItemClickListener);
+
+        dbHelper.close();
 
         return view;
     }
@@ -46,8 +46,8 @@ public class SubmissionsActivityFragment extends Fragment {
     private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Intent intent = new Intent(getActivity(), SubmissionActivity.class);
-//            Intent intent = new Intent(getActivity(), AltSubmissionActivity.class);
+            final Context context = getActivity();
+            Intent intent = new Intent(context, SubmissionActivity.class);
 
             intent.putExtra(getString(R.string.key_submission_id), submissions.get(position)
                     .getId());

@@ -85,6 +85,7 @@ public class ThumbnailGenerationService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "OnDestroy");
+        dbHelper.close();
         super.onDestroy();
     }
 }

@@ -57,17 +57,12 @@ public class SubmissionsListAdapter extends BaseAdapter {
         TextView powerElementTagsTextView = (TextView) view.findViewById(
                 R.id.submission_power_elements);
         TextView submissionNoImagesTextView = (TextView) view.findViewById(R.id.no_of_images);
-
-//        TextView submissionCoordsTextView = (TextView) view.findViewById(R.id.submission_coordinates);
-
         TextView latitudeTextView = (TextView) view.findViewById(R.id.latitude);
         TextView longitudeTextView = (TextView) view.findViewById(R.id.longitude);
         TextView accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
-
         ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.upload_progress_bar);
 
         Submission submission = submissions.get(position);
-
 
         Image image = submission.getImage(0);
         Bitmap bitmap = image.getThumbnailBitmap(context, Image.TYPE_LIST);
@@ -81,8 +76,8 @@ public class SubmissionsListAdapter extends BaseAdapter {
             submissionsImage.setBackgroundResource(R.drawable.camera_shutter);
         }
 
-
         powerElementTagsTextView.setText(powerElementNamesString);
+        powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
         submissionNoImagesTextView.setText(String.valueOf(submission.getNoOfImages()));
         latitudeTextView.setText(coordinates[0]);
         longitudeTextView.setText(coordinates[1]);
@@ -90,5 +85,37 @@ public class SubmissionsListAdapter extends BaseAdapter {
         progressBar.setProgress(new Random().nextInt(95));
 
         return view;
+    }
+
+    private int getPowerElementsTextColor(Submission submission) {
+        int powerElementsColor = 0;
+
+        switch (submission.getStatus()) {
+            case Submission.STATUS_SUBMISSION_CONFIRMED: {
+                powerElementsColor = context.getResources().getColor(R.color.amber_600);
+                break;
+            }
+            case Submission.STATUS_UPLOAD_PENDING: {
+                powerElementsColor = context.getResources().getColor(R.color.lime_700);
+                break;
+            }
+            case Submission.STATUS_UPLOAD_IN_PROGRESS: {
+                powerElementsColor = context.getResources().getColor(R.color.teal_400);
+                break;
+            }
+            case Submission.STATUS_SUBMITTED_PENDING_REVIEW: {
+                powerElementsColor = context.getResources().getColor(R.color.teal_800);
+                break;
+            }
+            case Submission.STATUS_SUBMITTED_APPROVED: {
+                powerElementsColor = context.getResources().getColor(R.color.teal_900);
+                break;
+            }
+            case Submission.STATUS_SUBMITTED_REJECTED: {
+                powerElementsColor = context.getResources().getColor(R.color.amber_900);
+                break;
+            }
+        }
+        return powerElementsColor;
     }
 }

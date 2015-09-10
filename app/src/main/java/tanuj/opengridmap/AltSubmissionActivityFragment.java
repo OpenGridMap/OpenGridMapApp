@@ -43,8 +43,9 @@ public class AltSubmissionActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_alt_submission, container, false);
+        final Context context = getActivity();
 
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
         long submissionId = getActivity().getIntent().getLongExtra(String.valueOf(
                 R.string.key_submission_id), -1);
@@ -54,11 +55,11 @@ public class AltSubmissionActivityFragment extends Fragment {
         }
 
         submission = dbHelper.getSubmission((int) getActivity().getIntent()
-                .getLongExtra(String.valueOf(R.string.key_submission_id), -1));
+                .getLongExtra(getString(R.string.key_submission_id), -1));
+
+        dbHelper.close();
 
         if (null != submission) {
-            final Context context = getActivity();
-
             latitudeTextView = (TextView) view.findViewById(R.id.latitude);
             longitudeTextView = (TextView) view.findViewById(R.id.best_submission_longitude);
             accuracyTextView = (TextView) view.findViewById(R.id.submission_accuracy);

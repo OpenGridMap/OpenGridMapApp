@@ -2,9 +2,8 @@ package tanuj.opengridmap;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,17 +49,20 @@ public class TagSelectionActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tag_selection, container, false);
+        final Context context = getActivity();
 
         ImageButton confirmButton = (ImageButton) view.findViewById(R.id.confirm_button);
 
         if (savedInstanceState != null && savedInstanceState.containsKey(TAGGED_POWER_ELEMENTS_KEY)
                 && savedInstanceState.containsKey(NOT_TAGGED_POWER_ELEMENTS_KEY)) {
-            taggedPowerElements = savedInstanceState.getParcelableArrayList(TAGGED_POWER_ELEMENTS_KEY);
-            notTaggedPowerElements = savedInstanceState.getParcelableArrayList(NOT_TAGGED_POWER_ELEMENTS_KEY);
+            taggedPowerElements = savedInstanceState.getParcelableArrayList(
+                    TAGGED_POWER_ELEMENTS_KEY);
+            notTaggedPowerElements = savedInstanceState.getParcelableArrayList(
+                    NOT_TAGGED_POWER_ELEMENTS_KEY);
         } else {
-            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
+            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
-            long submissionId = getActivity().getIntent().getLongExtra(String.valueOf(
+            long submissionId = ((Activity) context).getIntent().getLongExtra(getString(
                     R.string.key_submission_id), -1);
 
             if (submissionId > -1) {
@@ -71,17 +73,21 @@ public class TagSelectionActivityFragment extends Fragment {
                 taggedPowerElements = submission.getPowerElements();
                 notTaggedPowerElements = dbHelper.getNotTaggedPowerElements(submission);
             }
+            dbHelper.close();
         }
 
 
 
-        taggedPowerElementsListAdapter = new PowerElementTagsAdapter(getActivity(),taggedPowerElements, PowerElementTagsAdapter.TAGGED);
+        taggedPowerElementsListAdapter = new PowerElementTagsAdapter(context, taggedPowerElements,
+                PowerElementTagsAdapter.TAGGED);
         taggedPowerElementsList = (GridView) view.findViewById(R.id.power_elements_tagged_list);
         taggedPowerElementsList.setAdapter(taggedPowerElementsListAdapter);
 
 
-        notTaggedPowerElementsListAdapter = new PowerElementTagsAdapter(getActivity(), notTaggedPowerElements, PowerElementTagsAdapter.NOT_TAGGED);
-        notTaggedPowerElementsList = (GridView) view.findViewById(R.id.power_elements_not_tagged_list);
+        notTaggedPowerElementsListAdapter = new PowerElementTagsAdapter(context,
+                notTaggedPowerElements, PowerElementTagsAdapter.NOT_TAGGED);
+        notTaggedPowerElementsList = (GridView) view.findViewById(
+                R.id.power_elements_not_tagged_list);
         notTaggedPowerElementsList.setAdapter(notTaggedPowerElementsListAdapter);
 
         taggedPowerElementsList.setOnItemClickListener(taggedPowerElementClickListener);
@@ -89,32 +95,11 @@ public class TagSelectionActivityFragment extends Fragment {
 
         confirmButton.setOnClickListener(confirmButtonClickListener);
 
-//        taggedPowerElementsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                if (taggedPowerElementsListAdapter.getCount() > 1) {
-//                    PowerElement p = taggedPowerElementsListAdapter.removeTag(position);
-//                    notTaggedPowerElementsListAdapter.addTag(p);
-//                } else {
-//                    Toast.makeText(getActivity(), "Atleast 1 tag required", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
-
-//        notTaggedPowerElementsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                PowerElement p = notTaggedPowerElementsListAdapter.removeTag(position);
-//                taggedPowerElementsListAdapter.addTag(p);
-//            }
-//        });
-
-
-
         return view;
     }
 
-    private AdapterView.OnItemClickListener taggedPowerElementClickListener = new AdapterView.OnItemClickListener() {
+    private AdapterView.OnItemClickListener taggedPowerElementClickListener =
+            new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             if (taggedPowerElementsListAdapter.getCount() > 1) {
@@ -126,7 +111,8 @@ public class TagSelectionActivityFragment extends Fragment {
         }
     };
 
-    private AdapterView.OnItemClickListener notTaggedPowerElementClickListener = new AdapterView.OnItemClickListener() {
+    private AdapterView.OnItemClickListener notTaggedPowerElementClickListener =
+            new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             PowerElement p = notTaggedPowerElementsListAdapter.removeTag(position);
@@ -137,7 +123,7 @@ public class TagSelectionActivityFragment extends Fragment {
     private View.OnClickListener confirmButtonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Context context = getActivity();
+            final Context context = getActivity();
             if (submission != null && taggedPowerElements.size() > 0) {
                 OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
@@ -146,10 +132,7 @@ public class TagSelectionActivityFragment extends Fragment {
                 }
 
                 submission.addToUploadQueue(context);
-
-                Intent serviceIntent = new Intent(context, ThumbnailGenerationService.class);
-                serviceIntent.putExtra(getString(R.string.key_submission_id), submission.getId());
-                context.startService(serviceIntent);
+                dbHelper.close();
             }
             ((Activity) context).finish();
         }
@@ -159,8 +142,8 @@ public class TagSelectionActivityFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(TAGGED_POWER_ELEMENTS_KEY, taggedPowerElementsListAdapter
                 .getPowerElements());
-        outState.putParcelableArrayList(NOT_TAGGED_POWER_ELEMENTS_KEY, notTaggedPowerElementsListAdapter
-                .getPowerElements());
+        outState.putParcelableArrayList(NOT_TAGGED_POWER_ELEMENTS_KEY,
+                notTaggedPowerElementsListAdapter.getPowerElements());
 
         super.onSaveInstanceState(outState);
     }

@@ -1,6 +1,7 @@
 package tanuj.opengridmap.views.fragments;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -44,12 +45,14 @@ public class MainActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        final Context context = getActivity();
 
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
         powerElements = dbHelper.getPowerElements();
+        dbHelper.close();
 
         GridView gridView = (GridView) rootView.findViewById(R.id.main_gridview);
-        gridView.setAdapter(new PowerElementsGridAdapter(getActivity(), powerElements));
+        gridView.setAdapter(new PowerElementsGridAdapter(context, powerElements));
         gridView.setOnItemClickListener(onItemClickListener);
 
         return rootView;
@@ -58,7 +61,9 @@ public class MainActivityFragment extends Fragment {
     private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            Intent intent = new Intent(getActivity(), CameraActivity.class);
+            final Context context = getActivity();
+            Intent intent = new Intent(context, CameraActivity.class);
+
             intent.putExtra(getString(R.string.key_power_element_id), powerElements
                     .get(position).getId());
             startActivity(intent);

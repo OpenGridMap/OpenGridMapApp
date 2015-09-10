@@ -49,17 +49,17 @@ public class UploadQueueItem {
         this.createdAtTimestamp = timestamp;
         this.updatedAtTimestamp = timestamp;
         this.id = dbHelper.addQueueItem(this);
-        Log.d(TAG, Long.toString(id));
+        dbHelper.close();
     }
 
-    public UploadQueueItem(Context context, long id) {
-        this.id = id;
-
-        Timestamp timestamp = new Timestamp(new Date().getTime());
-        this.createdAtTimestamp = timestamp;
-
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-    }
+//    public UploadQueueItem(Context context, long id) {
+//        this.id = id;
+//
+//        Timestamp timestamp = new Timestamp(new Date().getTime());
+//        this.createdAtTimestamp = timestamp;
+//
+//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+//    }
 
     public long getSubmissionId() {
         return this.submission.getId();

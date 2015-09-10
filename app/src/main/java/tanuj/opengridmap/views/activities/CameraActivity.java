@@ -15,9 +15,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import java.text.DateFormat;
-import java.util.Date;
-
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.views.fragments.CameraActivityFragment;
 
@@ -39,8 +36,6 @@ public class CameraActivity extends Activity implements
     private LocationRequest locationRequest;
 
     private Location currentLocation;
-
-    private String lastLoctionUpdateTime;
 
     private CameraActivityFragment fragment;
 
@@ -111,8 +106,6 @@ public class CameraActivity extends Activity implements
     @Override
     public void onLocationChanged(Location location) {
         this.currentLocation = location;
-        lastLoctionUpdateTime = DateFormat.getTimeInstance().format(new Date());
-
         if (null != currentLocation) {
             CameraActivityFragment.setLocation(currentLocation, getApplicationContext());
         }

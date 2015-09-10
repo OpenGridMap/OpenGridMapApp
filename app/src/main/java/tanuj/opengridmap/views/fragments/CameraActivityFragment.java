@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.TagSelectionActivity;
+import tanuj.opengridmap.ThumbnailGenerationService;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
 
@@ -91,12 +92,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static final int LOCATION_STATUS_UNAVAILABLE = 0;
 
     private static final int LOCATION_STATUS_OK = 1;
-
-    private static final int STATUS_SAVING_IMAGES = 2;
-
-    private static final int STATUS_SUBMISSION_SAVED = 3;
-
-    private static int status = LOCATION_STATUS_UNAVAILABLE;
 
     private static boolean cameraState = false;
 
@@ -182,7 +177,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 @Override
                 public void onImageAvailable(ImageReader reader) {
                     final Context context = getActivity();
-                    final Activity activity = getActivity();
 
                     startTime = System.currentTimeMillis();
                     mFileName = Long.toString(startTime) + ".jpg";
@@ -190,14 +184,13 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     mFile = new File(getActivity().getExternalFilesDir(
                             tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
 
-                    boolean res = mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage()
-                            , mFile));
+                    mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage(), mFile));
 
                     if (submission == null) {
                         submission = new Submission(context);
                         noSavedImages = 0;
 
-                        long powerElementId = activity.getIntent().getExtras()
+                        long powerElementId = ((Activity) context).getIntent().getExtras()
                                 .getInt(getString(R.string.key_power_element_id), -1);
 
                         if (powerElementId > -1) {
@@ -205,13 +198,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         }
                     }
 
-//                    if (res) {
-                        image = new tanuj.opengridmap.models.Image(mFile.getPath(),
-                                currentLocation);
-                        submission.addImage(context, image);
-                        images.add(image);
-                        Log.d(TAG, "Image Saved : " + mFile.getPath());
-//                    }
+                    image = new tanuj.opengridmap.models.Image(mFile.getPath(),
+                            currentLocation);
+                    submission.addImage(context, image);
+                    images.add(image);
+                    Log.d(TAG, "Image Saved : " + mFile.getPath());
                 }
             };
 
@@ -260,8 +251,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static tanuj.opengridmap.models.Image lastSavedImage = null;
 
     private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
-
-//    private Context mContext = null;
 
     private CameraCaptureSession.CaptureCallback mCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
@@ -320,17 +309,20 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 }
 
                 @Override
-                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request, long timestamp, long frameNumber) {
+                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request,
+                                             long timestamp, long frameNumber) {
                     super.onCaptureStarted(session, request, timestamp, frameNumber);
                 }
 
                 @Override
-                public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
+                public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest
+                        request, CaptureResult partialResult) {
                     process(partialResult);
                 }
 
                 @Override
-                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
+                                               TotalCaptureResult result) {
                     process(result);
                 }
             };
@@ -456,8 +448,18 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         super.onActivityResult(requestCode, resultCode, data);
 
         noSavedImages = 0;
-//        cameraPreviewImageView.setImageBitmap(null);
-//        cameraPreviewImageView = null;
+        latitudeTextView = null;
+        longitudeTextView = null;
+        accuracyTextView = null;
+        bearingTextView = null;
+        previewAvailable = false;
+        cameraShutterButton = null;
+        cameraDialogBoxCardView = null;
+        cameraDialogBoxProgressBar = null;
+        cameraDialogBoxImageView = null;
+        camreaDialogBoxTextView = null;
+        currentLocation = null;
+        lastSavedImage = null;
     }
 
     private void setUpCameraOptions(int width, int height) {
@@ -657,6 +659,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private void takePicture() {
         lockFocus();
+        runPrecaptureSequence();
     }
 
     private void lockFocus() {
@@ -714,29 +717,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         public void onCaptureCompleted(CameraCaptureSession session,
                                                        CaptureRequest request,
                                                        TotalCaptureResult result) {
-//                            final Context context = getActivity();
-//                            if (submission == null) {
-//                                submission = new Submission(context);
-//                                noSavedImages = 0;
-//
-//                                long powerElementId = activity.getIntent().getExtras()
-//                                        .getInt("PowerElementId", -1);
-//                                if (powerElementId != -1) {
-//                                    submission.addPowerElementById(context, powerElementId);
-//                                }
-//                            }
-
-//                            mContext = getActivity();
-
-//                            image = new tanuj.opengridmap.models.Image(mFile.getPath(),
-//                                    currentLocation);
-//                            submission.addImage(context, image);
-//                            images.add(image);
-//                            Log.d(TAG, "Image Saved : " + mFile.getPath());
-
-//                            showText("Success");
                             unlockFocus();
-//                    super.onCaptureCompleted(session, request, result);
+//                            super.onCaptureCompleted(session, request, result);
                         }
                     };
 
@@ -772,13 +754,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.camera_shutter_button: {
-//                takePicture();
-//                startTime = System.currentTimeMillis();
-//                mFileName = Long.toString(startTime) + ".jpg";
-//                mFile = new File(getActivity().getExternalFilesDir(
-//                        tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
-
-                runPrecaptureSequence();
+                takePicture();
                 break;
             }
             case R.id.camera_confirm_button: {
@@ -793,11 +769,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     public void updatePreview(final Bitmap bitmap) {
+        final Activity activity = getActivity();
         if (null == cameraPreviewImageView) {
             return;
         }
 
-        getActivity().runOnUiThread(new Runnable() {
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 cameraPreviewImageView.setImageBitmap(bitmap);
@@ -913,11 +890,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             submission.confirmSubmission(context);
 
             Intent intent = new Intent(getActivity(), TagSelectionActivity.class);
-            intent.putExtra(String.valueOf(R.string.key_submission_id), submission.getId());
+            intent.putExtra(getString(R.string.key_submission_id), submission.getId());
 
-            submission = null;
-            image = null;
-            images = new ArrayList<tanuj.opengridmap.models.Image>();
+            Intent serviceIntent = new Intent(context, ThumbnailGenerationService.class);
+            serviceIntent.putExtra(getString(R.string.key_submission_id), submission.getId());
+            context.startService(serviceIntent);
 
             startActivity(intent);
         }
@@ -957,7 +934,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     public static void processCameraState(final Context context) {
-        status = getLocationStatus();
+        int status = getLocationStatus();
 
         switch (status) {
             case LOCATION_STATUS_UNAVAILABLE: {
@@ -1021,7 +998,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private static void showSavingImagesDialog(final Context context) {
-        camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_images));
+        if (noSavedImages == 1) {
+            camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_image));
+        } else {
+            camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_images));
+        }
         cameraDialogBoxImageView.setVisibility(View.GONE);
         cameraDialogBoxCardView.setVisibility(View.VISIBLE);
         cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);

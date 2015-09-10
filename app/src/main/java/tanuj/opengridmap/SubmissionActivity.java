@@ -21,8 +21,6 @@ import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
@@ -205,6 +203,8 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                 submission = dbHelper.getSubmission(submissionId);
             }
 
+            dbHelper.close();
+
             switch (tabIndex) {
                 case 1: {
                     final Context context = getActivity();
@@ -233,7 +233,7 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                     TextView submissionMeanDistanceTextView = (TextView) view.findViewById(
                             R.id.submission_mean_distance);
 
-                    submissionStatusTextView.setText(submission.getSubmisisionStatus(context));
+                    submissionStatusTextView.setText(submission.getSubmissionStatus(context));
                     noImagesTextView.setText(Integer.toString(submission.getNoOfImages()));
                     submissionLatitudeTextView.setText(coordinates[0]);
                     submissionLongitudeTextView.setText(coordinates[1]);
@@ -252,16 +252,20 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                 }
                 case 2: {
                     view = inflater.inflate(R.layout.fragment_submission_tab_2, container, false);
+                    final Context context = getActivity();
                     GridView gridView = (GridView) view.findViewById(R.id.submission_images_grid);
 
-                    gridView.setAdapter(new ImageAdapter(getActivity(), submission.getImages()));
+                    gridView.setAdapter(new ImageAdapter(context, submission.getImages()));
                     break;
                 }
                 case 3: {
                     view = inflater.inflate(R.layout.fragment_submission_tab_3, container, false);
+                    final Context context = getActivity();
 
-                    ListView listView = (ListView) view.findViewById(R.id.submission_power_elements_list);
-                    listView.setAdapter(new PowerElementTagsAdapter(getActivity(), submission.getPowerElements(), PowerElementTagsAdapter.TAGGED));
+                    ListView listView = (ListView) view.findViewById(
+                            R.id.submission_power_elements_list);
+                    listView.setAdapter(new PowerElementTagsAdapter(context,
+                            submission.getPowerElements(), PowerElementTagsAdapter.TAGGED));
                     break;
                 }
             }
