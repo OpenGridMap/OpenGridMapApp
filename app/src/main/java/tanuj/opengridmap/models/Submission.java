@@ -298,6 +298,13 @@ public class Submission {
         return meanDistance / (getNoOfImages() - 1);
     }
 
+    public boolean isEmpty() {
+        if (getNoOfImages() == 0) {
+            return true;
+        }
+        return false;
+    }
+
     static class CompareImagesByAccuracy implements Comparator<Image> {
         @Override
         public int compare(Image lhs, Image rhs) {

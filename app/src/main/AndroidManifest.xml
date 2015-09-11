@@ -31,7 +31,7 @@
         <activity
             android:name=".views.activities.CameraActivity"
             android:label="@string/title_activity_camera"
-            android:noHistory="true"
+            android:launchMode="singleTop"
             android:parentActivityName=".views.activities.MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

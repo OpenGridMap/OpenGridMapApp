@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#0000</color>
+    <color name="shutter_color">#70fcf6f5</color>
 
     <!-- Lime -->
     <color name="lime_50">#F9FBE7</color>

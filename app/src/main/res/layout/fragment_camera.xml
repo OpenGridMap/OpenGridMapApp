@@ -24,6 +24,13 @@
                 android:id="@+id/camera_texture"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:id="@+id/camera_output_texture_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:animateLayoutChanges="true"
+                android:orientation="horizontal" />
         </FrameLayout>
 
 
@@ -31,8 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dip"
             android:layout_weight="20"
-            android:padding="0dp"
-            android:background="#80000000" >
+            android:padding="0dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"

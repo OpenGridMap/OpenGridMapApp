@@ -16,6 +16,8 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -68,6 +70,7 @@ import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.TagSelectionActivity;
 import tanuj.opengridmap.ThumbnailGenerationService;
+import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
 
@@ -84,7 +87,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-
     private static final int LOCATION_STATUS_OUTDATED = -2;
 
     private static final int LOCATION_STATUS_ACCURACY_UNACCEPTABLE = -1;
@@ -93,7 +95,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private static final int LOCATION_STATUS_OK = 1;
 
-    private static boolean cameraState = false;
+    private static boolean cameraBusy = false;
 
     private static final int STATE_PREVIEW = 0;
 
@@ -101,7 +103,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private static final int STATE_WAITING_PRECAPTURE = 2;
 
-    private static final int STATE_WATING_NON_PRECAPTURE = 3;
+    private static final int STATE_WAITING_NON_PRECAPTURE = 3;
 
     private static final int STATE_PICTURE_TAKEN = 4;
 
@@ -201,10 +203,60 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     image = new tanuj.opengridmap.models.Image(mFile.getPath(),
                             currentLocation);
                     submission.addImage(context, image);
-                    images.add(image);
+//                    images.add(image);
+
+//                    displayImageCaptureAnimation();
+
                     Log.d(TAG, "Image Saved : " + mFile.getPath());
                 }
             };
+
+    private void displayImageCaptureAnimation() {
+        final Activity activity = getActivity();
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final AnimationDrawable drawable = new AnimationDrawable();
+                final Handler handler = new Handler();
+
+                drawable.addFrame(new ColorDrawable(activity.getResources().getColor(
+                        R.color.shutter_color)), 80);
+                drawable.addFrame(new ColorDrawable(activity.getResources().getColor(
+                        R.color.transparent)), 1);
+                drawable.setOneShot(true);
+                cameraTextureOverlay.setBackgroundDrawable(drawable);
+                drawable.start();
+
+//                handler.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        drawable.start();
+//                    }
+//                }, 10);
+
+//                cameraTextureOverlay.startAnimation(anim);
+            }
+        });
+
+//        activity.runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                cameraTextureOverlay.setBackgroundColor(getResources().getColor(R.color.shutter_color));
+//
+//                ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
+//
+//                Runnable runnable = new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        cameraTextureOverlay.setBackgroundColor(getResources().getColor(R.color.transparent));
+//                    }
+//                };
+//
+//                worker.schedule(runnable, 80, TimeUnit.MILLISECONDS);
+//            }
+//        });
+    }
 
     private static int noSavedImages = 0;
 
@@ -229,15 +281,15 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private ImageButton confirmButton = null;
 
-    private LinearLayout cameraDialogBoxLayout = null;
-
     private static CardView cameraDialogBoxCardView = null;
 
     private static ProgressBar cameraDialogBoxProgressBar = null;
 
     private static ImageView cameraDialogBoxImageView = null;
 
-    private static TextView camreaDialogBoxTextView = null;
+    private static TextView cameraDialogBoxTextView = null;
+
+    private LinearLayout cameraTextureOverlay = null;
 
     private long startTime;
     private long finishTime;
@@ -250,7 +302,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private static tanuj.opengridmap.models.Image lastSavedImage = null;
 
-    private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
+//    private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
 
     private CameraCaptureSession.CaptureCallback mCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
@@ -270,7 +322,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
                                 if (aeState == null ||
                                         aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                                    aeState = STATE_WATING_NON_PRECAPTURE;
+                                    aeState = STATE_WAITING_NON_PRECAPTURE;
                                 } else {
                                     runPrecaptureSequence();
                                 }
@@ -284,12 +336,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                             if (aestate == null ||
                                     aestate == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                                     aestate == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                                mState = STATE_WATING_NON_PRECAPTURE;
+                                mState = STATE_WAITING_NON_PRECAPTURE;
                             }
                             break;
                         }
-                        case STATE_WATING_NON_PRECAPTURE: {
-                            Log.d(TAG, "Process : STATE_WATING_NON_PRECAPTURE");
+                        case STATE_WAITING_NON_PRECAPTURE: {
+                            Log.d(TAG, "Process : STATE_WAITING_NON_PRECAPTURE");
                             Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
 
                             if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
@@ -384,6 +436,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_camera, container, false);
+        final Context context = getActivity();
 
         if (BuildConfig.DEBUG) {
             latitudeTextView = (TextView) view.findViewById(R.id.latitude);
@@ -396,12 +449,25 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         cameraShutterButton = (ImageButton) view.findViewById(R.id.camera_shutter_button);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.camera_texture);
 
-        cameraDialogBoxLayout = (LinearLayout) view.findViewById(R.id.camera_dialog_box);
         cameraPreviewImageView = (ImageView) view.findViewById(R.id.camera_preview);
         cameraDialogBoxCardView = (CardView) view.findViewById(R.id.camera_dialog_box_card);
         cameraDialogBoxProgressBar = (ProgressBar) view.findViewById(R.id.card_progress_spinner);
         cameraDialogBoxImageView = (ImageView) view.findViewById(R.id.card_image);
-        camreaDialogBoxTextView = (TextView) view.findViewById(R.id.card_text);
+        cameraDialogBoxTextView = (TextView) view.findViewById(R.id.card_text);
+
+        cameraTextureOverlay = (LinearLayout) view.findViewById(R.id.camera_output_texture_overlay);
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.key_submission_id))) {
+            long submissionId = savedInstanceState.getLong(getString(R.string.key_submission_id));
+
+            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+            submission = dbHelper.getSubmission(submissionId);
+            noSavedImages = submission.getNoOfImages();
+            lastSavedImage = submission.getImage(noSavedImages - 1);
+
+            dbHelper.close();
+        }
 
         if (noSavedImages > 0) {
             cameraPreviewImageView.setImageBitmap(lastSavedImage.getThumbnailBitmap(getActivity(),
@@ -425,9 +491,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onPause() {
+        super.onPause();
+
         closeCamera();
         stopBackgroundProcess();
-        super.onPause();
     }
 
     @Override
@@ -443,10 +510,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
+    public static void clearActivityFragment() {
         noSavedImages = 0;
         latitudeTextView = null;
         longitudeTextView = null;
@@ -457,9 +521,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         cameraDialogBoxCardView = null;
         cameraDialogBoxProgressBar = null;
         cameraDialogBoxImageView = null;
-        camreaDialogBoxTextView = null;
+        cameraDialogBoxTextView = null;
         currentLocation = null;
         lastSavedImage = null;
+
+        Log.d(TAG,"CameraActivityFragmentCleared");
     }
 
     private void setUpCameraOptions(int width, int height) {
@@ -658,8 +724,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void takePicture() {
-        lockFocus();
-        runPrecaptureSequence();
+        if (checkLocationStatus()) {
+            cameraBusy = true;
+            disableCamera();
+            lockFocus();
+            runPrecaptureSequence();
+        }
     }
 
     private void lockFocus() {
@@ -684,6 +754,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             mState = STATE_WAITING_PRECAPTURE;
             mCaptureSession.capture(mPreviewRequestBuidler.build(), mCaptureCallback,
                     mBackgroundHandler);
+//            displayImageCaptureAnimation();
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -717,7 +788,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         public void onCaptureCompleted(CameraCaptureSession session,
                                                        CaptureRequest request,
                                                        TotalCaptureResult result) {
+                            displayImageCaptureAnimation();
                             unlockFocus();
+                            cameraBusy = false;
+                            enableCamera();
 //                            super.onCaptureCompleted(session, request, result);
                         }
                     };
@@ -758,11 +832,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 break;
             }
             case R.id.camera_confirm_button: {
-                if (images.isEmpty()) {
-                    showText("No Pics Taken");
-                } else {
-                    confirmSubmission();
-                }
+                confirmSubmission();
                 break;
             }
         }
@@ -862,7 +932,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void confirmSubmission() {
-        if (images.isEmpty()) {
+        if (null == submission || submission.isEmpty()) {
             showText("No Pics Taken");
         } else {
             disableCamera();
@@ -896,7 +966,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             serviceIntent.putExtra(getString(R.string.key_submission_id), submission.getId());
             context.startService(serviceIntent);
 
+            clearActivityFragment();
+
             startActivity(intent);
+            ((Activity) context).finish();
         }
     }
 
@@ -921,7 +994,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         bearingTextView.setText("Bearing : " + String.valueOf(bearing));
     }
 
-    private static int getLocationStatus() {
+    private static int getCameraStatus() {
         if (null == currentLocation) {
             return LOCATION_STATUS_UNAVAILABLE;
         } else if (System.currentTimeMillis() - currentLocation.getTime() > 5000){
@@ -934,7 +1007,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     public static void processCameraState(final Context context) {
-        int status = getLocationStatus();
+        final int status = getCameraStatus();
 
         switch (status) {
             case LOCATION_STATUS_UNAVAILABLE: {
@@ -968,43 +1041,55 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
         if (cameraShutterButton.isClickable()) {
             cameraShutterButton.setClickable(false);
-            cameraState = false;
             Log.d(TAG, "Disabled Camera Shutter Button");
         }
     }
 
     public static void enableCamera() {
-        if (null == cameraShutterButton) {
+        if (null == cameraShutterButton || cameraBusy) {
             return;
         }
         if (!cameraShutterButton.isClickable()) {
-            cameraShutterButton.setClickable(false);
-            cameraState = true;
+            cameraShutterButton.setClickable(true);
             Log.d(TAG, "Enabled Camera Shutter Button");
         }
     }
 
     private static void showLocationAcquisitionDialog(final Context context) {
-        camreaDialogBoxTextView.setText(context.getString(R.string.location_message_acquiring));
-        cameraDialogBoxImageView.setVisibility(View.GONE);
-        cameraDialogBoxCardView.setVisibility(View.VISIBLE);
-        cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
+        if (null != cameraDialogBoxImageView) {
+            cameraDialogBoxTextView.setText(context.getString(R.string.location_message_acquiring));
+            cameraDialogBoxImageView.setVisibility(View.GONE);
+            cameraDialogBoxCardView.setVisibility(View.VISIBLE);
+            cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
+        }
     }
 
     private static void hideLocationAcquisitionDialog() {
-        cameraDialogBoxImageView.setVisibility(View.GONE);
-        cameraDialogBoxCardView.setVisibility(View.GONE);
-        cameraDialogBoxProgressBar.setVisibility(View.GONE);
+        if (null != cameraDialogBoxImageView) {
+            cameraDialogBoxImageView.setVisibility(View.GONE);
+            cameraDialogBoxCardView.setVisibility(View.GONE);
+            cameraDialogBoxProgressBar.setVisibility(View.GONE);
+        }
     }
 
     private static void showSavingImagesDialog(final Context context) {
-        if (noSavedImages == 1) {
-            camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_image));
-        } else {
-            camreaDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_images));
+        if (null != cameraDialogBoxImageView) {
+            if (noSavedImages == 1) {
+                cameraDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_image));
+            } else {
+                cameraDialogBoxTextView.setText(context.getString(R.string.camera_message_saving_images));
+            }
+            cameraDialogBoxImageView.setVisibility(View.GONE);
+            cameraDialogBoxCardView.setVisibility(View.VISIBLE);
+            cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
         }
-        cameraDialogBoxImageView.setVisibility(View.GONE);
-        cameraDialogBoxCardView.setVisibility(View.VISIBLE);
-        cameraDialogBoxProgressBar.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        if (null != submission) {
+            outState.putLong(getString(R.string.key_submission_id), submission.getId());
+        }
+        super.onSaveInstanceState(outState);
     }
 }
