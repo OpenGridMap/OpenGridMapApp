@@ -1,10 +1,12 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.broadcastreceivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
+import tanuj.opengridmap.services.UploadService;
 
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getSimpleName();

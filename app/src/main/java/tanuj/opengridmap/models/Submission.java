@@ -181,7 +181,7 @@ public class Submission {
         return false;
     }
 
-    public ArrayList<String> getUploadPayloads(Context context) {
+    public ArrayList<String> getUploadPayloads(Context context, String idToken) {
         ArrayList<String> payloads = new ArrayList<String>();
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
@@ -204,6 +204,7 @@ public class Submission {
                 point.put(context.getString(R.string.json_key_longitude), location.getLongitude());
                 point.put(context.getString(R.string.json_key_tags), tags);
 
+                json.put(context.getString(R.string.json_key_id_token), idToken);
                 json.put(context.getString(R.string.json_key_submission_id), id);
                 json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
                 json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());

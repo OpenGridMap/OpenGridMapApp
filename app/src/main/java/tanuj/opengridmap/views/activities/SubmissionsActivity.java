@@ -1,13 +1,11 @@
 package tanuj.opengridmap.views.activities;
 
-import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.SubmissionActivity;
 
 
 public class SubmissionsActivity extends ActionBarActivity {

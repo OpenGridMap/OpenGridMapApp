@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.fragments;
 
 import android.app.Activity;
 import android.content.Context;
@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.PowerElement;
 import tanuj.opengridmap.models.Submission;

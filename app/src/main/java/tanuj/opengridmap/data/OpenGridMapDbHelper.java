@@ -6,14 +6,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
-import android.util.Log;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -563,6 +562,71 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         db.close();
 
         return res;
+    }
+
+    public void updateQueueItemStatus(UploadQueueItem queueItem, int status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Timestamp timestamp = new Timestamp(new Date().getTime());
+
+        ContentValues values = new ContentValues();
+
+        values.put(UploadQueueEntry.COLUMN_STATUS, status);
+        values.put(UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());
+
+        db.update(UploadQueueEntry.TABLE_NAME, values, UploadQueueEntry._ID + " = ?", new String[]{
+                Long.toString(queueItem.getId())});
+
+        queueItem.setStatus(status);
+        db.close();
+    }
+
+    public ArrayList<String> getQueueItemPayloadsUploaded(UploadQueueItem queueItem) {
+        ArrayList<String> payloadsUploaded = null;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        final String[] columns = {UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED};
+
+        Cursor cursor = db.query(UploadQueueEntry.TABLE_NAME, columns, UploadQueueEntry._ID + " = ?"
+                , new String[] {Long.toString(queueItem.getId())}, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            payloadsUploaded = (ArrayList<String>) Arrays.asList(cursor.getString(0).split(":"));
+        }
+
+        cursor.close();
+        db.close();
+
+        return payloadsUploaded;
+    }
+
+    public void updateQueueItemPayloadUploads(UploadQueueItem queueItem, int n) {
+        ArrayList<String> payloadsUploaded = getQueueItemPayloadsUploaded(queueItem);
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Timestamp timestamp = new Timestamp(new Date().getTime());
+
+        ContentValues values = new ContentValues();
+
+        payloadsUploaded.add(Integer.toString(n));
+
+        String payloadsUploadedValue = null;
+
+        int i = 0;
+        for (String payloadUploaded : payloadsUploaded) {
+            payloadsUploadedValue += payloadUploaded;
+            if (i++ < queueItem.getSubmission().getNoOfImages() - 1) {
+                payloadsUploadedValue += ":";
+            }
+        }
+
+        values.put(UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED, payloadsUploadedValue);
+        values.put(UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());
+
+        db.update(UploadQueueEntry.TABLE_NAME, values, UploadQueueEntry._ID + " = ?", new String[]{
+                Long.toString(queueItem.getId())});
+
+        db.close();
     }
 
     public ArrayList<UploadQueueItem> getQueue() {

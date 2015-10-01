@@ -1,25 +1,17 @@
 package tanuj.opengridmap.views.fragments;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
@@ -36,7 +28,14 @@ public class MainActivityFragment extends Fragment {
 //            new PowerElement("Other", 4, R.drawable.lightening_logo)
 //    };
 
-    List<PowerElement> powerElements = null;
+    List<PowerElement> powerElements = Arrays.asList(new PowerElement[]{
+            new PowerElement("Transformer", 0, R.drawable.transformer),
+            new PowerElement("Substation", 1, R.drawable.substation),
+            new PowerElement("Generator", 2, R.drawable.power_station),
+            new PowerElement("PV or Wind Farm", 3, R.drawable.pv_wind),
+            new PowerElement("Other", 4, R.drawable.lightening_logo)
+    });
+
 
     public MainActivityFragment() {
     }

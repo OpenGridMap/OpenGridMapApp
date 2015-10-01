@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.services;
 
 import android.app.Service;
 import android.content.Context;
@@ -6,13 +6,12 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
-import tanuj.opengridmap.models.UploadQueueItem;
 
 public class ThumbnailGenerationService extends Service {
 

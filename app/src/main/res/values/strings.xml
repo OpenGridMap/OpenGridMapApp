@@ -37,6 +37,7 @@
     <string name="key_submission_id">submission_id</string>
 
     <!-- Upload Service -->
+    <string name="json_key_id_token">id_token</string>
     <string name="json_key_submission_id">submission_id</string>
     <string name="json_key_image">image</string>
     <string name="json_key_number_of_points">number_of_points</string>
@@ -50,17 +51,6 @@
     <string name="json_key_no_of_satellites">no_of_satellites</string>
     <string name="json_value_point">point</string>
     <string name="title_activity_alt_submission">AltSubmissionActivity</string>
-
-    <!-- Misc -->
-    <string name="ok">OK</string>
-    <string name="degree">°</string>
-    <string name="minute">\'</string>
-    <string name="seconds">\"</string>
-    <string name="north">N</string>
-    <string name="south">S</string>
-    <string name="east">E</string>
-    <string name="west">W</string>
-    <string name="unit_metre">m</string>
 
     <!-- Labels -->
     <string name="label_latitude">Latitude : </string>
@@ -94,4 +84,20 @@
     <!-- Camera State Messages -->
     <string name="camera_message_saving_images">Saving Images</string>
     <string name="camera_message_saving_image">Saving Image</string>
+    <string name="title_activity_login">LoginActivity</string>
+
+    <!-- Play Service Messages-->
+    <string name="play_services_error">Google Play services is not available.  This application will close.</string>
+
+    <!-- Misc -->
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
+    <string name="degree">°</string>
+    <string name="minute">\'</string>
+    <string name="seconds">\"</string>
+    <string name="north">N</string>
+    <string name="south">S</string>
+    <string name="east">E</string>
+    <string name="west">W</string>
+    <string name="unit_metre">m</string>
 </resources>

@@ -68,8 +68,8 @@ import java.util.concurrent.TimeUnit;
 
 import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.TagSelectionActivity;
-import tanuj.opengridmap.ThumbnailGenerationService;
+import tanuj.opengridmap.views.activities.TagSelectionActivity;
+import tanuj.opengridmap.services.ThumbnailGenerationService;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
@@ -227,35 +227,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 drawable.setOneShot(true);
                 cameraTextureOverlay.setBackgroundDrawable(drawable);
                 drawable.start();
-
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        drawable.start();
-//                    }
-//                }, 10);
-
-//                cameraTextureOverlay.startAnimation(anim);
             }
         });
-
-//        activity.runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                cameraTextureOverlay.setBackgroundColor(getResources().getColor(R.color.shutter_color));
-//
-//                ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
-//
-//                Runnable runnable = new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        cameraTextureOverlay.setBackgroundColor(getResources().getColor(R.color.transparent));
-//                    }
-//                };
-//
-//                worker.schedule(runnable, 80, TimeUnit.MILLISECONDS);
-//            }
-//        });
     }
 
     private static int noSavedImages = 0;
@@ -390,6 +363,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     };
 
+    private static Activity activity;
+
     private void showText(String text) {
         Message message = Message.obtain();
         message.obj = text;
@@ -474,6 +449,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     tanuj.opengridmap.models.Image.TYPE_LIST));
         }
 
+        activity = getActivity();
+
         return view;
     }
 
@@ -524,6 +501,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         cameraDialogBoxTextView = null;
         currentLocation = null;
         lastSavedImage = null;
+        activity = null;
 
         Log.d(TAG,"CameraActivityFragmentCleared");
     }
@@ -661,7 +639,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(CameraCaptureSession session) {
-                            if (null == mCameraDevice) {
+                            if (mCameraDevice == null) {
                                 return;
                             }
                             Log.d(TAG, "Configured");
@@ -695,7 +673,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private void configureTransform(int viewWidth, int viewHeight) {
         Activity activity = getActivity();
 
-        if (null == mTextureView || null == mPreviewSize || null == activity) {
+        if (mTextureView  == null|| mPreviewSize  == null|| activity == null) {
             return;
         }
 
@@ -767,7 +745,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         try {
             final Activity activity = getActivity();
 
-            if (null == activity || null == mCameraDevice) {
+            if (activity  == null|| mCameraDevice == null) {
                 return;
             }
 
@@ -840,7 +818,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     public void updatePreview(final Bitmap bitmap) {
         final Activity activity = getActivity();
-        if (null == cameraPreviewImageView) {
+        if (cameraPreviewImageView == null) {
             return;
         }
 
@@ -871,7 +849,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             try {
                 outputStream = new FileOutputStream(mFile);
                 outputStream.write(bytes);
-                if (null == bytes) {
+                if (bytes == null) {
                     throw new IOException();
                 }
             } catch (FileNotFoundException e) {
@@ -921,7 +899,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private boolean checkLocationStatus() {
-        if (null == currentLocation) {
+        if (currentLocation == null) {
             showText("Location not Available");
             return false;
         } else if (currentLocation.getAccuracy() > 200.0) {
@@ -932,7 +910,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void confirmSubmission() {
-        if (null == submission || submission.isEmpty()) {
+        if (submission  == null|| submission.isEmpty()) {
             showText("No Pics Taken");
         } else {
             disableCamera();
@@ -980,7 +958,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     public static void updateUi(Location location) {
-        if (null == latitudeTextView) {
+        if (latitudeTextView == null) {
             return;
         }
         double latitude = location.getLatitude();
@@ -995,7 +973,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     private static int getCameraStatus() {
-        if (null == currentLocation) {
+        if (currentLocation == null) {
             return LOCATION_STATUS_UNAVAILABLE;
         } else if (System.currentTimeMillis() - currentLocation.getTime() > 5000){
             return LOCATION_STATUS_OUTDATED;
@@ -1036,21 +1014,40 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     }
 
     public static void disableCamera() {
-        if (null == cameraShutterButton) {
+        if (cameraShutterButton == null) {
             return;
         }
         if (cameraShutterButton.isClickable()) {
-            cameraShutterButton.setClickable(false);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    cameraShutterButton.setClickable(false);
+                    cameraShutterButton.setEnabled(false);
+                }
+            });
+
+//            cameraShutterButton.setClickable(false);
+//            cameraShutterButton.setEnabled(false);
             Log.d(TAG, "Disabled Camera Shutter Button");
         }
     }
 
     public static void enableCamera() {
-        if (null == cameraShutterButton || cameraBusy) {
+        if (cameraShutterButton  == null|| cameraBusy) {
             return;
         }
         if (!cameraShutterButton.isClickable()) {
-            cameraShutterButton.setClickable(true);
+
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    cameraShutterButton.setClickable(true);
+                    cameraShutterButton.setEnabled(true);
+                }
+            });
+
+//            cameraShutterButton.setClickable(true);
+//            cameraShutterButton.setEnabled(true);
             Log.d(TAG, "Enabled Camera Shutter Button");
         }
     }

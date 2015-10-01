@@ -13,7 +13,7 @@ import android.widget.ListView;
 import java.util.List;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.SubmissionActivity;
+import tanuj.opengridmap.views.activities.SubmissionActivity;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.adapters.SubmissionsListAdapter;
@@ -33,12 +33,12 @@ public class SubmissionsActivityFragment extends Fragment {
 
         submissions = dbHelper.getSubmissions(Submission.STATUS_SUBMISSION_CONFIRMED);
 
+        dbHelper.close();
+
         ListView listView = (ListView) view.findViewById(R.id.listview_contributions);
 
         listView.setAdapter(new SubmissionsListAdapter(getActivity(), submissions));
         listView.setOnItemClickListener(onItemClickListener);
-
-        dbHelper.close();
 
         return view;
     }

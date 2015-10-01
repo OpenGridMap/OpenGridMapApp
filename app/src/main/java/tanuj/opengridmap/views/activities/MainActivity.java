@@ -1,10 +1,9 @@
 package tanuj.opengridmap.views.activities;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -28,19 +27,12 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.location.SettingsApi;
 
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.List;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
-import tanuj.opengridmap.models.Image;
-import tanuj.opengridmap.models.Submission;
-import tanuj.opengridmap.providers.MockLocationProvider;
 import tanuj.opengridmap.views.fragments.MainActivityFragment;
 
 public class MainActivity extends AppCompatActivity implements
@@ -68,18 +60,21 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        final Context context = getApplicationContext();
+
         setContentView(R.layout.activity_main);
 
-//        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-//        boolean locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        boolean locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-//        if (!locationEnabled) {
-//            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-//            startActivity(intent);
+        if (!locationEnabled) {
+            Toast.makeText(context, "Please Enable Location", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }
 
-            buildLocationSettingsRequest();
-//        }
+        buildLocationSettingsRequest();
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragment = (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);

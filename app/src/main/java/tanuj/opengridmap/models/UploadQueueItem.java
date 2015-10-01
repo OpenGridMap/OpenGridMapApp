@@ -1,10 +1,7 @@
 package tanuj.opengridmap.models;
 
 import android.content.Context;
-import android.util.Log;
 
-import java.sql.Struct;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 
@@ -16,11 +13,11 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
 public class UploadQueueItem {
     private static final String TAG = UploadQueueItem.class.getSimpleName();
 
-    private static final int STATUS_QUEUED = 0;
-    private static final int STATUS_UPLOAD_STARTED = 1;
-    private static final int STATUS_UPLOAD_FINISHED = 2;
-    private static final int STATUS_UPLOAD_FAILED = 3;
-    private static final int STATUS_UPLOAD_CANCELLED = 3;
+    public static final int STATUS_QUEUED = 0;
+    public static final int STATUS_UPLOAD_STARTED = 1;
+    public static final int STATUS_UPLOAD_FINISHED = 2;
+    public static final int STATUS_UPLOAD_FAILED = 3;
+    public static final int STATUS_UPLOAD_CANCELLED = 3;
 
     private long id;
 
@@ -73,11 +70,35 @@ public class UploadQueueItem {
         return this.status;
     }
 
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
     public Timestamp getUpdatedAtTimestamp() {
         return updatedAtTimestamp;
     }
 
     public Timestamp getCreatedAtTimestamp() {
         return createdAtTimestamp;
+    }
+
+    public void updateStatus(final Context context, int status) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+        if (this.status != status) {
+            dbHelper.updateQueueItemStatus(this, status);
+        }
+        dbHelper.close();
+    }
+
+    public void updatePayloadsUploaded(final Context context, int n) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+
+        dbHelper.updateQueueItemPayloadUploads(this, n);
+        dbHelper.close();
+    }
+
+    public long getId() {
+        return id;
     }
 }
