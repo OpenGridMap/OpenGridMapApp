@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
+import android.util.Log;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -581,7 +582,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
     }
 
     public ArrayList<String> getQueueItemPayloadsUploaded(UploadQueueItem queueItem) {
-        ArrayList<String> payloadsUploaded = null;
+        ArrayList<String> payloadsUploaded = new ArrayList<String>();
 
         SQLiteDatabase db = this.getReadableDatabase();
 
@@ -591,7 +592,10 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 , new String[] {Long.toString(queueItem.getId())}, null, null, null);
 
         if (cursor.moveToFirst()) {
-            payloadsUploaded = (ArrayList<String>) Arrays.asList(cursor.getString(0).split(":"));
+            String str = cursor.getString(0);
+            if (str != null) {
+                payloadsUploaded = (ArrayList<String>) Arrays.asList(str.split(":"));
+            }
         }
 
         cursor.close();
@@ -600,7 +604,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return payloadsUploaded;
     }
 
-    public void updateQueueItemPayloadUploads(UploadQueueItem queueItem, int n) {
+    public void updateQueueItemPayloadUploads(UploadQueueItem queueItem, long n) {
         ArrayList<String> payloadsUploaded = getQueueItemPayloadsUploaded(queueItem);
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -608,7 +612,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
 
-        payloadsUploaded.add(Integer.toString(n));
+        payloadsUploaded.add(Long.toString(n));
 
         String payloadsUploadedValue = null;
 
@@ -619,6 +623,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 payloadsUploadedValue += ":";
             }
         }
+
+        Log.d(TAG, payloadsUploadedValue);
 
         values.put(UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED, payloadsUploadedValue);
         values.put(UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());

@@ -2,6 +2,7 @@ package tanuj.opengridmap.views.fragments;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -18,6 +19,7 @@ import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.PowerElement;
 import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.services.UploadService;
 import tanuj.opengridmap.views.adapters.PowerElementTagsAdapter;
 
 public class TagSelectionActivityFragment extends Fragment {
@@ -134,6 +136,9 @@ public class TagSelectionActivityFragment extends Fragment {
 
                 submission.addToUploadQueue(context);
                 dbHelper.close();
+
+                Intent serviceIntent = new Intent(context, UploadService.class);
+                context.startService(serviceIntent);
             }
             ((Activity) context).finish();
         }

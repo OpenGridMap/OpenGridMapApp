@@ -181,8 +181,8 @@ public class Submission {
         return false;
     }
 
-    public ArrayList<String> getUploadPayloads(Context context, String idToken) {
-        ArrayList<String> payloads = new ArrayList<String>();
+    public ArrayList<Payload> getUploadPayloads(Context context, String idToken) {
+        ArrayList<Payload> payloads = new ArrayList<Payload>();
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
         if (status == STATUS_UPLOAD_PENDING) {
@@ -190,35 +190,43 @@ public class Submission {
         }
 
         for (Image image : images) {
-            JSONObject json = new JSONObject();
-            JSONObject point = new JSONObject();
-            JSONObject tags = new JSONObject();
-
-            try {
-                tags.put(context.getString(R.string.json_key_type), context.getString(
-                        R.string.json_value_point));
-
-                Location location = image.getLocation();
-
-                point.put(context.getString(R.string.json_key_latitude), location.getLatitude());
-                point.put(context.getString(R.string.json_key_longitude), location.getLongitude());
-                point.put(context.getString(R.string.json_key_tags), tags);
-
-                json.put(context.getString(R.string.json_key_id_token), idToken);
-                json.put(context.getString(R.string.json_key_submission_id), id);
-                json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
-                json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
-                json.put(context.getString(R.string.json_key_point), point);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            payloads.add(json.toString());
+            payloads.add(getPayloadByImage(context, idToken, image));
         }
 
         dbHelper.close();
 
         return payloads;
+    }
+
+    private Payload getPayloadByImage(Context context, String idToken, Image image) {
+        JSONObject json = getPayloadJsonObject(context, idToken, image);
+        return new Payload(this.getId(), image.getId(), json.toString());
+    }
+
+    private JSONObject getPayloadJsonObject(Context context, String idToken, Image image) {
+        JSONObject json = new JSONObject();
+        JSONObject point = new JSONObject();
+        JSONObject tags = new JSONObject();
+
+        try {
+            tags.put(context.getString(R.string.json_key_type), context.getString(
+                    R.string.json_value_point));
+
+            Location location = image.getLocation();
+
+            point.put(context.getString(R.string.json_key_latitude), location.getLatitude());
+            point.put(context.getString(R.string.json_key_longitude), location.getLongitude());
+            point.put(context.getString(R.string.json_key_tags), tags);
+
+            json.put(context.getString(R.string.json_key_id_token), idToken);
+            json.put(context.getString(R.string.json_key_submission_id), id);
+            json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
+            json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
+            json.put(context.getString(R.string.json_key_point), point);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 
     public void uploadComplete(Context context) {

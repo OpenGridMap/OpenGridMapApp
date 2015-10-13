@@ -1,21 +1,17 @@
 package tanuj.opengridmap;
 
-import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
@@ -40,7 +36,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ServerAuthCodeCallbacks {
+import tanuj.opengridmap.views.activities.MainActivity;
+
+public class LoginActivity extends AppCompatActivity implements
+        View.OnClickListener, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ServerAuthCodeCallbacks {
 
     private static final String TAG = LoginActivity.class.getSimpleName();
 
@@ -52,9 +52,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private static final String KEY_SAVED_PROGRESS = "sign_in_progress";
 
-    private static final String WEB_CLIENT_ID = "";
+    private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
 
-    private static final String SERVER_BASE_URL = "";
+    private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
 
     private static final String EXCHANGE_TOKEN_URL = SERVER_BASE_URL + "/";
 
@@ -70,6 +70,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private SignInButton signInButton;
 
+    private LinearLayout signInSection;
+
+    private LinearLayout spinnerSection;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +88,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
 
         googleApiClient = buildGoogleApiClient();
+
+        signInSection = (LinearLayout) findViewById(R.id.sign_in_section);
+        spinnerSection = (LinearLayout) findViewById(R.id.spinner_section);
     }
 
     @Override
@@ -118,6 +125,23 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case RC_SIGN_IN: {
+                if (resultCode == RESULT_OK) {
+                    signInProgress = STATE_SIGN_IN;
+                } else {
+                    signInProgress = STATE_DEFUALT;
+                }
+
+                if (!googleApiClient.isConnecting()) {
+                    googleApiClient.connect();
+                }
+            }
+        }
+    }
+
     private GoogleApiClient buildGoogleApiClient() {
         GoogleApiClient.Builder builder = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -132,11 +156,17 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     @Override
     public void onConnected(Bundle bundle) {
+        showSpinnerSection();
+
         Log.i(TAG, "Connected to Google API Services");
 
         Plus.PeopleApi.getCurrentPerson(googleApiClient);
 
         signInProgress = STATE_DEFUALT;
+
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     @Override
@@ -146,6 +176,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+        showSignInSection();
         int errorCode = connectionResult.getErrorCode();
         Log.e(TAG, "onConnectionFailed: ErrorCode : " + errorCode);
 
@@ -159,6 +190,20 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 resolveSignInError();
             }
         }
+
+//        if (!googleApiClient.isConnected()) {
+            googleApiClient.connect();
+//        }
+    }
+
+    private void showSignInSection() {
+        signInSection.setVisibility(View.VISIBLE);
+        spinnerSection.setVisibility(View.GONE);
+    }
+
+    private void showSpinnerSection() {
+        signInSection.setVisibility(View.GONE);
+        spinnerSection.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -227,7 +272,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 Log.e(TAG, "Could not send Sign In Intent");
                 signInProgress = STATE_SIGN_IN;
                 googleApiClient.connect();
-                e.printStackTrace();
+//                e.printStackTrace();
             }
         } else {
             createErrorDialog().show();
@@ -258,47 +303,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                             signInProgress = STATE_DEFUALT;
                         }
                     }).create();
-        }
-    }
-
-    private class GetIdTokenTask extends AsyncTask<Void, Void, String> {
-
-        @Override
-        protected String doInBackground(Void... params) {
-            String accountName = Plus.AccountApi.getAccountName(googleApiClient);
-            String idToken = String.valueOf(params[0]);
-            Account account = new Account(accountName, GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-            String scopes = "audience:server:client_id:" + WEB_CLIENT_ID;
-            final Context context = getApplicationContext();
-            String token = null;
-
-
-            try {
-                token = GoogleAuthUtil.getToken(context, account, scopes);
-
-                return token;
-            } catch (UserRecoverableAuthException e) {
-                e.printStackTrace();
-//                Log.e(TAG, "Error Retrieving ID Token : " + e);
-                return token;
-            } catch (GoogleAuthException e) {
-                e.printStackTrace();
-//                Log.e(TAG, "Error Retrieving ID Token : " + e);
-                return token;
-            } catch (IOException e) {
-                e.printStackTrace();
-//                Log.e(TAG, "Error Retrieving ID Token : " + e);
-                return token;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String idToken) {
-            if (null != idToken) {
-                Log.i(TAG, "ID token received : " + idToken);
-            } else {
-                Log.e(TAG, "Error Retrieving ID Token");
-            }
         }
     }
 }

@@ -16,18 +16,18 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.plus.Plus;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.models.Payload;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.models.UploadQueueItem;
 
@@ -57,6 +57,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         dbHelper.close();
 
         googleApiClient = buildGoogleApiClient();
+        Log.d(TAG, "Upload Service OnCreate");
     }
 
     private GoogleApiClient buildGoogleApiClient() {
@@ -71,7 +72,11 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        processUploadQueue();
+//        processUploadQueue();
+
+        if (!googleApiClient.isConnected()) {
+            googleApiClient.connect();
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -95,6 +100,9 @@ public class UploadService extends Service implements GoogleApiClient.Connection
     @Override
     public void onDestroy() {
         dbHelper.close();
+        if (googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
         super.onDestroy();
     }
 
@@ -118,21 +126,6 @@ public class UploadService extends Service implements GoogleApiClient.Connection
             Log.v(TAG, "API Unavailable");
         }
     }
-
-//    private class GetIdTokenTask extends AsyncTask<Void, Void, String> {
-//
-//        @Override
-//        protected String doInBackground(Void... params) {
-//            return getIdToken(params[0]);
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String idToken) {
-//            super.onPostExecute(idToken);
-//
-//            new SendPayloadsTask().execute(idToken);
-//        }
-//    }
 
     private String getIdToken() {
         String accountName = Plus.AccountApi.getAccountName(googleApiClient);
@@ -167,33 +160,41 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
                 for (int i = 0;i < queueItems.size(); i++) {
                     HttpPost httpPost = new HttpPost(TOKEN_URL);
+
                     String idToken = getIdToken();
                     UploadQueueItem currentItem = queueItems.get(i);
                     Submission submission = currentItem.getSubmission();
-                    ArrayList<String> payloads = submission.getUploadPayloads(context, idToken);
+                    ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
 
-                    for (String payload : payloads) {
-                        int tryCount = 0;
+                    for (Payload payload : payloads) {
                         try {
                             HttpResponse httpResponse = sendPayload(httpClient, httpPost, payload);
 
+                            String response = EntityUtils.toString(httpResponse.getEntity(),
+                                    "UTF-8");
+
+                            Log.d(TAG, response);
+
                             if (httpResponse.getStatusLine().getStatusCode() ==  200) {
-                                currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_STARTED);
-                                currentItem.updatePayloadsUploaded(context, i);
+                                currentItem.updateStatus(context,
+                                        UploadQueueItem.STATUS_UPLOAD_STARTED);
+                                currentItem.updatePayloadsUploaded(context, payload.getImageId());
+                                Log.v(TAG, "Payload Successfully Uploaded");
                             } else {
-                                tryCount++;
-                                httpResponse = sendPayload(httpClient, httpPost, payload);
+//                                tryCount++;
+                                Log.v(TAG, "Payload Upload Failed, Response Code : " +
+                                        httpResponse.getStatusLine().getStatusCode());
                             }
-                        } catch (ClientProtocolException e) {
-                            e.printStackTrace();
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
 
-                    currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_FINISHED);
+                    if (currentItem.isUploadComplete(context)) {
+                        currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
+                        currentItem.getSubmission().uploadComplete(context);
+                    }
+
                 }
             }
         };
@@ -201,12 +202,15 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         return new Thread(runnable);
     }
 
-    private HttpResponse sendPayload(HttpClient httpClient, HttpPost httpPost, String payload) throws IOException {
-        httpPost.addHeader("Content-Type", "application/json");
+    private HttpResponse sendPayload(HttpClient httpClient, HttpPost httpPost, Payload payload)
+            throws IOException {
+        Log.d(TAG, "Starting Upload for Image " + payload.getImageId() + " of Submission " +
+                payload.getSubmissionId());
 
-        StringEntity stringEntity = null;
-        stringEntity = new StringEntity(payload, HTTP.UTF_8);
+        StringEntity stringEntity = new StringEntity(payload.getPayloadEntity(), HTTP.UTF_8);
+
         httpPost.setEntity(stringEntity);
+        httpPost.addHeader("Content-Type", "application/json");
 
         return httpClient.execute(httpPost);
     }

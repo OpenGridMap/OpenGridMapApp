@@ -1,4 +1,4 @@
-package tanuj.opengridmap.helpers;
+package tanuj.opengridmap.utils;
 
 import android.net.Uri;
 
@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Created by Tanuj on 21/9/2015.
  */
-public class HttpHelper {
+public class HttpUtil {
 //    private HttpURLConnection conn;
 
     public static String httpPost(URL url, Map<String, String> params) {

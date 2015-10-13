@@ -15,9 +15,9 @@ public class UploadQueueItem {
 
     public static final int STATUS_QUEUED = 0;
     public static final int STATUS_UPLOAD_STARTED = 1;
-    public static final int STATUS_UPLOAD_FINISHED = 2;
+    public static final int STATUS_UPLOAD_COMPLETE = 2;
     public static final int STATUS_UPLOAD_FAILED = 3;
-    public static final int STATUS_UPLOAD_CANCELLED = 3;
+    public static final int STATUS_UPLOAD_CANCELLED = 4;
 
     private long id;
 
@@ -49,21 +49,16 @@ public class UploadQueueItem {
         dbHelper.close();
     }
 
-//    public UploadQueueItem(Context context, long id) {
-//        this.id = id;
-//
-//        Timestamp timestamp = new Timestamp(new Date().getTime());
-//        this.createdAtTimestamp = timestamp;
-//
-//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-//    }
-
-    public long getSubmissionId() {
-        return this.submission.getId();
+    public long getId() {
+        return id;
     }
 
     public Submission getSubmission() {
         return submission;
+    }
+
+    public long getSubmissionId() {
+        return this.submission.getId();
     }
 
     public int getStatus() {
@@ -91,14 +86,29 @@ public class UploadQueueItem {
         dbHelper.close();
     }
 
-    public void updatePayloadsUploaded(final Context context, int n) {
+    public void updatePayloadsUploaded(final Context context, long n) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
         dbHelper.updateQueueItemPayloadUploads(this, n);
         dbHelper.close();
     }
 
-    public long getId() {
-        return id;
+    public int getNoOfPayloadsUploaded(final Context context) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        int noOfPayloadUploaded = dbHelper.getQueueItemPayloadsUploaded(this).size();
+
+        dbHelper.close();
+
+        return noOfPayloadUploaded;
+    }
+
+    public float getUploadCompletion(final Context context) {
+        int noOfPayloads = getNoOfPayloadsUploaded(context);
+
+        return (float) (noOfPayloads / this.getSubmission().getNoOfImages());
+    }
+
+    public boolean isUploadComplete(final Context context) {
+        return getNoOfPayloadsUploaded(context) == submission.getNoOfImages();
     }
 }

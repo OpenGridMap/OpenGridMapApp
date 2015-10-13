@@ -3,10 +3,9 @@ package tanuj.opengridmap.broadcastreceivers;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 import tanuj.opengridmap.services.UploadService;
+import tanuj.opengridmap.utils.ConnectivityUtil;
 
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getSimpleName();
@@ -16,22 +15,9 @@ public class WifiStateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (isWifiConnected(context)) {
+        if (ConnectivityUtil.isWifiConnected(context)) {
             Intent serviceIntent = new Intent(context, UploadService.class);
             context.startService(serviceIntent);
-//            TODO Upload Service
         }
-    }
-
-    private boolean isWifiConnected(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(
-                Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
-        if (networkInfo.isConnected()) {
-            return true;
-        }
-
-        return false;
     }
 }
