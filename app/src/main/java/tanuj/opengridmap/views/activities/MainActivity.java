@@ -8,7 +8,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -21,7 +20,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -29,11 +27,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
-import java.text.DateFormat;
-import java.util.Date;
-
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.views.fragments.MainActivityFragment;
 
 public class MainActivity extends AppCompatActivity implements
         LocationListener,
@@ -45,14 +39,11 @@ public class MainActivity extends AppCompatActivity implements
     private static final long INTERVAL = 10;
     private static final long FASTEST_INTERVAL = 5;
 
-    private FusedLocationProviderApi fusedLocationProviderApi = LocationServices.FusedLocationApi;
     private GoogleApiClient googleApiClient;
     private LocationRequest locationRequest;
-    private Location currentLocation;
-    private String lastLoctionUpdateTime;
     private LocationSettingsRequest.Builder locationSettingsRequestBuilder;
 
-    private MainActivityFragment fragment;
+//    private MainActivityFragment fragment;
 
 //    private MockLocationProvider mockLocationProvider;
 
@@ -69,15 +60,15 @@ public class MainActivity extends AppCompatActivity implements
         boolean locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
         if (!locationEnabled) {
-            Toast.makeText(context, "Please Enable Location", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Please Enable High Accuracy Mode in Location Settings", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             startActivity(intent);
         }
 
         buildLocationSettingsRequest();
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragment = (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
+//        FragmentManager fragmentManager = getSupportFragmentManager();
+//        fragment = (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
 
         if (isGooglePlayServicesAvailable()) {
             Log.d(TAG, "Google Play Services Available");
@@ -88,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements
         createLocationRequest();
         buildGoogleApiClient();
 
+//        Intent intent = new Intent(context, UploadService.class);
+//        startService(intent);
 //        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
 //            @Override
 //            public void onResult(LocationSettingsResult locationSettingsResult) {
@@ -179,13 +172,6 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        this.currentLocation = location;
-        lastLoctionUpdateTime = DateFormat.getTimeInstance().format(new Date());
-
-        if (null != location) {
-//            fragment.updateUi(location);
-        }
-
         Log.d(TAG, "Location Updated, location : " + location.toString());
     }
 

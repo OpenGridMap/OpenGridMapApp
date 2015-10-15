@@ -3,6 +3,7 @@ package tanuj.opengridmap.models;
 import android.content.Context;
 import android.location.Location;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -200,23 +201,35 @@ public class Submission {
 
     private Payload getPayloadByImage(Context context, String idToken, Image image) {
         JSONObject json = getPayloadJsonObject(context, idToken, image);
-        return new Payload(this.getId(), image.getId(), json.toString());
+        return new Payload(this.getId(), image.getId(), json);
     }
 
     private JSONObject getPayloadJsonObject(Context context, String idToken, Image image) {
         JSONObject json = new JSONObject();
         JSONObject point = new JSONObject();
+        JSONObject properties = new JSONObject();
         JSONObject tags = new JSONObject();
+        JSONArray powerElements = new JSONArray();
+
+        for (PowerElement powerElement : this.powerElements) {
+            powerElements.put(powerElement.getName());
+        }
+
+        Location location = image.getLocation();
 
         try {
             tags.put(context.getString(R.string.json_key_type), context.getString(
                     R.string.json_value_point));
+            tags.put(context.getString(R.string.json_key_accuracy), location.getAccuracy());
+            tags.put(context.getString(R.string.json_key_altitude), location.getAltitude());
+            tags.put(context.getString(R.string.json_key_timestamp), image.getCreatedTimestamp());
+            tags.put(context.getString(R.string.json_key_power_element_tags), powerElements);
 
-            Location location = image.getLocation();
+            properties.put(context.getString(R.string.json_key_tags), tags);
 
             point.put(context.getString(R.string.json_key_latitude), location.getLatitude());
             point.put(context.getString(R.string.json_key_longitude), location.getLongitude());
-            point.put(context.getString(R.string.json_key_tags), tags);
+            point.put(context.getString(R.string.json_key_properties), properties);
 
             json.put(context.getString(R.string.json_key_id_token), idToken);
             json.put(context.getString(R.string.json_key_submission_id), id);

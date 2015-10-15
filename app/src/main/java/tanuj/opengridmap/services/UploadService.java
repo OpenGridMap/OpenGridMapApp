@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -26,13 +27,17 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Payload;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.models.UploadQueueItem;
 
-public class UploadService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class UploadService extends Service implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = UploadService.class.getSimpleName();
+
+    private static final int MAX_UPLOAD_ATTEMPTS = 3;
 
     private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
 
@@ -51,13 +56,20 @@ public class UploadService extends Service implements GoogleApiClient.Connection
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.v(TAG, "Upload Service OnCreate");
 
-        dbHelper = new OpenGridMapDbHelper(getApplicationContext());
-        queueItems = dbHelper.getQueue();
-        dbHelper.close();
+        getUploadQueue();
+
+        Log.v(TAG, "No. Of Queue Items : " + queueItems.size());
 
         googleApiClient = buildGoogleApiClient();
-        Log.d(TAG, "Upload Service OnCreate");
+    }
+
+    private void getUploadQueue() {
+        queueItems = null;
+        dbHelper = new OpenGridMapDbHelper(getApplicationContext());
+        queueItems = dbHelper.getUploadQueue();
+        dbHelper.close();
     }
 
     private GoogleApiClient buildGoogleApiClient() {
@@ -72,8 +84,6 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        processUploadQueue();
-
         if (!googleApiClient.isConnected()) {
             googleApiClient.connect();
         }
@@ -82,8 +92,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
     }
 
     private void processUploadQueue() {
-        handlePayloads().start();
-//        new SendPayloadsTask().execute();
+        new HandlePayloadsTask().execute();
     }
 
     @Override
@@ -102,13 +111,15 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         dbHelper.close();
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
+            Log.d(TAG, "Disconnected from Google Play Services");
         }
+        Log.v(TAG, "Stopping UploadService");
         super.onDestroy();
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.d(TAG, "Connected to Google Play Services");
+        Log.v(TAG, "Connected to Google Play Services");
         processUploadQueue();
     }
 
@@ -150,68 +161,106 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         return token;
     }
 
-    private Thread handlePayloads() {
-        final Context context = getApplicationContext();
+    private class HandlePayloadsTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            handlePayloads(queueItems);
+            return null;
+        }
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                HttpClient httpClient = new DefaultHttpClient();
-
-                for (int i = 0;i < queueItems.size(); i++) {
-                    HttpPost httpPost = new HttpPost(TOKEN_URL);
-
-                    String idToken = getIdToken();
-                    UploadQueueItem currentItem = queueItems.get(i);
-                    Submission submission = currentItem.getSubmission();
-                    ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
-
-                    for (Payload payload : payloads) {
-                        try {
-                            HttpResponse httpResponse = sendPayload(httpClient, httpPost, payload);
-
-                            String response = EntityUtils.toString(httpResponse.getEntity(),
-                                    "UTF-8");
-
-                            Log.d(TAG, response);
-
-                            if (httpResponse.getStatusLine().getStatusCode() ==  200) {
-                                currentItem.updateStatus(context,
-                                        UploadQueueItem.STATUS_UPLOAD_STARTED);
-                                currentItem.updatePayloadsUploaded(context, payload.getImageId());
-                                Log.v(TAG, "Payload Successfully Uploaded");
-                            } else {
-//                                tryCount++;
-                                Log.v(TAG, "Payload Upload Failed, Response Code : " +
-                                        httpResponse.getStatusLine().getStatusCode());
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    if (currentItem.isUploadComplete(context)) {
-                        currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
-                        currentItem.getSubmission().uploadComplete(context);
-                    }
-
-                }
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            getUploadQueue();
+            if (queueItems.size() == 0) {
+                stopSelf();
+            } else {
+                processUploadQueue();
             }
-        };
-
-        return new Thread(runnable);
+        }
     }
 
-    private HttpResponse sendPayload(HttpClient httpClient, HttpPost httpPost, Payload payload)
-            throws IOException {
-        Log.d(TAG, "Starting Upload for Image " + payload.getImageId() + " of Submission " +
-                payload.getSubmissionId());
+    private void handlePayloads(ArrayList<UploadQueueItem> uploadQueueItems) {
+        final Context context = getApplicationContext();
+        HttpClient httpClient = new DefaultHttpClient();
 
-        StringEntity stringEntity = new StringEntity(payload.getPayloadEntity(), HTTP.UTF_8);
+        for (int i = 0;i < queueItems.size(); i++) {
+            HttpPost httpPost = new HttpPost(TOKEN_URL);
 
-        httpPost.setEntity(stringEntity);
-        httpPost.addHeader("Content-Type", "application/json");
+            String idToken = getIdToken();
+            UploadQueueItem currentItem = queueItems.get(i);
+            Submission submission = currentItem.getSubmission();
+            ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
 
-        return httpClient.execute(httpPost);
+            int payloadNo = 1;
+            for (Payload payload : payloads) {
+                Log.v(TAG, "Starting Upload for Payload " + payloadNo++ + " of Submission " +
+                        payload.getSubmissionId());
+
+                if (!currentItem.isPayloadUploaded(payload)) {
+                    HttpResponse httpResponse = sendPayload(context, httpClient, httpPost,
+                            payload, MAX_UPLOAD_ATTEMPTS);
+
+                    String response = getResponseStringFromHttpResponse(httpResponse);
+//                    Log.d(TAG, response);
+
+                    if (httpResponse.getStatusLine().getStatusCode() ==  200) {
+                        currentItem.updateStatus(context,
+                                UploadQueueItem.STATUS_UPLOAD_STARTED);
+                        currentItem.updatePayloadsUploaded(context, payload.getImageId());
+                    }
+                } else {
+                    Log.v(TAG, "Payload Already Uploaded");
+                }
+            }
+
+            if (currentItem.isUploadComplete(context)) {
+                currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
+                currentItem.getSubmission().uploadComplete(context);
+            }
+
+        }
+        Log.v(TAG, "Uploads Complete");
+    }
+
+    private HttpResponse sendPayload(Context context, HttpClient httpClient, HttpPost httpPost,
+                                     Payload payload, int ttl) {
+        if (ttl > 0) {
+            Log.v(TAG, "Attempt " + (MAX_UPLOAD_ATTEMPTS - ttl + 1));
+
+            try {
+                StringEntity stringEntity = new StringEntity(payload.getPayloadEntity(), HTTP.UTF_8);
+
+                httpPost.setEntity(stringEntity);
+                httpPost.addHeader("Content-Type", "application/json");
+
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+
+                if (statusCode == 200) {
+                    Log.v(TAG, "Payload Successfully Uploaded");
+                } else if (statusCode == 400 && getResponseStringFromHttpResponse(httpResponse) ==
+                        context.getString(R.string.error_response_invalid_id_token)) {
+                    payload.renewPayloadToken(context, getIdToken());
+                    httpResponse = sendPayload(context, httpClient, httpPost, payload, ttl - 1);
+                } else {
+                    Log.v(TAG, "Payload Upload Failed, Response Code : " + statusCode);
+                }
+
+                return httpResponse;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private String getResponseStringFromHttpResponse(HttpResponse httpResponse) {
+        try {
+            return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

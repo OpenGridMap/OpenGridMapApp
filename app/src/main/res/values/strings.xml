@@ -1,6 +1,4 @@
 <resources>
-    <string name="hello_world">Hello world!</string>
-
     <!-- App -->
     <string name="app_name">Open Grid Map</string>
 
@@ -33,24 +31,28 @@
     <string name="title_activity_tag_selection">Select any additional tags if any</string>
 
     <!-- Activity extras -->
-    <string name="key_power_element_id">power_element_id</string>
-    <string name="key_submission_id">submission_id</string>
+    <string name="key_power_element_id" translatable="false">power_element_id</string>
+    <string name="key_submission_id" translatable="false">submission_id</string>
 
     <!-- Upload Service -->
-    <string name="json_key_id_token">id_token</string>
-    <string name="json_key_submission_id">submission_id</string>
-    <string name="json_key_image">image</string>
-    <string name="json_key_number_of_points">number_of_points</string>
-    <string name="json_key_point">point</string>
-    <string name="json_key_latitude">latitude</string>
-    <string name="json_key_longitude">longitude</string>
-    <string name="json_key_properties">properties</string>
-    <string name="json_key_tags">tags</string>
-    <string name="json_key_type">type</string>
-    <string name="json_key_accuracy">accuracy</string>
-    <string name="json_key_no_of_satellites">no_of_satellites</string>
-    <string name="json_value_point">point</string>
+    <string name="json_key_id_token" translatable="false">id_token</string>
+    <string name="json_key_submission_id" translatable="false">submission_id</string>
+    <string name="json_key_image" translatable="false">image</string>
+    <string name="json_key_number_of_points" translatable="false">number_of_points</string>
+    <string name="json_key_point" translatable="false">point</string>
+    <string name="json_key_latitude" translatable="false">latitude</string>
+    <string name="json_key_longitude" translatable="false">longitude</string>
+    <string name="json_key_properties" translatable="false">properties</string>
+    <string name="json_key_tags" translatable="false">tags</string>
+    <string name="json_key_type" translatable="false">type</string>
+    <string name="json_key_accuracy" translatable="false">accuracy</string>
+    <string name="json_key_altitude" translatable="false">altitude</string>
+    <string name="json_key_no_of_satellites" translatable="false">no_of_satellites</string>
+    <string name="json_key_timestamp" translatable="false">timestamp</string>
+    <string name="json_key_power_element_tags" translatable="false">power_element_tags</string>
+    <string name="json_value_point" translatable="false">point</string>
     <string name="title_activity_alt_submission">AltSubmissionActivity</string>
+    <string name="error_response_invalid_id_token" translatable="false">Invalid Id Token</string>
 
     <!-- Labels -->
     <string name="label_latitude">Latitude : </string>
@@ -72,7 +74,7 @@
     <string name="submission_status_confirmed">Submission Confirmed</string>
     <string name="submission_status_upload_pending">Submission Confirmed, Upload pending</string>
     <string name="submission_status_upload_in_progress">Upload in Progress</string>
-    <string name="submission_status_submitted_pending_review">Submission Uploaded Successfully, pendind review</string>
+    <string name="submission_status_submitted_pending_review">Submission Uploaded Successfully, Pending review</string>
     <string name="submission_status_submitted_approved">Submission Approved</string>
     <string name="submission_status_submitted_rejected">Submission Rejected</string>
 
@@ -92,12 +94,12 @@
     <!-- Misc -->
     <string name="ok">OK</string>
     <string name="close">Close</string>
-    <string name="degree">°</string>
-    <string name="minute">\'</string>
-    <string name="seconds">\"</string>
-    <string name="north">N</string>
-    <string name="south">S</string>
-    <string name="east">E</string>
-    <string name="west">W</string>
-    <string name="unit_metre">m</string>
+    <string name="degree" translatable="false">°</string>
+    <string name="minute" translatable="false">\'</string>
+    <string name="seconds" translatable="false">\"</string>
+    <string name="north" translatable="false">N</string>
+    <string name="south" translatable="false">S</string>
+    <string name="east" translatable="false">E</string>
+    <string name="west" translatable="false">W</string>
+    <string name="unit_metre" translatable="false">m</string>
 </resources>
