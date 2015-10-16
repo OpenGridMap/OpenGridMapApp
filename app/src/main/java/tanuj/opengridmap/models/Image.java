@@ -43,13 +43,13 @@ public class Image {
 
     private static final int GRID_THUMB_HEIGHT = 200;
 
-    private int id;
+    private long id;
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

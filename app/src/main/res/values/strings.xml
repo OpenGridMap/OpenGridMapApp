@@ -26,6 +26,7 @@
     <string name="title_section1">Submission Info</string>
     <string name="title_section2">Images</string>
     <string name="title_section3">Tags</string>
+    <string name="title_section4">Maps</string>
 
     <!-- Tag Selection Activity -->
     <string name="title_activity_tag_selection">Select any additional tags if any</string>
@@ -33,6 +34,7 @@
     <!-- Activity extras -->
     <string name="key_power_element_id" translatable="false">power_element_id</string>
     <string name="key_submission_id" translatable="false">submission_id</string>
+    <string name="key_upload_completion" translatable="false">upload_completion</string>
 
     <!-- Upload Service -->
     <string name="json_key_id_token" translatable="false">id_token</string>

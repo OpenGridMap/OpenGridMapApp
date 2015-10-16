@@ -45,6 +45,16 @@ public class Submission {
 
     private Timestamp updatedTimestamp;
 
+    private int uploadStatus = 0;
+
+    public int getUploadStatus() {
+        return uploadStatus;
+    }
+
+    public void setUploadStatus(int uploadStatus) {
+        this.uploadStatus = uploadStatus;
+    }
+
     public Submission() {
         Timestamp timestamp = new Timestamp(new Date().getTime());
 
@@ -158,8 +168,9 @@ public class Submission {
     public void addImage(Context context, Image image) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
+        long imageId = dbHelper.addImageToSubmission(image, this);
+        image.setId(imageId);
         images.add(image);
-        dbHelper.addImageToSubmission(image, this);
         dbHelper.close();
 
         if (status == STATUS_IMAGE_CAPTURE_PENDING) {
@@ -170,6 +181,7 @@ public class Submission {
     public void confirmSubmission(Context context) {
         if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
             updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
+            this.addToUploadQueue(context);
         }
     }
 

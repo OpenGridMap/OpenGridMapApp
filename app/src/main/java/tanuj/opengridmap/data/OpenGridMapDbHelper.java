@@ -237,7 +237,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return submissions;
     }
 
-    public void addImageToSubmission(Image image, Submission submission) {
+    public long addImageToSubmission(Image image, Submission submission) {
         SQLiteDatabase db = this.getWritableDatabase();
         Timestamp timestamp = new Timestamp(new Date().getTime());
 
@@ -258,8 +258,10 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         values.put(ImageEntry.COLUMN_CREATED_TIMESTAMP, timestamp.toString());
         values.put(ImageEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());
 
-        db.insert(ImageEntry.TABLE_NAME, null, values);
+        long res = db.insert(ImageEntry.TABLE_NAME, null, values);
         db.close();
+
+        return res;
     }
 
     public void updateSubmissionStatus(Submission submission, int status) {
@@ -555,7 +557,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         values.put(UploadQueueEntry.COLUMN_SUBMISSION_ID, item.getSubmissionId());
         values.put(UploadQueueEntry.COLUMN_STATUS, item.getStatus());
-        values.put(UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED, item.getPayloadsUploadedSrting());
+        values.put(UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED, item.getPayloadsUploadedString());
         values.put(UploadQueueEntry.COLUMN_CREATED_TIMESTAMP, item.getCreatedAtTimestamp().
                 toString());
         values.put(UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP, item.getUpdatedAtTimestamp().

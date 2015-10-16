@@ -13,7 +13,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.List;
-import java.util.Random;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.models.Image;
@@ -81,7 +80,13 @@ public class SubmissionsListAdapter extends BaseAdapter {
         latitudeTextView.setText(coordinates[0]);
         longitudeTextView.setText(coordinates[1]);
         accuracyTextView.setText(String.format("%.2f", location.getAccuracy()));
-        progressBar.setProgress(new Random().nextInt(95));
+
+        if (submission.getUploadStatus() == 0 || submission.getUploadStatus() == 100) {
+            progressBar.setVisibility(View.GONE);
+        } else {
+            progressBar.setVisibility(View.VISIBLE);
+            progressBar.setProgress(submission.getUploadStatus());
+        }
 
         return view;
     }
@@ -116,5 +121,10 @@ public class SubmissionsListAdapter extends BaseAdapter {
             }
         }
         return powerElementsColor;
+    }
+
+    public void notifyDataSetChanged(List<Submission> submissions) {
+        this.submissions = submissions;
+        this.notifyDataSetChanged();
     }
 }

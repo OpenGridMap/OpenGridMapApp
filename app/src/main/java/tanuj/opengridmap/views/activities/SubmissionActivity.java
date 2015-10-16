@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -144,7 +145,7 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 3;
+            return 4;
         }
 
         @Override
@@ -157,6 +158,8 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                     return getString(R.string.title_section2);
                 case 2:
                     return getString(R.string.title_section3);
+                case 3:
+                    return getString(R.string.title_section4);
             }
             return null;
         }
@@ -268,6 +271,16 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                     listView.setAdapter(new PowerElementTagsAdapter(context,
                             submission.getPowerElements(), PowerElementTagsAdapter.TAGGED));
                     break;
+                }
+                case 4: {
+                    view = inflater.inflate(R.layout.fragment_submission_tab_4, container, false);
+                    WebView mapWebView = (WebView) view.findViewById(R.id.map_web_view);
+                    String url = "http://vmjacobsen39.informatik.tu-muenchen.de/";
+
+                    mapWebView.getSettings().setJavaScriptEnabled(true);
+                    mapWebView.getSettings().setSupportZoom(true);
+                    mapWebView.getSettings().setBuiltInZoomControls(true);
+                    mapWebView.loadUrl(url);
                 }
             }
 

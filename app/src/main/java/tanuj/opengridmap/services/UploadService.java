@@ -37,6 +37,8 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = UploadService.class.getSimpleName();
 
+    public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
+
     private static final int MAX_UPLOAD_ATTEMPTS = 3;
 
     private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
@@ -51,6 +53,8 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
     private GoogleApiClient googleApiClient;
 
+    Intent intent;
+
     public UploadService() {}
 
     @Override
@@ -63,6 +67,8 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         Log.v(TAG, "No. Of Queue Items : " + queueItems.size());
 
         googleApiClient = buildGoogleApiClient();
+
+        intent = new Intent(UPLOAD_UPDATE_BROADCAST);
     }
 
     private void getUploadQueue() {
@@ -161,11 +167,61 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         return token;
     }
 
-    private class HandlePayloadsTask extends AsyncTask<Void, Void, Void> {
+    private class HandlePayloadsTask extends AsyncTask<Void, UploadQueueItem, Void> {
         @Override
         protected Void doInBackground(Void... params) {
-            handlePayloads(queueItems);
+            handlePayloads();
+
+//            final Context context = getApplicationContext();
+//            HttpClient httpClient = new DefaultHttpClient();
+//
+//            for (int i = 0;i < queueItems.size(); i++) {
+//                HttpPost httpPost = new HttpPost(TOKEN_URL);
+//
+//                String idToken = getIdToken();
+//                UploadQueueItem currentItem = queueItems.get(i);
+//                Submission submission = currentItem.getSubmission();
+//                ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
+//
+//                int payloadNo = 1;
+//                for (Payload payload : payloads) {
+//                    Log.v(TAG, "Starting Upload for Payload " + payloadNo++ + " of Submission " +
+//                            payload.getSubmissionId());
+//
+//                    if (!currentItem.isPayloadUploaded(payload)) {
+//                        HttpResponse httpResponse = sendPayload(context, httpClient, httpPost,
+//                                payload, MAX_UPLOAD_ATTEMPTS);
+//
+//                        String response = getResponseStringFromHttpResponse(httpResponse);
+////                    Log.d(TAG, response);
+//
+//                        if (httpResponse.getStatusLine().getStatusCode() ==  200) {
+//                            currentItem.updateStatus(context,
+//                                    UploadQueueItem.STATUS_UPLOAD_STARTED);
+//                            currentItem.updatePayloadsUploaded(context, payload.getImageId());
+//                        }
+//                    } else {
+//                        Log.v(TAG, "Payload Already Uploaded");
+//                    }
+//
+//                    publishProgress(currentItem);
+//                }
+//
+//                if (currentItem.isUploadComplete(context)) {
+//                    currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
+//                    currentItem.getSubmission().uploadComplete(context);
+//                }
+//
+//            }
+//            Log.v(TAG, "Uploads Complete");
+
             return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(UploadQueueItem... values) {
+            super.onProgressUpdate(values);
+            broadcastUpdate(values[0]);
         }
 
         @Override
@@ -178,49 +234,64 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                 processUploadQueue();
             }
         }
-    }
 
-    private void handlePayloads(ArrayList<UploadQueueItem> uploadQueueItems) {
-        final Context context = getApplicationContext();
-        HttpClient httpClient = new DefaultHttpClient();
+        private void handlePayloads() {
+            final Context context = getApplicationContext();
+            HttpClient httpClient = new DefaultHttpClient();
 
-        for (int i = 0;i < queueItems.size(); i++) {
-            HttpPost httpPost = new HttpPost(TOKEN_URL);
+            for (int i = 0;i < queueItems.size(); i++) {
+                HttpPost httpPost = new HttpPost(TOKEN_URL);
 
-            String idToken = getIdToken();
-            UploadQueueItem currentItem = queueItems.get(i);
-            Submission submission = currentItem.getSubmission();
-            ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
+                String idToken = getIdToken();
+                UploadQueueItem currentItem = queueItems.get(i);
+                Submission submission = currentItem.getSubmission();
+                ArrayList<Payload> payloads = submission.getUploadPayloads(context, idToken);
 
-            int payloadNo = 1;
-            for (Payload payload : payloads) {
-                Log.v(TAG, "Starting Upload for Payload " + payloadNo++ + " of Submission " +
-                        payload.getSubmissionId());
+                int payloadNo = 1;
+                for (Payload payload : payloads) {
+                    Log.v(TAG, "Starting Upload for Payload " + payloadNo++ + " of Submission " +
+                            payload.getSubmissionId());
 
-                if (!currentItem.isPayloadUploaded(payload)) {
-                    HttpResponse httpResponse = sendPayload(context, httpClient, httpPost,
-                            payload, MAX_UPLOAD_ATTEMPTS);
+                    if (!currentItem.isPayloadUploaded(payload)) {
+                        HttpResponse httpResponse = sendPayload(context, httpClient, httpPost,
+                                payload, MAX_UPLOAD_ATTEMPTS);
 
-                    String response = getResponseStringFromHttpResponse(httpResponse);
+                        String response = getResponseStringFromHttpResponse(httpResponse);
 //                    Log.d(TAG, response);
 
-                    if (httpResponse.getStatusLine().getStatusCode() ==  200) {
-                        currentItem.updateStatus(context,
-                                UploadQueueItem.STATUS_UPLOAD_STARTED);
-                        currentItem.updatePayloadsUploaded(context, payload.getImageId());
+                        if (httpResponse.getStatusLine().getStatusCode() ==  200) {
+                            currentItem.updateStatus(context,
+                                    UploadQueueItem.STATUS_UPLOAD_STARTED);
+                            currentItem.updatePayloadsUploaded(context, payload.getImageId());
+                        }
+                    } else {
+                        Log.v(TAG, "Payload Already Uploaded");
                     }
-                } else {
-                    Log.v(TAG, "Payload Already Uploaded");
+
+                    publishProgress(currentItem);
                 }
-            }
 
-            if (currentItem.isUploadComplete(context)) {
-                currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
-                currentItem.getSubmission().uploadComplete(context);
-            }
+                if (currentItem.isUploadComplete(context)) {
+                    currentItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
+                    currentItem.getSubmission().uploadComplete(context);
+                }
 
+            }
+            Log.v(TAG, "Uploads Complete");
         }
-        Log.v(TAG, "Uploads Complete");
+    }
+
+    private void broadcastUpdate(UploadQueueItem currentItem) {
+        final Context context = getApplicationContext();
+        int uploadCompletion = (int) (currentItem.getUploadCompletion(context) * 100);
+
+        Log.v(TAG, "Upload Completion for Submission " + currentItem.getSubmissionId() + " : " +
+                uploadCompletion + "%");
+
+        intent.putExtra(getString(R.string.key_submission_id), currentItem.getSubmissionId());
+        intent.putExtra(getString(R.string.key_upload_completion), uploadCompletion);
+
+        sendBroadcast(intent);
     }
 
     private HttpResponse sendPayload(Context context, HttpClient httpClient, HttpPost httpPost,

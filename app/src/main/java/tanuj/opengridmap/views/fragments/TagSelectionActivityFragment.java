@@ -134,7 +134,6 @@ public class TagSelectionActivityFragment extends Fragment {
                     dbHelper.addPowerElementToSubmission(powerElement, submission);
                 }
 
-                submission.addToUploadQueue(context);
                 dbHelper.close();
 
                 Intent serviceIntent = new Intent(context, UploadService.class);

@@ -1,6 +1,7 @@
 package tanuj.opengridmap.models;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,7 +56,7 @@ public class UploadQueueItem {
         return payloadsUploaded;
     }
 
-    public String getPayloadsUploadedSrting() {
+    public String getPayloadsUploadedString() {
         return payloadsUploaded.toString();
     }
 
@@ -71,7 +72,8 @@ public class UploadQueueItem {
 
         for (Image image: submission.getImages()) {
             try {
-                payloadsUploaded.put(String.valueOf(image.getId()), false);
+                Log.d(TAG, Long.toString(image.getId()));
+                payloadsUploaded.put(Long.toString(image.getId()), false);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -79,6 +81,8 @@ public class UploadQueueItem {
 
         this.id = dbHelper.addQueueItem(this);
         dbHelper.close();
+
+        Log.d(TAG, payloadsUploaded.toString());
     }
 
     public long getId() {
@@ -161,6 +165,7 @@ public class UploadQueueItem {
 
     public boolean isPayloadUploaded(Payload payload) {
         boolean status = false;
+        Log.d(TAG, payloadsUploaded.toString());
         try {
             status = payloadsUploaded.getBoolean(Long.toString(payload.getImageId()));
         } catch (JSONException e) {

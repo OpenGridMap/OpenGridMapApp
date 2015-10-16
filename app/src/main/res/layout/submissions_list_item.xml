@@ -152,7 +152,7 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:visibility="visible"
             android:progress="20"
-            android:max="100" />
+            android:max="100"/>
 
     </LinearLayout>
 
