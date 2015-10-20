@@ -12,7 +12,6 @@ public class OpenGridMapContract {
         public static final String TABLE_NAME = "power_element";
 
         public static final String COLUMN_POWER_ELEMENT_NAME = "name";
-        public static final String COLUMN_IMAGE = "image_id";
         public static final String COLUMN_DESCRIPTION = "description";
     }
 
@@ -20,6 +19,7 @@ public class OpenGridMapContract {
         public static final String TABLE_NAME = "submission";
 
         public static final String COLUMN_STATUS = "status";
+        public static final String COLUMN_SUBMISSION_ID = "submission_id";
         public static final String COLUMN_CREATED_TIMESTAMP = "created_on";
         public static final String COLUMN_UPDATED_TIMESTAMP = "updated_on";
         public static final String COLUMN_DELETED_TIMESTAMP = "deleted_on";

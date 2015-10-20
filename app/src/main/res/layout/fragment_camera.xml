@@ -75,7 +75,7 @@
                 android:paddingTop="10dp"
                 android:paddingBottom="10dp"
                 android:layout_gravity="center"
-                android:src="@drawable/camera_shutter"
+                android:src="@drawable/camera60"
                 android:scaleType="fitCenter"
                 android:clickable="false"
                 android:contentDescription="@string/camera_shutter_image_button_description" />
@@ -87,7 +87,7 @@
                 android:layout_height="match_parent"
                 android:padding="0dp"
                 android:layout_gravity="center_vertical|right"
-                android:src="@drawable/iconmonstr_check_mark_6_icon_256"
+                android:src="@drawable/verification24"
                 android:scaleType="fitCenter"
                 android:paddingRight="21dp"
                 android:paddingEnd="21dp"

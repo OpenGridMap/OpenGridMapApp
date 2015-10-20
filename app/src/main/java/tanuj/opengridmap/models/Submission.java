@@ -2,6 +2,7 @@ package tanuj.opengridmap.models;
 
 import android.content.Context;
 import android.location.Location;
+import android.provider.Settings;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.utils.HashUtils;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -37,6 +39,8 @@ public class Submission {
 
     private int status = STATUS_IMAGE_CAPTURE_PENDING;
 
+    private long submissionId;
+
     private List<Image> images;
 
     private ArrayList<PowerElement> powerElements;
@@ -46,14 +50,6 @@ public class Submission {
     private Timestamp updatedTimestamp;
 
     private int uploadStatus = 0;
-
-    public int getUploadStatus() {
-        return uploadStatus;
-    }
-
-    public void setUploadStatus(int uploadStatus) {
-        this.uploadStatus = uploadStatus;
-    }
 
     public Submission() {
         Timestamp timestamp = new Timestamp(new Date().getTime());
@@ -68,9 +64,20 @@ public class Submission {
     public Submission(Context context) {
         this();
 
+        this.submissionId = generateSubmissionId(context);
+
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         this.id = dbHelper.addSubmission(this);
         dbHelper.close();
+    }
+
+    public Submission(long id, int status, long submissionId, Timestamp createdTimestamp,
+                      Timestamp updatedTimestamp) {
+        this.id = id;
+        this.status = status;
+        this.submissionId = submissionId;
+        this.createdTimestamp = createdTimestamp;
+        this.updatedTimestamp = updatedTimestamp;
     }
 
     public long getId() {
@@ -91,6 +98,18 @@ public class Submission {
 
     public int getNoOfImages() {
         return images.size();
+    }
+
+    public int getUploadStatus() {
+        return uploadStatus;
+    }
+
+    public long getSubmissionId() {
+        return submissionId;
+    }
+
+    public void setUploadStatus(int uploadStatus) {
+        this.uploadStatus = uploadStatus;
     }
 
     public Timestamp getCreatedTimestamp() {
@@ -244,7 +263,7 @@ public class Submission {
             point.put(context.getString(R.string.json_key_properties), properties);
 
             json.put(context.getString(R.string.json_key_id_token), idToken);
-            json.put(context.getString(R.string.json_key_submission_id), id);
+            json.put(context.getString(R.string.json_key_submission_id), submissionId);
             json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
             json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
             json.put(context.getString(R.string.json_key_point), point);
@@ -403,5 +422,11 @@ public class Submission {
             }
         }
         return status;
+    }
+
+    private long generateSubmissionId(Context context) {
+        String android_id = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+        return HashUtils.getSha256Long(android_id + createdTimestamp.toString());
     }
 }

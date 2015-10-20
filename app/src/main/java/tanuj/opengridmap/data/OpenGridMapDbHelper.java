@@ -6,15 +6,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
-import android.support.annotation.NonNull;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +25,7 @@ import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.PowerElement;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.models.UploadQueueItem;
+import tanuj.opengridmap.utils.TimestampUtils;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -64,14 +61,14 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String CREATE_POWER_ELEMENTS_TABLE = CREATE_TABLE +
                 PowerElementEntry.TABLE_NAME + " (" +
                 PowerElementEntry._ID + TYPE_INTEGER + CONSTRAINT_PRIMARY_KEY + "," +
-                PowerElementEntry.COLUMN_POWER_ELEMENT_NAME + TYPE_TEXT + CONSTRAINT_UNIQUE + CONSTRAINT_NOT_NULL + ", " +
-                PowerElementEntry.COLUMN_IMAGE + TYPE_TEXT + CONSTRAINT_NOT_NULL + ", " +
-                PowerElementEntry.COLUMN_DESCRIPTION + TYPE_TEXT + ");";
+                PowerElementEntry.COLUMN_POWER_ELEMENT_NAME + TYPE_TEXT + CONSTRAINT_UNIQUE +
+                CONSTRAINT_NOT_NULL + ", " + PowerElementEntry.COLUMN_DESCRIPTION + TYPE_TEXT + ");";
 
         final String CREATE_SUBMISSIONS_TABLE = CREATE_TABLE +
                 SubmissionEntry.TABLE_NAME + " (" +
                 SubmissionEntry._ID + TYPE_INTEGER + CONSTRAINT_PRIMARY_KEY + CONSTRAINT_AUTOINCREMENT + "," +
                 SubmissionEntry.COLUMN_STATUS + TYPE_INTEGER + CONSTRAINT_NOT_NULL + ", " +
+                SubmissionEntry.COLUMN_SUBMISSION_ID + TYPE_TEXT + "," +
                 SubmissionEntry.COLUMN_CREATED_TIMESTAMP + TYPE_TEXT + CONSTRAINT_NOT_NULL + ", " +
                 SubmissionEntry.COLUMN_UPDATED_TIMESTAMP + TYPE_TEXT + CONSTRAINT_NOT_NULL + ", " +
                 SubmissionEntry.COLUMN_DELETED_TIMESTAMP + TYPE_TEXT + ");";
@@ -124,16 +121,14 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_UPLOAD_QUEUE_TABLE);
 
         seedPowerElementsTable(db);
-
-//        db.close();
     }
 
     private void seedPowerElementsTable(SQLiteDatabase db) {
-        seedPowerElement(new PowerElement("Transformer", 0, R.drawable.transformer), db);
-        seedPowerElement(new PowerElement("Substation", 1, R.drawable.substation), db);
-        seedPowerElement(new PowerElement("Generator", 2, R.drawable.power_station), db);
-        seedPowerElement(new PowerElement("PV or Wind Farm", 3, R.drawable.pv_wind), db);
-        seedPowerElement(new PowerElement("Other", 4, R.drawable.lightening_logo), db);
+        seedPowerElement(new PowerElement(0, "Transformer", R.drawable.transformer), db);
+        seedPowerElement(new PowerElement(1, "Substation", R.drawable.substation), db);
+        seedPowerElement(new PowerElement(2, "Generator", R.drawable.power_station), db);
+        seedPowerElement(new PowerElement(3, "PV or Wind Farm", R.drawable.pv_wind), db);
+        seedPowerElement(new PowerElement(4, "Other", R.drawable.lightening_logo), db);
     }
 
     @Override
@@ -153,6 +148,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
         values.put(SubmissionEntry.COLUMN_STATUS, submission.getStatus());
+        values.put(SubmissionEntry.COLUMN_SUBMISSION_ID, submission.getSubmissionId());
         values.put(SubmissionEntry.COLUMN_CREATED_TIMESTAMP, timestamp.toString());
         values.put(SubmissionEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());
 
@@ -168,6 +164,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String[] columns = {
                 SubmissionEntry._ID,
                 SubmissionEntry.COLUMN_STATUS,
+                SubmissionEntry.COLUMN_SUBMISSION_ID,
                 SubmissionEntry.COLUMN_CREATED_TIMESTAMP,
                 SubmissionEntry.COLUMN_UPDATED_TIMESTAMP};
 
@@ -177,11 +174,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         Submission submission = null;
 
         if (cursor.moveToFirst()) {
-            submission = new Submission();
-            submission.setId(cursor.getInt(0));
-            submission.setStatus(cursor.getInt(1));
-            submission.setCreatedTimestamp(getTimestampFromString(cursor.getString(2)));
-            submission.setUpdatedTimestamp(getTimestampFromString(cursor.getString(3)));
+            submission = getSubmissionFromCursor(cursor);
         }
 
         cursor.close();
@@ -202,6 +195,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String[] columns = {
                 SubmissionEntry._ID,
                 SubmissionEntry.COLUMN_STATUS,
+                SubmissionEntry.COLUMN_SUBMISSION_ID,
                 SubmissionEntry.COLUMN_CREATED_TIMESTAMP,
                 SubmissionEntry.COLUMN_UPDATED_TIMESTAMP};
 
@@ -211,16 +205,11 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         List<Submission> submissions = new ArrayList<Submission>();
 
-        Submission submission = null;
+        Submission submission;
 
         if (cursor.moveToFirst()) {
             do {
-                submission = new Submission();
-
-                submission.setId(cursor.getInt(0));
-                submission.setStatus(cursor.getInt(1));
-                submission.setCreatedTimestamp(getTimestampFromString(cursor.getString(2)));
-                submission.setUpdatedTimestamp(getTimestampFromString(cursor.getString(3)));
+                submission = getSubmissionFromCursor(cursor);
 
                 submissions.add(submission);
             } while (cursor.moveToNext());
@@ -235,6 +224,16 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         }
 
         return submissions;
+    }
+
+    private Submission getSubmissionFromCursor(Cursor cursor) {
+        long id = cursor.getLong(0);
+        int status = cursor.getInt(1);
+        long submissionId = cursor.getLong(2);
+        Timestamp createdAtTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(3));
+        Timestamp updatedAtTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(4));
+
+        return new Submission(id, status, submissionId, createdAtTimestamp, updatedAtTimestamp);
     }
 
     public long addImageToSubmission(Image image, Submission submission) {
@@ -316,8 +315,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
             do {
                 int id = cursor.getInt(0);
                 String src = cursor.getString(1);
-                Timestamp createdTimestamp = getTimestampFromString(cursor.getString(2));
-                Timestamp updatedTimestamp = getTimestampFromString(cursor.getString(3));
+                Timestamp createdTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(2));
+                Timestamp updatedTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(3));
 
                 Image image = new Image(createdTimestamp, updatedTimestamp);
                 image.setId(id);
@@ -365,8 +364,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 float speed = cursor.getFloat(6);
                 double altitude = cursor.getDouble(7);
                 float accuracy = cursor.getFloat(8);
-                Timestamp createdTimestamp = getTimestampFromString(cursor.getString(9));
-                Timestamp updatedTimestamp = getTimestampFromString(cursor.getString(10));
+                Timestamp createdTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(9));
+                Timestamp updatedTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(10));
 
                 Location location = new Location(provider);
                 location.setLatitude(latitude);
@@ -396,7 +395,6 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
 
         values.put(PowerElementEntry.COLUMN_POWER_ELEMENT_NAME, powerElement.getName());
-        values.put(PowerElementEntry.COLUMN_IMAGE, powerElement.getImageId());
         values.put(PowerElementEntry.COLUMN_DESCRIPTION, powerElement.getDescription());
 
         db.insert(PowerElementEntry.TABLE_NAME, null, values);
@@ -421,7 +419,6 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String[] columns = {
                 PowerElementEntry._ID,
                 PowerElementEntry.COLUMN_POWER_ELEMENT_NAME,
-                PowerElementEntry.COLUMN_IMAGE,
                 PowerElementEntry.COLUMN_DESCRIPTION};
 
         Cursor cursor = db.query(PowerElementEntry.TABLE_NAME, columns, PowerElementEntry._ID +
@@ -447,13 +444,12 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String[] columns = {
                 PowerElementEntry._ID,
                 PowerElementEntry.COLUMN_POWER_ELEMENT_NAME,
-                PowerElementEntry.COLUMN_IMAGE,
                 PowerElementEntry.COLUMN_DESCRIPTION};
 
         Cursor cursor = db.query(PowerElementEntry.TABLE_NAME, columns, null, null, null, null,
                 null);
 
-        PowerElement powerElement = null;
+        PowerElement powerElement;
 
         if (cursor.moveToFirst()) {
             do {
@@ -481,7 +477,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 PowerElementSubmissionEntry.COLUMN_SUBMISSION_ID + "=" +
                 submission.getId() + ")", null);
 
-        PowerElement powerElement = null;
+        PowerElement powerElement;
 
         if (cursor.moveToFirst()) {
             do {
@@ -497,29 +493,12 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return powerElements;
     }
 
-    @NonNull
     private PowerElement getPowerElementFromCursor(Cursor cursor) {
-        PowerElement powerElement;
-        powerElement = new PowerElement();
-        powerElement.setId(cursor.getInt(0));
-        powerElement.setName(cursor.getString(1));
-        powerElement.setImageId(cursor.getInt(2));
-        powerElement.setDescription(cursor.getString(3));
-        return powerElement;
-    }
+        long id = cursor.getLong(0);
+        String name = cursor.getString(1);
+        String description = cursor.getString(2);
 
-    private Timestamp getTimestampFromString(String time){
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");;
-        Date date;
-        Timestamp timestamp = null;
-        try {
-            date = formatter.parse(time);
-            timestamp = new Timestamp(date.getTime());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return timestamp;
+        return new PowerElement(id, name);
     }
 
     public ArrayList<PowerElement> getNotTaggedPowerElements(Submission submission) {
@@ -534,7 +513,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 PowerElementSubmissionEntry.COLUMN_SUBMISSION_ID + "=" +
                 submission.getId() + ")", null);
 
-        PowerElement powerElement = null;
+        PowerElement powerElement;
 
         if (cursor.moveToFirst()) {
             do {
@@ -653,7 +632,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 new String[]{Integer.toString(UploadQueueItem.STATUS_UPLOAD_COMPLETE)}, null, null,
                 null);
 
-        UploadQueueItem queueItem = null;
+        UploadQueueItem queueItem;
 
         if (cursor.moveToFirst()) {
             do {
@@ -701,8 +680,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         long submissionId = cursor.getLong(1);
         int status = cursor.getInt(2);
         String payloadsUploaded = cursor.getString(3);
-        Timestamp createdAtTimestamp = getTimestampFromString(cursor.getString(4));
-        Timestamp updatedAtTimestamp = getTimestampFromString(cursor.getString(5));
+        Timestamp createdAtTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(4));
+        Timestamp updatedAtTimestamp = TimestampUtils.getTimestampFromString(cursor.getString(5));
 
         Submission submission = getSubmission(submissionId);
 

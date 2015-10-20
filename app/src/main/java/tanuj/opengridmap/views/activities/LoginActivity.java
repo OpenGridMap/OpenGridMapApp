@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.activities;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import tanuj.opengridmap.views.activities.MainActivity;
+import tanuj.opengridmap.R;
 
 public class LoginActivity extends AppCompatActivity implements
         View.OnClickListener, GoogleApiClient.ConnectionCallbacks,

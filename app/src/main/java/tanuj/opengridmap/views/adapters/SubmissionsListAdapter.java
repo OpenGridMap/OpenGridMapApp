@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.List;
@@ -17,6 +16,8 @@ import java.util.List;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.utils.ImageUtils;
+import tanuj.opengridmap.views.custom_views.CircularProgressBar;
 
 public class SubmissionsListAdapter extends BaseAdapter {
     private Context context = null;
@@ -58,7 +59,11 @@ public class SubmissionsListAdapter extends BaseAdapter {
         TextView latitudeTextView = (TextView) view.findViewById(R.id.latitude);
         TextView longitudeTextView = (TextView) view.findViewById(R.id.longitude);
         TextView accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
-        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.upload_progress_bar);
+//        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.upload_progress_bar);
+        CircularProgressBar progressBar = (CircularProgressBar) view.findViewById(
+                R.id.upload_progress_bar);
+        ImageView submissionStatusImage = (ImageView) view.findViewById(
+                R.id.submission_status_image);
 
         Submission submission = submissions.get(position);
 
@@ -71,7 +76,7 @@ public class SubmissionsListAdapter extends BaseAdapter {
         if(bitmap != null){
             submissionsImage.setImageBitmap(bitmap);
         } else {
-            submissionsImage.setBackgroundResource(R.drawable.camera_shutter);
+            submissionsImage.setBackgroundResource(R.drawable.photo212);
         }
 
         powerElementTagsTextView.setText(powerElementNamesString);
@@ -81,11 +86,47 @@ public class SubmissionsListAdapter extends BaseAdapter {
         longitudeTextView.setText(coordinates[1]);
         accuracyTextView.setText(String.format("%.2f", location.getAccuracy()));
 
-        if (submission.getUploadStatus() == 0 || submission.getUploadStatus() == 100) {
+        int submissionStatus = submission.getStatus();
+
+        if (submissionStatus <= Submission.STATUS_SUBMISSION_CONFIRMED) {
+            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
+
             progressBar.setVisibility(View.GONE);
-        } else {
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.setProgress(submission.getUploadStatus());
+            submissionStatusImage.setVisibility(View.VISIBLE);
+
+            ImageUtils.setImageViewDrawable(context, submissionStatusImage,
+                    R.drawable.verification24);
+        } else if (submissionStatus == Submission.STATUS_UPLOAD_IN_PROGRESS) {
+            int submissionUploadProgress = submission.getUploadStatus();
+
+            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
+
+            submissionStatusImage.setVisibility(View.GONE);
+
+            if (progressBar.getVisibility() == View.GONE) {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+
+            progressBar.setProgress(submissionUploadProgress);
+
+            if (submissionUploadProgress == 100) {
+                powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
+
+                progressBar.setVisibility(View.GONE);
+
+                ImageUtils.setImageViewDrawable(context, submissionStatusImage,
+                        R.drawable.double126);
+                submissionStatusImage.setVisibility(View.VISIBLE);
+            }
+        } else if (submissionStatus >= Submission.STATUS_SUBMITTED_PENDING_REVIEW) {
+            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
+
+            progressBar.setVisibility(View.GONE);
+
+            ImageUtils.setImageViewDrawable(context, submissionStatusImage,
+                    R.drawable.double126);
+
+            submissionStatusImage.setVisibility(View.VISIBLE);
         }
 
         return view;

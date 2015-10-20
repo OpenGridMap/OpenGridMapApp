@@ -13,6 +13,7 @@ import java.util.List;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.models.PowerElement;
+import tanuj.opengridmap.utils.ImageUtils;
 
 /**
  * Created by tanuj on 08.05.15.
@@ -45,7 +46,6 @@ public class PowerElementsGridAdapter extends BaseAdapter {
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        View currentView;
         layoutInflater = ((Activity) context).getLayoutInflater();
 
         if (view == null) {
@@ -57,14 +57,10 @@ public class PowerElementsGridAdapter extends BaseAdapter {
 
         PowerElement powerElement = (PowerElement) getItem(i);
 
-//        imageView.setBackgroundResource(powerElement.getImageId());
-        imageView.setImageResource(powerElement.getImageId());
+        ImageUtils.setImageViewDrawable(context, imageView, powerElement.getImageId());
         textView.setText(powerElement.getName());
 
         return view;
-//        currentView = (View) view;
-
-//        return currentView;
     }
 
     @Override

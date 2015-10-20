@@ -7,17 +7,20 @@ import android.os.Parcelable;
  * Created by tanuj on 08.05.15.
  */
 public class PowerElement implements Parcelable{
-    private int id;
+    private long id;
     private String name;
     private int imageId;
     private String description;
 
-    public PowerElement() {}
-
-    public PowerElement(String name, int id, int imageId) {
+    public PowerElement(long id, String name, int imageId) {
         this.id = id;
         this.name = name;
         this.imageId = imageId;
+    }
+
+    public PowerElement(long id, String name) {
+        this.id = id;
+        this.name = name;
     }
 
     public PowerElement(Parcel parcel) {
@@ -38,7 +41,7 @@ public class PowerElement implements Parcelable{
         }
     };
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -77,7 +80,7 @@ public class PowerElement implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(this.id);
+        dest.writeLong(this.id);
         dest.writeString(this.name);
         dest.writeInt(this.imageId);
     }

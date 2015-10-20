@@ -14,27 +14,19 @@ import java.util.Arrays;
 import java.util.List;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.models.PowerElement;
 import tanuj.opengridmap.views.activities.CameraActivity;
 import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
-import tanuj.opengridmap.models.PowerElement;
 
 public class MainActivityFragment extends Fragment {
-//    private PowerElement[] powerElements = {
-//            new PowerElement("Transformer", 0, R.drawable.transformer),
-//            new PowerElement("Substation", 1, R.drawable.substation),
-//            new PowerElement("Generator", 2, R.drawable.power_station),
-//            new PowerElement("PV or Wind Farm", 3, R.drawable.pv_wind),
-//            new PowerElement("Other", 4, R.drawable.lightening_logo)
-//    };
+    public static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    List<PowerElement> powerElements = Arrays.asList(new PowerElement[]{
-            new PowerElement("Transformer", 0, R.drawable.transformer),
-            new PowerElement("Substation", 1, R.drawable.substation),
-            new PowerElement("Generator", 2, R.drawable.power_station),
-            new PowerElement("PV or Wind Farm", 3, R.drawable.pv_wind),
-            new PowerElement("Other", 4, R.drawable.lightening_logo)
-    });
+    private static final List<PowerElement> powerElements = Arrays.asList(
+            new PowerElement(0, "Transformer", R.drawable.transformer),
+            new PowerElement(1, "Substation", R.drawable.substation),
+            new PowerElement(2, "Generator", R.drawable.power_station),
+            new PowerElement(3, "PV or Wind Farm", R.drawable.pv_wind),
+            new PowerElement(4, "Other", R.drawable.lightening_logo));
 
 
     public MainActivityFragment() {
@@ -46,9 +38,9 @@ public class MainActivityFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         final Context context = getActivity();
 
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getActivity());
-        powerElements = dbHelper.getPowerElements();
-        dbHelper.close();
+//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+//        powerElements = dbHelper.getPowerElements();
+//        dbHelper.close();
 
         GridView gridView = (GridView) rootView.findViewById(R.id.main_gridview);
         gridView.setAdapter(new PowerElementsGridAdapter(context, powerElements));

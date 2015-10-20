@@ -70,7 +70,7 @@ public class ImageAdapter extends BaseAdapter {
         if(bitmap != null){
             imageView.setImageBitmap(bitmap);
         } else {
-            imageView.setImageResource(R.drawable.camera_shutter);
+            imageView.setImageResource(R.drawable.photo212);
         }
 
 //        imageView.setImageResource(i);

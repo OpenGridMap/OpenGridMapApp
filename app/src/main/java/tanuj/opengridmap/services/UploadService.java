@@ -257,7 +257,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                                 payload, MAX_UPLOAD_ATTEMPTS);
 
                         String response = getResponseStringFromHttpResponse(httpResponse);
-//                    Log.d(TAG, response);
+                    Log.d(TAG, response);
 
                         if (httpResponse.getStatusLine().getStatusCode() ==  200) {
                             currentItem.updateStatus(context,

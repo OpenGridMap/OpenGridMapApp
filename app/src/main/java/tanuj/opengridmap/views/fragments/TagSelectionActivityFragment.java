@@ -9,8 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -54,7 +54,8 @@ public class TagSelectionActivityFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_tag_selection, container, false);
         final Context context = getActivity();
 
-        ImageButton confirmButton = (ImageButton) view.findViewById(R.id.confirm_button);
+//        ImageButton confirmButton = (ImageButton) view.findViewById(R.id.confirm_button);
+        Button confirmButton = (Button) view.findViewById(R.id.confirm_button);
 
         if (savedInstanceState != null && savedInstanceState.containsKey(TAGGED_POWER_ELEMENTS_KEY)
                 && savedInstanceState.containsKey(NOT_TAGGED_POWER_ELEMENTS_KEY)) {

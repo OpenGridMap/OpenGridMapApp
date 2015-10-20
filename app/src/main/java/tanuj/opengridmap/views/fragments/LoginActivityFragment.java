@@ -1,10 +1,12 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.fragments;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import tanuj.opengridmap.R;
 
 /**
  * A placeholder fragment containing a simple view.

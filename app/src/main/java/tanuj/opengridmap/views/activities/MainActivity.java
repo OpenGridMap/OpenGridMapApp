@@ -43,6 +43,8 @@ public class MainActivity extends AppCompatActivity implements
     private LocationRequest locationRequest;
     private LocationSettingsRequest.Builder locationSettingsRequestBuilder;
 
+    public static int noOfLocationUpdates = 0;
+
 //    private MainActivityFragment fragment;
 
 //    private MockLocationProvider mockLocationProvider;
@@ -119,13 +121,21 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_submissions) {
-            Intent intent = new Intent(getApplicationContext(), SubmissionsActivity.class);
-            startActivity(intent);
+        switch (item.getItemId()) {
+            case R.id.action_settings: {
+                break;
+            }
+            case R.id.action_submissions: {
+                Intent intent = new Intent(getApplicationContext(), SubmissionsActivity.class);
+                startActivity(intent);
+                break;
+            }
+            case R.id.action_about: {
+                Intent intent = new Intent(getApplicationContext(), AboutActivity.class);
+                startActivity(intent);
+                break;
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -157,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements
         if (googleApiClient.isConnected()) {
             startLocationUpdates();
         }
+        noOfLocationUpdates = 0;
     }
 
     @Override
@@ -173,6 +184,9 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "Location Updated, location : " + location.toString());
+        if (noOfLocationUpdates++ >= 5) {
+            disconnectFromGoogleApiClient();
+        }
     }
 
     @Override

@@ -180,34 +180,32 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 public void onImageAvailable(ImageReader reader) {
                     final Context context = getActivity();
 
-                    startTime = System.currentTimeMillis();
-                    mFileName = Long.toString(startTime) + ".jpg";
+                    if (currentLocation != null) {
+                        startTime = System.currentTimeMillis();
+                        mFileName = Long.toString(startTime) + ".jpg";
 
-                    mFile = new File(getActivity().getExternalFilesDir(
-                            tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
+                        mFile = new File(context.getExternalFilesDir(
+                                tanuj.opengridmap.models.Image.IMAGE_STORE_PATH), mFileName);
 
-                    mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage(), mFile));
+                        mBackgroundHandler.post(new ImageSaver(reader.acquireLatestImage(), mFile));
 
-                    if (submission == null) {
-                        submission = new Submission(context);
-                        noSavedImages = 0;
+                        if (submission == null) {
+                            submission = new Submission(context);
+                            noSavedImages = 0;
 
-                        long powerElementId = ((Activity) context).getIntent().getExtras()
-                                .getInt(getString(R.string.key_power_element_id), -1);
+                            long powerElementId = ((Activity) context).getIntent().getExtras()
+                                    .getLong(getString(R.string.key_power_element_id), -1);
 
-                        if (powerElementId > -1) {
-                            submission.addPowerElementById(context, powerElementId);
+                            if (powerElementId > -1) {
+                                submission.addPowerElementById(context, powerElementId);
+                            }
                         }
+
+                        image = new tanuj.opengridmap.models.Image(mFile.getPath(),
+                                currentLocation);
+                        submission.addImage(context, image);
+                        Log.d(TAG, "Image Saved : " + mFile.getPath());
                     }
-
-                    image = new tanuj.opengridmap.models.Image(mFile.getPath(),
-                            currentLocation);
-                    submission.addImage(context, image);
-//                    images.add(image);
-
-//                    displayImageCaptureAnimation();
-
-                    Log.d(TAG, "Image Saved : " + mFile.getPath());
                 }
             };
 
@@ -355,7 +353,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private Handler mMessageHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            Activity activity = getActivity();
+            final Activity activity = getActivity();
             if (activity != null) {
                 Toast.makeText(activity, (String) msg.obj, Toast.LENGTH_SHORT).show();
             }
@@ -858,7 +856,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 e.printStackTrace();
             } finally {
                 mImage.close();
-                if (null != outputStream) {
+                if (outputStream != null) {
                     try {
                         outputStream.close();
                     } catch (IOException e) {
