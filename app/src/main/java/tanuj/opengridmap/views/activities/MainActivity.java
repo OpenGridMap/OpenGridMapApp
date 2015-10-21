@@ -28,6 +28,7 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import tanuj.opengridmap.R;
+import tanuj.opengridmap.SettingsActivity;
 
 public class MainActivity extends AppCompatActivity implements
         LocationListener,
@@ -124,6 +125,8 @@ public class MainActivity extends AppCompatActivity implements
 
         switch (item.getItemId()) {
             case R.id.action_settings: {
+                Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
                 break;
             }
             case R.id.action_submissions: {

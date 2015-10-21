@@ -62,7 +62,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Please Sign In to the App to Continue"/>
+            android:text="@string/text_sign_in"/>
 
         <com.google.android.gms.common.SignInButton
             android:id="@+id/plus_sign_in_button"
@@ -77,17 +77,27 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <LinearLayout android:id="@+id/plus_sign_out_buttons"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:visibility="gone" android:weightSum="2">
+        <LinearLayout
+            android:id="@+id/plus_sign_out_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:weightSum="2">
 
-            <Button android:id="@+id/plus_sign_out_button" style="?android:textAppearanceSmall"
-                android:layout_width="match_parent" android:layout_height="match_parent"
-                android:layout_weight="1" android:text="@string/plus_sign_out" />
+            <Button
+                android:id="@+id/plus_sign_out_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="@string/plus_sign_out" />
 
-            <Button android:id="@+id/plus_disconnect_button"
-                style="?android:textAppearanceSmall" android:layout_width="match_parent"
-                android:layout_height="match_parent" android:layout_weight="1"
+            <Button
+                android:id="@+id/plus_disconnect_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:text="@string/plus_disconnect" />
 
         </LinearLayout>
