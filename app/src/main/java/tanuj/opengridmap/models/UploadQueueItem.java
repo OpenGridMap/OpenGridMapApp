@@ -15,18 +15,16 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
 /**
  * Created by Tanuj on 14/8/2015.
  */
-public class UploadQueueItem {
+public class UploadQueueItem extends Submission{
     private static final String TAG = UploadQueueItem.class.getSimpleName();
 
     public static final int STATUS_UPLOAD_CANCELLED = -2;
     public static final int STATUS_UPLOAD_FAILED = -1;
     public static final int STATUS_QUEUED = 0;
-    public static final int STATUS_UPLOAD_STARTED = 1;
+    public static final int STATUS_UPLOAD_IN_PROGRESS = 1;
     public static final int STATUS_UPLOAD_COMPLETE = 2;
 
     private long id;
-
-    private Submission submission;
 
     private int status = STATUS_QUEUED;
 
@@ -38,8 +36,8 @@ public class UploadQueueItem {
 
     public UploadQueueItem(long id, Submission submission, int status, String payloadsUploaded,
                            Timestamp createdAtTimestamp, Timestamp updatedAtTimestamp) {
+        super(submission);
         this.id = id;
-        this.submission = submission;
         this.status = status;
 
         try {
@@ -61,10 +59,10 @@ public class UploadQueueItem {
     }
 
     public UploadQueueItem(Context context, Submission submission) {
+        super(submission);
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         Timestamp timestamp = new Timestamp(new Date().getTime());
 
-        this.submission = submission;
         this.createdAtTimestamp = timestamp;
         this.updatedAtTimestamp = timestamp;
         this.payloadsUploaded = new JSONObject();
@@ -90,11 +88,11 @@ public class UploadQueueItem {
     }
 
     public Submission getSubmission() {
-        return submission;
+        return super.getSubmission();
     }
 
-    public long getSubmissionId() {
-        return this.submission.getId();
+    public long getSubmissionPayloadsId() {
+        return super.getId();
     }
 
     public int getStatus() {
@@ -122,14 +120,18 @@ public class UploadQueueItem {
         dbHelper.close();
     }
 
+    public int getNoOfPayloads() {
+        return getNoOfImages();
+    }
+
     public void setPayloadsUploaded(JSONObject payloadsUploaded) {
         this.payloadsUploaded = payloadsUploaded;
     }
 
-    public void updatePayloadsUploaded(final Context context, long n) {
+    public void updatePayloadsUploaded(final Context context, Payload payload) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
-        dbHelper.updateQueueItemPayloadUploads(this, n);
+        dbHelper.updateQueueItemPayloadUploads(this, payload.getImageId());
         dbHelper.close();
     }
 
@@ -160,7 +162,7 @@ public class UploadQueueItem {
     public float getUploadCompletion(final Context context) {
         int noOfPayloads = getNoOfPayloadsUploaded(context);
 
-        return (float) noOfPayloads / (float) this.getSubmission().getNoOfImages();
+        return (float) noOfPayloads / (float) getNoOfImages();
     }
 
     public boolean isPayloadUploaded(Payload payload) {
@@ -175,6 +177,6 @@ public class UploadQueueItem {
     }
 
     public boolean isUploadComplete(final Context context) {
-        return getNoOfPayloadsUploaded(context) == submission.getNoOfImages();
+        return getNoOfPayloadsUploaded(context) == getNoOfImages();
     }
 }

@@ -39,7 +39,7 @@ public class Submission {
 
     private int status = STATUS_IMAGE_CAPTURE_PENDING;
 
-    private long submissionId;
+    private long submissionPayloadsId;
 
     private List<Image> images;
 
@@ -61,10 +61,20 @@ public class Submission {
         images = new ArrayList<Image>();
     }
 
+    public Submission(Submission submission) {
+        this.id = submission.getId();
+        this.status = submission.getStatus();
+        this.submissionPayloadsId = submission.getSubmissionPayloadsId();
+        this.images = submission.getImages();
+        this.powerElements = submission.getPowerElements();
+        this.createdTimestamp = submission.getCreatedTimestamp();
+        this.updatedTimestamp = submission.getUpdatedTimestamp();
+    }
+
     public Submission(Context context) {
         this();
 
-        this.submissionId = generateSubmissionId(context);
+        this.submissionPayloadsId = generateSubmissionId(context);
 
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         this.id = dbHelper.addSubmission(this);
@@ -75,7 +85,7 @@ public class Submission {
                       Timestamp updatedTimestamp) {
         this.id = id;
         this.status = status;
-        this.submissionId = submissionId;
+        this.submissionPayloadsId = submissionId;
         this.createdTimestamp = createdTimestamp;
         this.updatedTimestamp = updatedTimestamp;
     }
@@ -104,8 +114,8 @@ public class Submission {
         return uploadStatus;
     }
 
-    public long getSubmissionId() {
-        return submissionId;
+    public long getSubmissionPayloadsId() {
+        return submissionPayloadsId;
     }
 
     public void setUploadStatus(int uploadStatus) {
@@ -213,13 +223,20 @@ public class Submission {
         return false;
     }
 
-    public ArrayList<Payload> getUploadPayloads(Context context, String idToken) {
+    public Payload getUploadPayload(Context context, String idToken, int imageIndex) {
+        updateStatus(context, STATUS_UPLOAD_IN_PROGRESS);
+        return getPayloadByImage(context, idToken, getImage(imageIndex));
+    }
+
+    public ArrayList<Payload> getUploadPayloads(Context context, String idToken, int j) {
         ArrayList<Payload> payloads = new ArrayList<Payload>();
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
         if (status == STATUS_UPLOAD_PENDING) {
             updateStatus(context, STATUS_UPLOAD_IN_PROGRESS);
         }
+
+        for (int i = 0; i < getNoOfImages(); i++)
 
         for (Image image : images) {
             payloads.add(getPayloadByImage(context, idToken, image));
@@ -356,6 +373,10 @@ public class Submission {
             return true;
         }
         return false;
+    }
+
+    public Submission getSubmission() {
+        return this;
     }
 
     static class CompareImagesByAccuracy implements Comparator<Image> {

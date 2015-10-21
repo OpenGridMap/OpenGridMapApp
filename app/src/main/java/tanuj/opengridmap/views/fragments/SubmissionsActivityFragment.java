@@ -85,7 +85,7 @@ public class SubmissionsActivityFragment extends Fragment {
         Log.v(TAG, "UpdateUI");
         final Long submissionId = intent.getLongExtra(getString(R.string.key_submission_id), -1);
         final int uploadCompletion = intent.getIntExtra(getString(R.string.key_upload_completion),
-                0);
+                -1);
 
         Log.d(TAG, "Submission ID : " + submissionId + "    Upload Completion : " +
                 uploadCompletion);
@@ -94,7 +94,7 @@ public class SubmissionsActivityFragment extends Fragment {
         submissions = dbHelper.getSubmissions(Submission.STATUS_SUBMISSION_CONFIRMED);
         dbHelper.close();
 
-        if (submissionId != -1) {
+        if (submissionId != -1 && uploadCompletion != -1) {
             for (Submission submission : submissions) {
                 if (submission.getId() == submissionId) {
                     submission.setUploadStatus(uploadCompletion);

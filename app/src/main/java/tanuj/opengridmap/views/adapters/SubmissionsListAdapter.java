@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Location;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,8 @@ import tanuj.opengridmap.utils.ImageUtils;
 import tanuj.opengridmap.views.custom_views.CircularProgressBar;
 
 public class SubmissionsListAdapter extends BaseAdapter {
+    private static final String TAG = SubmissionsListAdapter.class.getSimpleName();
+
     private Context context = null;
     private List<Submission> submissions;
     private LayoutInflater layoutInflater = null;
@@ -88,48 +91,36 @@ public class SubmissionsListAdapter extends BaseAdapter {
 
         int submissionStatus = submission.getStatus();
 
+        Log.d(TAG, "Submission Status : " + submissionStatus);
+
         if (submissionStatus <= Submission.STATUS_SUBMISSION_CONFIRMED) {
-            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
-
-            progressBar.setVisibility(View.GONE);
-            submissionStatusImage.setVisibility(View.VISIBLE);
-
-            ImageUtils.setImageViewDrawable(context, submissionStatusImage,
-                    R.drawable.verification24);
+            showStatusImage(progressBar, submissionStatusImage, R.drawable.verification24);
         } else if (submissionStatus == Submission.STATUS_UPLOAD_IN_PROGRESS) {
             int submissionUploadProgress = submission.getUploadStatus();
 
-            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
-
-            submissionStatusImage.setVisibility(View.GONE);
-
-            if (progressBar.getVisibility() == View.GONE) {
-                progressBar.setVisibility(View.VISIBLE);
-            }
-
-            progressBar.setProgress(submissionUploadProgress);
-
             if (submissionUploadProgress == 100) {
-                powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
-
-                progressBar.setVisibility(View.GONE);
-
-                ImageUtils.setImageViewDrawable(context, submissionStatusImage,
-                        R.drawable.double126);
-                submissionStatusImage.setVisibility(View.VISIBLE);
+                showStatusImage(progressBar, submissionStatusImage, R.drawable.double126);
+            } else {
+                updateProgressBar(progressBar, submissionStatusImage, submissionUploadProgress);
             }
         } else if (submissionStatus >= Submission.STATUS_SUBMITTED_PENDING_REVIEW) {
-            powerElementTagsTextView.setTextColor(getPowerElementsTextColor(submission));
-
-            progressBar.setVisibility(View.GONE);
-
-            ImageUtils.setImageViewDrawable(context, submissionStatusImage,
-                    R.drawable.double126);
-
-            submissionStatusImage.setVisibility(View.VISIBLE);
+            showStatusImage(progressBar, submissionStatusImage, R.drawable.double126);
         }
 
         return view;
+    }
+
+    private void updateProgressBar(CircularProgressBar progressBar, ImageView submissionStatusImage, int submissionUploadProgress) {
+        submissionStatusImage.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+        progressBar.setProgress(submissionUploadProgress);
+    }
+
+    private void showStatusImage(CircularProgressBar progressBar, ImageView submissionStatusImage,
+                                 int drawableId) {
+        progressBar.setVisibility(View.GONE);
+        submissionStatusImage.setVisibility(View.VISIBLE);
+        ImageUtils.setImageViewDrawable(context, submissionStatusImage, drawableId);
     }
 
     private int getPowerElementsTextColor(Submission submission) {

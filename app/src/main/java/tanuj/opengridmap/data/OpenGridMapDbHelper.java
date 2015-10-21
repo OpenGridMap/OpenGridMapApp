@@ -181,7 +181,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
         values.put(SubmissionEntry.COLUMN_STATUS, submission.getStatus());
-        values.put(SubmissionEntry.COLUMN_SUBMISSION_ID, submission.getSubmissionId());
+        values.put(SubmissionEntry.COLUMN_SUBMISSION_ID, submission.getSubmissionPayloadsId());
         values.put(SubmissionEntry.COLUMN_CREATED_TIMESTAMP, timestamp.toString());
         values.put(SubmissionEntry.COLUMN_UPDATED_TIMESTAMP, timestamp.toString());
 
@@ -509,7 +509,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
 
-        values.put(UploadQueueEntry.COLUMN_SUBMISSION_ID, item.getSubmissionId());
+        values.put(UploadQueueEntry.COLUMN_SUBMISSION_ID, item.getSubmissionPayloadsId());
         values.put(UploadQueueEntry.COLUMN_STATUS, item.getStatus());
         values.put(UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED, item.getPayloadsUploadedString());
         values.put(UploadQueueEntry.COLUMN_CREATED_TIMESTAMP, item.getCreatedAtTimestamp().
