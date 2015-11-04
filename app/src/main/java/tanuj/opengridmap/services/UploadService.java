@@ -30,6 +30,7 @@ import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Payload;
 import tanuj.opengridmap.models.UploadQueueItem;
+import tanuj.opengridmap.utils.ConnectivityUtil;
 
 public class UploadService extends Service implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
@@ -84,7 +85,12 @@ public class UploadService extends Service implements GoogleApiClient.Connection
     }
 
     private void processUploadQueue() {
-        new HandlePayloadsTask().execute();
+        if (ConnectivityUtil.isConnectionPossible(getApplicationContext())) {
+            new HandlePayloadsTask().execute();
+        } else {
+            Log.d(TAG, "Permitted Connectivity not available");
+            stopSelf();
+        }
     }
 
     @Override
@@ -139,7 +145,6 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
         try {
             token = GoogleAuthUtil.getToken(context, account, scopes);
-            return token;
         } catch (UserRecoverableAuthException e) {
             e.printStackTrace();
             Log.e(TAG, "Error Retrieving ID Token : " + e);
@@ -183,8 +188,10 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                 int noOfPayloads = queueItem.getNoOfPayloads();
 
                 for (int j = 0; j < noOfPayloads; j++) {
-                    handlePayload(context, httpClient, queueItem, j);
-                    publishProgress(queueItem);
+                    if (ConnectivityUtil.isConnectionPossible(context)) {
+                        handlePayload(context, httpClient, queueItem, j);
+                        publishProgress(queueItem);
+                    } else return;
                 }
 
                 if (queueItem.isUploadComplete(context)) {
@@ -208,7 +215,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                         MAX_UPLOAD_ATTEMPTS);
 
                 String response = getResponseStringFromHttpResponse(httpResponse);
-                Log.d(TAG, response);
+//                Log.d(TAG, response);
 
                 if (httpResponse != null &&
                         httpResponse.getStatusLine().getStatusCode() ==  200) {

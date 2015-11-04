@@ -280,7 +280,7 @@ public class Submission {
             point.put(context.getString(R.string.json_key_properties), properties);
 
             json.put(context.getString(R.string.json_key_id_token), idToken);
-            json.put(context.getString(R.string.json_key_submission_id), createdTimestamp.getNanos());
+            json.put(context.getString(R.string.json_key_submission_id), createdTimestamp.getTime());
             json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
             json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
             json.put(context.getString(R.string.json_key_point), point);

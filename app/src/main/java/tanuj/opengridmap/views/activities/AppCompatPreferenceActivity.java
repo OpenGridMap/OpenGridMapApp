@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.activities;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

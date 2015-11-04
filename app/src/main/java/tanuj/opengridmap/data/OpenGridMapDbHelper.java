@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapContract.ImageEntry;
 import tanuj.opengridmap.data.OpenGridMapContract.PowerElementEntry;
 import tanuj.opengridmap.data.OpenGridMapContract.PowerElementSubmissionEntry;
@@ -157,11 +156,9 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
     }
 
     private void seedPowerElementsTable(SQLiteDatabase db) {
-        seedPowerElement(new PowerElement(0, "Transformer", R.drawable.transformer), db);
-        seedPowerElement(new PowerElement(1, "Substation", R.drawable.substation), db);
-        seedPowerElement(new PowerElement(2, "Generator", R.drawable.power_station), db);
-        seedPowerElement(new PowerElement(3, "PV or Wind Farm", R.drawable.pv_wind), db);
-        seedPowerElement(new PowerElement(4, "Other", R.drawable.lightening_logo), db);
+        for (PowerElement powerElement: PowerElementsSeedData.powerElements) {
+            seedPowerElement(powerElement, db);
+        }
     }
 
     @Override
@@ -391,6 +388,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
     private void seedPowerElement(PowerElement powerElement, SQLiteDatabase db) {
         ContentValues values = new ContentValues();
 
+        values.put(PowerElementEntry._ID, powerElement.getId());
         values.put(PowerElementEntry.COLUMN_POWER_ELEMENT_NAME, powerElement.getName());
         values.put(PowerElementEntry.COLUMN_DESCRIPTION, powerElement.getDescription());
 
@@ -413,8 +411,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getReadableDatabase();
 
-        Cursor cursor = db.query(PowerElementEntry.TABLE_NAME, powerElementColumns, PowerElementEntry._ID +
-                "= ?", new String[]{Long.toString(id)}, null, null, null);
+        Cursor cursor = db.query(PowerElementEntry.TABLE_NAME, powerElementColumns,
+                PowerElementEntry._ID + "= ?", new String[]{Long.toString(id)}, null, null, null);
 
         PowerElement powerElement = null;
 

@@ -6,7 +6,9 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -16,7 +18,9 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.plus.People;
 import com.google.android.gms.plus.Plus;
 
 import org.apache.http.HttpResponse;
@@ -39,12 +43,14 @@ import java.util.Set;
 import tanuj.opengridmap.R;
 
 public class LoginActivity extends AppCompatActivity implements
-        View.OnClickListener, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ServerAuthCodeCallbacks {
+        View.OnClickListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        GoogleApiClient.ServerAuthCodeCallbacks, ResultCallback<People.LoadPeopleResult> {
 
     private static final String TAG = LoginActivity.class.getSimpleName();
 
-    private static final int STATE_DEFUALT = 0;
+    private static final int STATE_DEFAULT = 0;
     private static final int STATE_SIGN_IN = 1;
     private static final int STATE_IN_PROGRESS = 2;
 
@@ -62,6 +68,8 @@ public class LoginActivity extends AppCompatActivity implements
 
     private int signInProgress;
 
+    private boolean signedIn = false;
+
     private PendingIntent signInIntent;
 
     private int signInError;
@@ -76,6 +84,16 @@ public class LoginActivity extends AppCompatActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if (preferences.contains(getString(R.string.pref_key_signed_in)) &&
+                preferences.getBoolean(getString(R.string.pref_key_signed_in), false)) {
+            signedIn = true;
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         getSupportActionBar().hide();
@@ -84,7 +102,7 @@ public class LoginActivity extends AppCompatActivity implements
         signInButton.setOnClickListener(this);
 
         if (savedInstanceState != null) {
-            signInProgress = savedInstanceState.getInt(KEY_SAVED_PROGRESS, STATE_DEFUALT);
+            signInProgress = savedInstanceState.getInt(KEY_SAVED_PROGRESS, STATE_DEFAULT);
         }
 
         googleApiClient = buildGoogleApiClient();
@@ -96,7 +114,9 @@ public class LoginActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        googleApiClient.connect();
+        if (!signedIn) {
+            googleApiClient.connect();
+        }
     }
 
     @Override
@@ -132,7 +152,7 @@ public class LoginActivity extends AppCompatActivity implements
                 if (resultCode == RESULT_OK) {
                     signInProgress = STATE_SIGN_IN;
                 } else {
-                    signInProgress = STATE_DEFUALT;
+                    signInProgress = STATE_DEFAULT;
                 }
 
                 if (!googleApiClient.isConnecting()) {
@@ -159,10 +179,12 @@ public class LoginActivity extends AppCompatActivity implements
         showSpinnerSection();
 
         Log.i(TAG, "Connected to Google API Services");
+        signInProgress = STATE_DEFAULT;
 
-        Plus.PeopleApi.getCurrentPerson(googleApiClient);
-
-        signInProgress = STATE_DEFUALT;
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(getString(R.string.pref_key_signed_in), true);
+        editor.apply();
 
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         startActivity(intent);
@@ -289,7 +311,7 @@ public class LoginActivity extends AppCompatActivity implements
                         @Override
                         public void onCancel(DialogInterface dialogInterface) {
                             Log.e(TAG, "Google Play Services resolution Cancelled");
-                            signInProgress = STATE_DEFUALT;
+                            signInProgress = STATE_DEFAULT;
                         }
                     });
         } else {
@@ -300,9 +322,14 @@ public class LoginActivity extends AppCompatActivity implements
                         public void onClick(DialogInterface dialogInterface, int i) {
                             Log.e(TAG, "Google Play Services Error could not be resolved " +
                                     signInError);
-                            signInProgress = STATE_DEFUALT;
+                            signInProgress = STATE_DEFAULT;
                         }
                     }).create();
         }
+    }
+
+    @Override
+    public void onResult(People.LoadPeopleResult loadPeopleResult) {
+
     }
 }

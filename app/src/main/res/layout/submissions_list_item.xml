@@ -155,21 +155,4 @@
         </LinearLayout>
 
     </LinearLayout>
-
-    <!--<LinearLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:orientation="vertical">-->
-
-        <!--<ProgressBar-->
-            <!--android:id="@+id/upload_progress_bar"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent"-->
-            <!--style="?android:attr/progressBarStyleHorizontal"-->
-            <!--android:visibility="visible"-->
-            <!--android:progress="20"-->
-            <!--android:max="100"/>-->
-
-    <!--</LinearLayout>-->
-
 </LinearLayout>

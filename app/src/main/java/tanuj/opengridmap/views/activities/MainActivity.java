@@ -26,9 +26,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.plus.Plus;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.SettingsActivity;
 
 public class MainActivity extends AppCompatActivity implements
         LocationListener,
@@ -82,8 +82,11 @@ public class MainActivity extends AppCompatActivity implements
         createLocationRequest();
         buildGoogleApiClient();
 
-//        Intent intent = new Intent(context, UploadService.class);
-//        startService(intent);
+
+//        Intent intent = new Intent(context, CameraActivity.class);
+//        intent.putExtra(getString(R.string.key_power_element_id), 1);
+//        startActivity(intent);
+
 //        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
 //            @Override
 //            public void onResult(LocationSettingsResult locationSettingsResult) {
@@ -258,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements
     private void buildGoogleApiClient() {
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
+                .addApi(Plus.API, Plus.PlusOptions.builder().build())
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();

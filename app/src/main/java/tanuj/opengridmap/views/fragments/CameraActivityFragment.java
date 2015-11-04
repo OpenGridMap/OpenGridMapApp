@@ -14,6 +14,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimationDrawable;
@@ -40,14 +41,17 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,11 +60,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
@@ -68,14 +69,15 @@ import java.util.concurrent.TimeUnit;
 
 import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.views.activities.TagSelectionActivity;
-import tanuj.opengridmap.services.ThumbnailGenerationService;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.services.ThumbnailGenerationService;
+import tanuj.opengridmap.utils.CameraUtils;
+import tanuj.opengridmap.views.activities.TagSelectionActivity;
 import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
 
 @SuppressLint("NewApi")
-public class CameraActivityFragment extends Fragment implements View.OnClickListener {
+public class CameraActivityFragment extends Fragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
     private static final String TAG = CameraActivityFragment.class.getSimpleName();
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -196,6 +198,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                             long powerElementId = ((Activity) context).getIntent().getExtras()
                                     .getLong(getString(R.string.key_power_element_id), -1);
 
+                            Log.d(TAG, "Power Element ID : " + powerElementId);
+
                             if (powerElementId > -1) {
                                 submission.addPowerElementById(context, powerElementId);
                             }
@@ -231,7 +235,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private static int noSavedImages = 0;
 
-    private CaptureRequest.Builder mPreviewRequestBuidler;
+    private CaptureRequest.Builder mPreviewRequestBuilder;
 
     private CaptureRequest mPreviewRequest;
 
@@ -261,6 +265,14 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
     private static TextView cameraDialogBoxTextView = null;
 
     private LinearLayout cameraTextureOverlay = null;
+
+    private Button zoomPlusButton;
+
+    private Button zoomMinusButton;
+
+    private SeekBar zoomSeekBar;
+
+    private double zoom = 1;
 
     private long startTime;
     private long finishTime;
@@ -369,34 +381,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         mMessageHandler.sendMessage(message);
     }
 
-    private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
-        List<Size> bigEnough = new ArrayList<Size>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-
-        Log.d(TAG, "Len Choices : " + choices.length);
-
-        for (Size option : choices) {
-            if (option.getHeight() == option.getWidth() * h / w && option.getWidth() >= width &&
-                    option.getHeight() >= height) {
-                bigEnough.add(option);
-                Log.d(TAG, "Height : " + option.getHeight() + " Width : " + option.getWidth());
-                Log.d(TAG, "Diff Height : " + (option.getHeight() - height) + " Width : " +
-                        (option.getWidth() - width));
-            }
-        }
-
-        if (bigEnough.size() > 0) {
-            Size optimalSize = Collections.max(bigEnough, new CompareSizesByArea());
-            Log.d(TAG, "Chosen Size | Height : " + optimalSize.getHeight() + " Width : " +
-                    optimalSize.getWidth());
-            return optimalSize;
-        } else {
-            Log.e(TAG, "Could not find any suitable preview area");
-            return choices[0];
-        }
-    };
-
     public static CameraActivityFragment newInstance() {
         CameraActivityFragment fragment = new CameraActivityFragment();
         fragment.setRetainInstance(true);
@@ -430,6 +414,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
         cameraTextureOverlay = (LinearLayout) view.findViewById(R.id.camera_output_texture_overlay);
 
+        zoomSeekBar = (SeekBar) view.findViewById(R.id.zoom_seek_bar);
+
+        view.findViewById(R.id.touch_layer).setOnTouchListener(onTouchListener);
+
+        zoomSeekBar.setOnSeekBarChangeListener(this);
+
         if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.key_submission_id))) {
             long submissionId = savedInstanceState.getLong(getString(R.string.key_submission_id));
 
@@ -450,6 +440,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         activity = getActivity();
 
         return view;
+    }
+
+    public static double calculateDistance(float x1, float y1, float x2, float y2) {
+        float x = x1 - x2;
+        float y = y1 - y2;
+        return Math.sqrt(x * x + y * y);
     }
 
     @Override
@@ -525,7 +521,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-                        new CompareSizesByArea());
+                        new CameraUtils.CompareSizesByArea());
 
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, 2);
@@ -533,7 +529,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 mImageReader.setOnImageAvailableListener(mOnImageAvailableListener,
                         mBackgroundHandler);
 
-                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), width,
+                mPreviewSize = CameraUtils.chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), width,
                         height, largest);
 
                 int orientation = getResources().getConfiguration().orientation;
@@ -628,10 +624,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
             Surface surface =  new Surface(texture);
 
-            mPreviewRequestBuidler = mCameraDevice.createCaptureRequest(
+            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(
                     CameraDevice.TEMPLATE_PREVIEW);
 
-            mPreviewRequestBuidler.addTarget(surface);
+            mPreviewRequestBuilder.addTarget(surface);
 
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
@@ -645,12 +641,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                             mCaptureSession = session;
 
                             try {
-                                mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_MODE,
+                                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_MODE,
+                                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
-                                mPreviewRequest = mPreviewRequestBuidler.build();
+                                mPreviewRequest = mPreviewRequestBuilder.build();
                                 mCaptureSession.setRepeatingRequest(mPreviewRequest,
                                         mCaptureCallback, mBackgroundHandler);
                             } catch (CameraAccessException e) {
@@ -710,12 +706,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private void lockFocus() {
         try {
-            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_TRIGGER,
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
 
             mState = STATE_WAITING_LOCK;
 
-            mCaptureSession.setRepeatingRequest(mPreviewRequestBuidler.build(), mCaptureCallback,
+            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -724,11 +720,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private void runPrecaptureSequence() {
         try {
-            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
 
             mState = STATE_WAITING_PRECAPTURE;
-            mCaptureSession.capture(mPreviewRequestBuidler.build(), mCaptureCallback,
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
 //            displayImageCaptureAnimation();
         } catch (CameraAccessException e) {
@@ -747,8 +743,13 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 return;
             }
 
+            Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
+                    mPreviewSize.getHeight());
+            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
+
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(
                     CameraDevice.TEMPLATE_STILL_CAPTURE);
+
             captureBuilder.addTarget(mImageReader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
@@ -785,11 +786,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private void unlockFocus() {
         try {
-            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AF_TRIGGER,
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
-            mPreviewRequestBuidler.set(CaptureRequest.CONTROL_AE_MODE,
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-            mCaptureSession.capture(mPreviewRequestBuidler.build(), mCaptureCallback,
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
 
             mState = STATE_PREVIEW;
@@ -814,6 +815,35 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
+    private void setZoom(double z) {
+        if (mCameraDevice == null) return;
+
+        float maxZoom = CameraUtils.getMaxZoom(getActivity(), mCameraDevice.getId());
+        float minZoom = 1;
+
+        if (z > maxZoom) {
+            z = maxZoom;
+        }
+
+        if (z < minZoom) {
+            z = minZoom;
+        }
+
+        if (z >= minZoom && z <= maxZoom) {
+            try {
+                Rect previewRect = CameraUtils.getZoomRect(z, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
+                mPreviewRequest = mPreviewRequestBuilder.build();
+                mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
+                        mBackgroundHandler);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            } finally {
+                zoom = z;
+            }
+        }
+    }
+
     public void updatePreview(final Bitmap bitmap) {
         final Activity activity = getActivity();
         if (cameraPreviewImageView == null) {
@@ -827,6 +857,60 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             }
         });
     }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        setZoom(CameraUtils.getZoomLevelFromSeekBarProgress(progress));
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+    }
+
+    private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
+        private double initialDistance = -1;
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (event.getPointerCount() == 2) {
+                if (initialDistance == -1) {
+                    initialDistance = calculateDistance(event.getX(0), event.getY(0),
+                            event.getX(1), event.getY(1));
+                } else {
+                    double distance = calculateDistance(event.getX(0), event.getY(0),
+                            event.getX(1), event.getY(1));
+
+                    double z = (distance / initialDistance) * zoom * 0.05;
+
+                    z = distance > initialDistance ? zoom + z : zoom - z;
+
+                    float maxZoom = CameraUtils.getMaxZoom(getActivity(), mCameraDevice.getId());
+                    float minZoom = 1;
+
+                    if (z > maxZoom) {
+                        z = maxZoom;
+                    }
+
+                    if (z < minZoom) {
+                        z = minZoom;
+                    }
+
+                    setZoom(z);
+                    zoomSeekBar.setProgress(CameraUtils.getSeekBarProgressFromZoomValue(z));
+                }
+            }
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                initialDistance = -1;
+                Log.d(TAG, "Touch Up");
+            }
+            return true;
+        }
+    };
 
     private static class ImageSaver implements Runnable {
         private final Image mImage;
@@ -869,14 +953,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     }
                 }
             }
-        }
-    }
-
-    static class CompareSizesByArea implements Comparator<Size> {
-        @Override
-        public int compare(Size lhs, Size rhs) {
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
         }
     }
 

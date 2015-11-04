@@ -72,11 +72,19 @@
                     android:layout_alignParentBottom="true"/>
             </RelativeLayout>
 
+            <ImageView
+                android:id="@+id/camera_preview"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:layout_marginBottom="21dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:scaleType="centerCrop" />
+
             <ImageButton
                 android:id="@+id/camera_shutter_button"
                 style="?android:borderlessButtonStyle"
                 android:layout_width="match_parent"
-                android:layout_height="250dp"
+                android:layout_height="210dp"
                 android:layout_margin="0dp"
                 android:paddingTop="10dp"
                 android:paddingBottom="10dp"
@@ -96,6 +104,7 @@
                 android:src="@drawable/verification24"
                 android:scaleType="fitCenter"
                 android:paddingTop="21dp"
+                android:layout_marginTop="21dp"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
@@ -121,6 +130,13 @@
             android:orientation="vertical"
             android:gravity="center">
             <include layout="@layout/camera_dialog_box" />
+
+            <LinearLayout
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end">
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -134,28 +150,35 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginRight="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="10dp"
-        android:gravity="end|bottom"
-        android:layout_gravity="end|right">
+        android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/touch_layer"
             android:layout_width="0dip"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="80"
-            android:orientation="vertical"
-            android:gravity="end">
-            <ImageView
-                android:id="@+id/camera_preview"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:scaleType="centerCrop" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical|end">
+
+            <SeekBar
+                android:id="@+id/zoom_seek_bar"
+                android:layout_width="250dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="-80dp"
+                android:layout_marginRight="-80dp"
+                android:max="300"
+                android:rotation="270" />
+
+            <!--<ImageView-->
+            <!--android:id="@+id/camera_preview"-->
+                <!--android:layout_width="60dp"-->
+                <!--android:layout_height="60dp"-->
+                <!--android:scaleType="centerCrop" />-->
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="0dip"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="20"
             android:gravity="center">
         </LinearLayout>
