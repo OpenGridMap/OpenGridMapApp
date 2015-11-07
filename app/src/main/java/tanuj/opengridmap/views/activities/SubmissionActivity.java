@@ -145,7 +145,7 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 4;
+            return 3;
         }
 
         @Override
@@ -281,6 +281,7 @@ public class SubmissionActivity extends AppCompatActivity implements ActionBar.T
                     mapWebView.getSettings().setSupportZoom(true);
                     mapWebView.getSettings().setBuiltInZoomControls(true);
                     mapWebView.loadUrl(url);
+                    break;
                 }
             }
 

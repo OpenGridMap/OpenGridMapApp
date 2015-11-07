@@ -3,8 +3,9 @@
     <string name="app_name">Open Grid Map</string>
 
     <!-- Menu -->
-    <string name="action_settings">Settings</string>
     <string name="action_submissions">Submissions</string>
+    <string name="action_map">Map</string>
+    <string name="action_settings">Settings</string>
     <string name="action_about">About</string>
 
     <!-- Login Activity -->
@@ -31,10 +32,17 @@
     <string name="title_section1">Submission Info</string>
     <string name="title_section2">Images</string>
     <string name="title_section3">Tags</string>
-    <string name="title_section4">Maps</string>
+    <string name="title_section4">Map</string>
 
     <!-- Tag Selection Activity -->
     <string name="title_activity_tag_selection">Select any additional tags if any</string>
+
+    <!-- About Activity -->
+    <string name="title_activity_about">About Open Grid Map</string>
+    <string name="label_about">About</string>
+    <string name="text_about">We are an open community that crowdsources realistic power grid data to be used for research purposes. Here you will find the tools for crowdsourcing power grid data. The goal is to create an open platform for inferring realistic power grids based on actual data. Our vision is to provide a tool to researchers and practitioners that is able to produce realistic input data for simulation studies. OpenGridMap will support the entire process from data collection to formatting grid data for various purposes. We explore innovative ways to capture data and produce power grid approximations, e.g., using smartphone apps, drones, expert classification, existing map APIs, and graph inference algorithms. We are still in the early developing phase and we could really use your help. Join us and lets map the world\'s power grid!!! <a href="https://www.facebook.com/opengridmap">facebook page</a></string>
+    <string name="label_contact">Contact</string>
+    <string name="text_contact">For any inquiries please contact Jose (<a href="mailto:j.rivera@tum.de">j.rivera@tum.de</a>). The project was started by the chair for applications and middleware systems of TU Munich and is supported by a German Federal Ministry of Education and Research grant (BMBF 01IS12057) and the Alexander von Humbolt Foundation.</string>
 
     <!-- Activity extras -->
     <string name="key_power_element_id" translatable="false">power_element_id</string>
@@ -42,6 +50,8 @@
     <string name="key_upload_completion" translatable="false">upload_completion</string>
 
     <!-- Upload Service -->
+    <string name="json_key_data_packet" translatable="false">data_packet</string>
+    <string name="json_key_hash" translatable="false">hash</string>
     <string name="json_key_id_token" translatable="false">id_token</string>
     <string name="json_key_submission_id" translatable="false">submission_id</string>
     <string name="json_key_image" translatable="false">image</string>
@@ -59,7 +69,10 @@
     <string name="json_key_power_element_tags" translatable="false">power_element_tags</string>
     <string name="json_value_point" translatable="false">point</string>
     <string name="title_activity_alt_submission">AltSubmissionActivity</string>
-    <string name="error_response_invalid_id_token" translatable="false">Invalid Id Token</string>
+    <string name="response_key_status">status</string>
+    <string name="response_key_received_data">received_data</string>
+    <string name="response_error_invalid_id_token" translatable="false">Invalid Id Token</string>
+    <string name="response_status_ok" translatable="false">ok</string>
 
     <!-- Labels -->
     <string name="label_latitude">Latitude : </string>

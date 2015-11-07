@@ -74,6 +74,23 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
+        <activity
+            android:name=".views.activities.AboutActivity"
+            android:label="@string/title_activity_about" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".views.activities.MainActivity" />
+        </activity>
+        <activity android:name=".views.activities.SettingsActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".views.activities.MainActivity" />
+        </activity>
+        <activity android:name=".views.activities.MapActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".views.activities.MainActivity" />
+        </activity>
 
         <receiver
             android:name=".broadcastreceivers.WifiStateReceiver"
@@ -81,7 +98,6 @@
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-                <!-- <action android:name="android.net.wifi.WIFI_STATE_CHANGED"></action> -->
             </intent-filter>
         </receiver>
 
@@ -99,17 +115,6 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-
-        <activity android:name=".views.activities.AboutActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.MainActivity" />
-        </activity>
-        <activity android:name=".views.activities.SettingsActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.MainActivity" />
-        </activity>
     </application>
 
 </manifest>

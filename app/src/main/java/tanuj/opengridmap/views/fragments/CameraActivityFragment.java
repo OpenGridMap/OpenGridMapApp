@@ -1,6 +1,5 @@
 package tanuj.opengridmap.views.fragments;
 
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -67,7 +66,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
@@ -395,12 +393,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         View view = inflater.inflate(R.layout.fragment_camera, container, false);
         final Context context = getActivity();
 
-        if (BuildConfig.DEBUG) {
-            latitudeTextView = (TextView) view.findViewById(R.id.latitude);
-            longitudeTextView = (TextView) view.findViewById(R.id.longitude);
-            accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
-            bearingTextView = (TextView) view.findViewById(R.id.bearing);
-        }
+//        if (BuildConfig.DEBUG) {
+//            latitudeTextView = (TextView) view.findViewById(R.id.latitude);
+//            longitudeTextView = (TextView) view.findViewById(R.id.longitude);
+//            accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
+//            bearingTextView = (TextView) view.findViewById(R.id.bearing);
+//        }
 
         confirmButton = (ImageButton) view.findViewById(R.id.camera_confirm_button);
         cameraShutterButton = (ImageButton) view.findViewById(R.id.camera_shutter_button);
@@ -416,8 +414,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
         zoomSeekBar = (SeekBar) view.findViewById(R.id.zoom_seek_bar);
 
-        view.findViewById(R.id.touch_layer).setOnTouchListener(onTouchListener);
-
+        mTextureView.setOnTouchListener(onTouchListener);
         zoomSeekBar.setOnSeekBarChangeListener(this);
 
         if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.key_submission_id))) {
@@ -645,6 +642,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                                final Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
+                                        mPreviewSize.getHeight());
+                                mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
 
                                 mPreviewRequest = mPreviewRequestBuilder.build();
                                 mCaptureSession.setRepeatingRequest(mPreviewRequest,
@@ -708,9 +708,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
         try {
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
-
             mState = STATE_WAITING_LOCK;
-
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
@@ -743,10 +741,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                 return;
             }
 
-            Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
-                    mPreviewSize.getHeight());
-            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
-
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(
                     CameraDevice.TEMPLATE_STILL_CAPTURE);
 
@@ -758,6 +752,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+
+            final Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
+                    mPreviewSize.getHeight());
+            captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
 
             CameraCaptureSession.CaptureCallback captureCallback = new
                     CameraCaptureSession.CaptureCallback() {
@@ -790,6 +788,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+            Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
+                    mPreviewSize.getHeight());
+            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
 
@@ -876,15 +877,35 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if (event.getPointerCount() == 2) {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                initialDistance = -1;
+                Log.d(TAG, "Touch Up");
+            } else if (event.getPointerCount() == 2) {
                 if (initialDistance == -1) {
                     initialDistance = calculateDistance(event.getX(0), event.getY(0),
                             event.getX(1), event.getY(1));
+                    Log.d(TAG, "Initial Distance : " + initialDistance);
                 } else {
                     double distance = calculateDistance(event.getX(0), event.getY(0),
                             event.getX(1), event.getY(1));
+                    double dampingFactor = 0.12;
 
-                    double z = (distance / initialDistance) * zoom * 0.05;
+                    if (initialDistance < 350) {
+                        dampingFactor /= 3;
+                    } else if (initialDistance < 450) {
+                        dampingFactor /= 2;
+                    } else if (initialDistance > 1200) {
+                        dampingFactor /= 1.5;
+                    } else if (initialDistance > 1400) {
+                        dampingFactor /= 2;
+                    } else if (initialDistance > 1500) {
+                        dampingFactor /= 4;
+                    }
+
+                    double z = (distance / initialDistance) * zoom * dampingFactor;
+
+//                    Log.d(TAG, "Distance : " + distance);
+//                    Log.d(TAG, "Z : " + z);
 
                     z = distance > initialDistance ? zoom + z : zoom - z;
 
@@ -900,13 +921,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     }
 
                     setZoom(z);
+
                     zoomSeekBar.setProgress(CameraUtils.getSeekBarProgressFromZoomValue(z));
                 }
-            }
-
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                initialDistance = -1;
-                Log.d(TAG, "Touch Up");
             }
             return true;
         }

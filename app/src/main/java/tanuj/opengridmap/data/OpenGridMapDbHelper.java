@@ -609,7 +609,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return uploadQueueItems;
     }
 
-    public UploadQueueItem getQueueItem() {
+    public UploadQueueItem getPendingQueueItem() {
         UploadQueueItem queueItem = null;
 
         SQLiteDatabase db = getReadableDatabase();

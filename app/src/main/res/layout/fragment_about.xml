@@ -1,6 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center">
+                <ImageView
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:src="@drawable/open_grid_map_logo_rounded"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Base.TextAppearance.AppCompat.Title"
+                android:text="@string/label_about"/>
+
+            <TextView
+                android:id="@+id/text_view_about"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/text_about"
+                android:elegantTextHeight="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/Base.TextAppearance.AppCompat.Headline"
+                android:text="@string/label_contact" />
+
+            <TextView
+                android:id="@+id/text_view_contact"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:elegantTextHeight="true"
+                android:text="@string/text_contact"
+                android:autoLink="email"/>
+        </LinearLayout>
+
+    </ScrollView>
 
 </LinearLayout>

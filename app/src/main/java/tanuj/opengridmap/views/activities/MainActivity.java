@@ -73,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements
 //        FragmentManager fragmentManager = getSupportFragmentManager();
 //        fragment = (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
 
+//        Intent intent = new Intent(context, UploadService.class);
+//        startService(intent);
+
         if (isGooglePlayServicesAvailable()) {
             Log.d(TAG, "Google Play Services Available");
         } else {
@@ -81,39 +84,6 @@ public class MainActivity extends AppCompatActivity implements
 
         createLocationRequest();
         buildGoogleApiClient();
-
-
-//        Intent intent = new Intent(context, CameraActivity.class);
-//        intent.putExtra(getString(R.string.key_power_element_id), 1);
-//        startActivity(intent);
-
-//        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
-//            @Override
-//            public void onResult(LocationSettingsResult locationSettingsResult) {
-//                final Status status = locationSettingsResult.getStatus();
-//                final LocationSettingsStates locationSettingsStates= locationSettingsResult.getLocationSettingsStates();
-//                switch (status.getStatusCode()) {
-//                    case LocationSettingsStatusCodes.SUCCESS:
-//                        Log.d(TAG, "LOCATION SUCCESS");
-//                        break;
-//                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-//                        Log.d(TAG, "LOCATION PERMISSION REQUIRED");
-//                        try {
-//                            // Show the dialog by calling startResolutionForResult(),
-//                            // and check the result in onActivityResult().
-//                            status.startResolutionForResult(
-//                                    MainActivity.this,
-//                                    1000);
-//                        } catch (IntentSender.SendIntentException e) {
-//                            // Ignore the error.
-//                        }
-//                        break;
-//                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-//                        Log.d(TAG, "LOCATION UNAVAILABLE");
-//                        break;
-//                }
-//            }
-//        });
     }
 
 
@@ -127,24 +97,30 @@ public class MainActivity extends AppCompatActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
-            case R.id.action_settings: {
-                Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
-                startActivity(intent);
+            case R.id.action_submissions: {
+                startActivity(SubmissionsActivity.class);
                 break;
             }
-            case R.id.action_submissions: {
-                Intent intent = new Intent(getApplicationContext(), SubmissionsActivity.class);
-                startActivity(intent);
+            case R.id.action_map: {
+                startActivity(MapActivity.class);
+                break;
+            }
+            case R.id.action_settings: {
+                startActivity(SettingsActivity.class);
                 break;
             }
             case R.id.action_about: {
-                Intent intent = new Intent(getApplicationContext(), AboutActivity.class);
-                startActivity(intent);
+                startActivity(AboutActivity.class);
                 break;
             }
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void startActivity(Class activityClass) {
+        Intent intent = new Intent(getApplicationContext(), activityClass);
+        startActivity(intent);
     }
 
     @Override
@@ -295,37 +271,37 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-//    protected void checkLocationSettings() {
-//        Log.d(TAG, "Checking Location Settings");
-//        LocationServices.SettingsApi.checkLocationSettings(
-//                googleApiClient,
-//                locationSettingsRequestBuilder.build()
-//        ).setResultCallback(new ResultCallback<LocationSettingsResult>() {
-//            @Override
-//            public void onResult(LocationSettingsResult locationSettingsResult) {
-//                final Status status = locationSettingsResult.getStatus();
-//                switch (status.getStatusCode()) {
-//                    case LocationSettingsStatusCodes.SUCCESS:
-//                        Log.i(TAG, "All location settings are satisfied.");
-//                        break;
-//                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-//                        Log.i(TAG, "Location settings are not satisfied. Show the user a dialog to" +
-//                                "upgrade location settings ");
-//
-//                        try {
-//                            status.startResolutionForResult(MainActivity.this, 1000);
-//                        } catch (IntentSender.SendIntentException e) {
-//                            Log.i(TAG, "PendingIntent unable to execute request.");
-//                        }
-//                        break;
-//                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-//                        Log.i(TAG, "Location settings are inadequate, and cannot be fixed here. Dialog " +
-//                                "not created.");
-//                        break;
-//                }
-//            }
-//        });
-//    }
+    protected void checkLocationSettings() {
+        Log.d(TAG, "Checking Location Settings");
+        LocationServices.SettingsApi.checkLocationSettings(
+                googleApiClient,
+                locationSettingsRequestBuilder.build()
+        ).setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult locationSettingsResult) {
+                final Status status = locationSettingsResult.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        Log.i(TAG, "All location settings are satisfied.");
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        Log.i(TAG, "Location settings are not satisfied. Show the user a dialog to" +
+                                "upgrade location settings ");
+
+                        try {
+                            status.startResolutionForResult(MainActivity.this, 1000);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.i(TAG, "PendingIntent unable to execute request.");
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.i(TAG, "Location settings are inadequate, and cannot be fixed here. Dialog " +
+                                "not created.");
+                        break;
+                }
+            }
+        });
+    }
 
 
 }

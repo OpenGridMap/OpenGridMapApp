@@ -3,6 +3,7 @@ package tanuj.opengridmap.models;
 import android.content.Context;
 import android.location.Location;
 import android.provider.Settings;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -254,6 +255,7 @@ public class Submission {
 
     private JSONObject getPayloadJsonObject(Context context, String idToken, Image image) {
         JSONObject json = new JSONObject();
+        JSONObject dataPacket = new JSONObject();
         JSONObject point = new JSONObject();
         JSONObject properties = new JSONObject();
         JSONObject tags = new JSONObject();
@@ -266,12 +268,12 @@ public class Submission {
         Location location = image.getLocation();
 
         try {
-            tags.put(context.getString(R.string.json_key_type), context.getString(
-                    R.string.json_value_point));
             tags.put(context.getString(R.string.json_key_accuracy), location.getAccuracy());
             tags.put(context.getString(R.string.json_key_altitude), location.getAltitude());
-            tags.put(context.getString(R.string.json_key_timestamp), image.getCreatedTimestamp());
             tags.put(context.getString(R.string.json_key_power_element_tags), powerElements);
+            tags.put(context.getString(R.string.json_key_timestamp), image.getCreatedTimestamp());
+            tags.put(context.getString(R.string.json_key_type), context.getString(
+                    R.string.json_value_point));
 
             properties.put(context.getString(R.string.json_key_tags), tags);
 
@@ -279,14 +281,19 @@ public class Submission {
             point.put(context.getString(R.string.json_key_longitude), location.getLongitude());
             point.put(context.getString(R.string.json_key_properties), properties);
 
-            json.put(context.getString(R.string.json_key_id_token), idToken);
-            json.put(context.getString(R.string.json_key_submission_id), createdTimestamp.getTime());
-            json.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
-            json.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
-            json.put(context.getString(R.string.json_key_point), point);
+            dataPacket.put(context.getString(R.string.json_key_id_token), idToken);
+            dataPacket.put(context.getString(R.string.json_key_image), image.getBase64EncodedImage());
+            dataPacket.put(context.getString(R.string.json_key_number_of_points), getNoOfImages());
+            dataPacket.put(context.getString(R.string.json_key_point), point);
+            dataPacket.put(context.getString(R.string.json_key_submission_id), createdTimestamp.getTime());
+
+            json.put(context.getString(R.string.json_key_data_packet), dataPacket);
+            json.put(context.getString(R.string.json_key_hash),
+                    HashUtils.getSha256String(dataPacket.toString()));
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        Log.d(TAG, json.toString());
         return json;
     }
 

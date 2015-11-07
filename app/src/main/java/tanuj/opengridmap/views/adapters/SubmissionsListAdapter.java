@@ -93,7 +93,7 @@ public class SubmissionsListAdapter extends BaseAdapter {
 
         Log.d(TAG, "Submission Status : " + submissionStatus);
 
-        if (submissionStatus <= Submission.STATUS_SUBMISSION_CONFIRMED) {
+        if (submissionStatus <= Submission.STATUS_UPLOAD_PENDING) {
             showStatusImage(progressBar, submissionStatusImage, R.drawable.verification24);
         } else if (submissionStatus == Submission.STATUS_UPLOAD_IN_PROGRESS) {
             int submissionUploadProgress = submission.getUploadStatus();

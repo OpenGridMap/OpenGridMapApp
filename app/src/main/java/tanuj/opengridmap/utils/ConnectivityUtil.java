@@ -36,16 +36,17 @@ public class ConnectivityUtil {
         return mobileNetworkInfo.isAvailable() && mobileNetworkInfo.isConnected();
     }
 
-    public static boolean isConnectionPossible(final Context context) {
+    public static boolean isInternetConnected(final Context context) {
+        return isWifiConnected(context) || isMobileDataConnected(context);
+    }
+
+    public static boolean isConnectionPermitted(final Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
         boolean wifiOnly = preferences.getBoolean(context.getString(
                 R.string.pref_key_sync_wifi_only), false);
 
-        if ((wifiOnly && isWifiConnected(context)) || !wifiOnly && isMobileDataConnected(context)) {
-            return true;
-        }
-
-        return false;
+        return (!wifiOnly && isInternetConnected(context)) ||
+                (wifiOnly && isWifiConnected(context));
     }
 }

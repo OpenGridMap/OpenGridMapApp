@@ -23,8 +23,11 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
@@ -85,7 +88,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
     }
 
     private void processUploadQueue() {
-        if (ConnectivityUtil.isConnectionPossible(getApplicationContext())) {
+        if (ConnectivityUtil.isConnectionPermitted(getApplicationContext())) {
             new HandlePayloadsTask().execute();
         } else {
             Log.d(TAG, "Permitted Connectivity not available");
@@ -184,11 +187,11 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
             UploadQueueItem queueItem;
 
-            while ((queueItem = dbHelper.getQueueItem()) != null) {
+            while ((queueItem = dbHelper.getPendingQueueItem()) != null) {
                 int noOfPayloads = queueItem.getNoOfPayloads();
 
                 for (int j = 0; j < noOfPayloads; j++) {
-                    if (ConnectivityUtil.isConnectionPossible(context)) {
+                    if (ConnectivityUtil.isConnectionPermitted(context)) {
                         handlePayload(context, httpClient, queueItem, j);
                         publishProgress(queueItem);
                     } else return;
@@ -217,11 +220,23 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                 String response = getResponseStringFromHttpResponse(httpResponse);
 //                Log.d(TAG, response);
 
-                if (httpResponse != null &&
-                        httpResponse.getStatusLine().getStatusCode() ==  200) {
-                    queueItem.updateStatus(context,
-                            UploadQueueItem.STATUS_UPLOAD_IN_PROGRESS);
-                    queueItem.updatePayloadsUploaded(context, payload);
+                if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() ==  200) {
+                    try {
+                        JSONObject responseJSON = new JSONObject(response);
+
+                        if (responseJSON.has(getString(R.string.response_key_status)) &&
+                                Objects.equals(
+                                        responseJSON.getString(getString(R.string.response_key_status)),
+                                        getString(R.string.response_status_ok))) {
+                            queueItem.updateStatus(context,
+                                    UploadQueueItem.STATUS_UPLOAD_IN_PROGRESS);
+                            queueItem.updatePayloadsUploaded(context, payload);
+                        } else {
+                            Log.d(TAG, "Invalid Response");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             } else {
                 Log.v(TAG, "Payload Already Uploaded");
@@ -248,7 +263,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                     if (statusCode == 200) {
                         Log.v(TAG, "Payload Successfully Uploaded");
                     } else if (statusCode == 400 && getResponseStringFromHttpResponse(httpResponse)
-                            == context.getString(R.string.error_response_invalid_id_token)) {
+                            == context.getString(R.string.response_error_invalid_id_token)) {
                         payload.renewPayloadToken(context, getIdToken());
                         httpResponse = sendPayload(context, httpClient, payload, ttl - 1);
                     } else {
@@ -272,8 +287,8 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                 return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
             } catch (IOException e) {
                 e.printStackTrace();
+                return null;
             }
-            return null;
         }
     }
 
