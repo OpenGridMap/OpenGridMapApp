@@ -53,6 +53,8 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
     private GoogleApiClient googleApiClient;
 
+    private static int noOfFailedAttempts;
+
     Intent intent;
 
     public UploadService() {}
@@ -66,6 +68,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         googleApiClient = buildGoogleApiClient();
         dbHelper = new OpenGridMapDbHelper(context);
         intent = new Intent(UPLOAD_UPDATE_BROADCAST);
+        noOfFailedAttempts = 0;
     }
 
     private GoogleApiClient buildGoogleApiClient() {
@@ -218,7 +221,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                         MAX_UPLOAD_ATTEMPTS);
 
                 String response = getResponseStringFromHttpResponse(httpResponse);
-//                Log.d(TAG, response);
+                Log.d(TAG, response);
 
                 if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() ==  200) {
                     try {
@@ -268,6 +271,10 @@ public class UploadService extends Service implements GoogleApiClient.Connection
                         httpResponse = sendPayload(context, httpClient, payload, ttl - 1);
                     } else {
                         Log.v(TAG, "Payload Upload Failed, Response Code : " + statusCode);
+
+                        if (++noOfFailedAttempts > 3) {
+                            stopSelf();
+                        }
                     }
 
                     return httpResponse;

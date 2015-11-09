@@ -24,6 +24,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
@@ -45,7 +46,6 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -75,7 +75,8 @@ import tanuj.opengridmap.views.activities.TagSelectionActivity;
 import tanuj.opengridmap.views.custom_views.AutoFitTextureView;
 
 @SuppressLint("NewApi")
-public class CameraActivityFragment extends Fragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class CameraActivityFragment extends Fragment implements View.OnClickListener,
+        SeekBar.OnSeekBarChangeListener {
     private static final String TAG = CameraActivityFragment.class.getSimpleName();
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -264,10 +265,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private LinearLayout cameraTextureOverlay = null;
 
-    private Button zoomPlusButton;
-
-    private Button zoomMinusButton;
-
     private SeekBar zoomSeekBar;
 
     private double zoom = 1;
@@ -283,8 +280,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
     private static tanuj.opengridmap.models.Image lastSavedImage = null;
 
-//    private List<tanuj.opengridmap.models.Image> images = new ArrayList<>();
-
     private CameraCaptureSession.CaptureCallback mCaptureCallback =
             new CameraCaptureSession.CaptureCallback() {
 
@@ -295,15 +290,18 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         }
                         case STATE_WAITING_LOCK: {
                             Log.d(TAG, "Process : STATE_WAITING_LOCK");
-                            int afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                            Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
 
-                            if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                            if (afState == null) {
+                                captureStillImage();
+                            } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                                     CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
                                 Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
 
                                 if (aeState == null ||
                                         aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                                    aeState = STATE_WAITING_NON_PRECAPTURE;
+                                    captureStillImage();
+                                    mState = STATE_PICTURE_TAKEN;
                                 } else {
                                     runPrecaptureSequence();
                                 }
@@ -312,11 +310,11 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         }
                         case STATE_WAITING_PRECAPTURE: {
                             Log.d(TAG, "Process : STATE_WAITING_PRECAPTURE");
-                            Integer aestate = result.get(CaptureResult.CONTROL_AE_STATE);
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
 
-                            if (aestate == null ||
-                                    aestate == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
-                                    aestate == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                            if (aeState == null ||
+                                    aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                                    aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED) {
                                 mState = STATE_WAITING_NON_PRECAPTURE;
                             }
                             break;
@@ -340,12 +338,12 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                         previewAvailable = false;
                     }
                 }
-
-                @Override
-                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request,
-                                             long timestamp, long frameNumber) {
-                    super.onCaptureStarted(session, request, timestamp, frameNumber);
-                }
+//
+//                @Override
+//                public void onCaptureStarted(CameraCaptureSession session, CaptureRequest request,
+//                                             long timestamp, long frameNumber) {
+//                    super.onCaptureStarted(session, request, timestamp, frameNumber);
+//                }
 
                 @Override
                 public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest
@@ -700,7 +698,7 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             cameraBusy = true;
             disableCamera();
             lockFocus();
-            runPrecaptureSequence();
+//            runPrecaptureSequence();
         }
     }
 
@@ -710,6 +708,8 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
             mState = STATE_WAITING_LOCK;
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback,
+                    mBackgroundHandler);
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -721,10 +721,9 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
 
-            mState = STATE_WAITING_PRECAPTURE;
+//            mState = STATE_WAITING_PRECAPTURE;
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
-//            displayImageCaptureAnimation();
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -767,7 +766,14 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                             unlockFocus();
                             cameraBusy = false;
                             enableCamera();
-//                            super.onCaptureCompleted(session, request, result);
+                        }
+
+                        @Override
+                        public void onCaptureFailed(CameraCaptureSession session, CaptureRequest request, CaptureFailure failure) {
+                            unlockFocus();
+                            cameraBusy = false;
+                            enableCamera();
+                            Log.d(TAG, "Capture Failed");
                         }
                     };
 
@@ -788,9 +794,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-            Rect previewRect = CameraUtils.getZoomRect(zoom, mPreviewSize.getWidth(),
-                    mPreviewSize.getHeight());
-            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
 
@@ -832,8 +835,10 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
 
         if (z >= minZoom && z <= maxZoom) {
             try {
-                Rect previewRect = CameraUtils.getZoomRect(z, mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                Rect previewRect = CameraUtils.getZoomRect(z, mPreviewSize.getWidth(),
+                        mPreviewSize.getHeight());
                 mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, previewRect);
+
                 mPreviewRequest = mPreviewRequestBuilder.build();
                 mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
                         mBackgroundHandler);
@@ -903,9 +908,6 @@ public class CameraActivityFragment extends Fragment implements View.OnClickList
                     }
 
                     double z = (distance / initialDistance) * zoom * dampingFactor;
-
-//                    Log.d(TAG, "Distance : " + distance);
-//                    Log.d(TAG, "Z : " + z);
 
                     z = distance > initialDistance ? zoom + z : zoom - z;
 

@@ -91,6 +91,7 @@ public class CameraUtils {
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
+
         return maxZoom;
     }
 
