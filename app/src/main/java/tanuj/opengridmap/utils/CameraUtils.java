@@ -1,10 +1,12 @@
 package tanuj.opengridmap.utils;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 
@@ -19,10 +21,11 @@ import java.util.List;
 public class CameraUtils {
     private static final String TAG = CameraUtils.class.getSimpleName();
 
-    public static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static Size chooseOptimalSize(Size[] choices, int width, int height, Size size) {
         List<Size> bigEnough = new ArrayList<Size>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
+        int w = size.getWidth();
+        int h = size.getHeight();
 
         Log.d(TAG, "Len Choices : " + choices.length);
 
@@ -47,6 +50,7 @@ public class CameraUtils {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static Rect getZoomRect(double zoom, int width, int height) {
         int w, h, b, l, r, t;
 
@@ -66,35 +70,36 @@ public class CameraUtils {
         return new Rect(l, t, r, b);
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static float getZoomLevelFromSeekBarProgress(int value) {
         return (float) value / 100 + 1;
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static int getSeekBarProgressFromZoomValue(double z) {
         return (int) ((z - 1) * 100);
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static float getMaxZoom(Context context, String cameraDeviceId) {
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        CameraCharacteristics cameraCharacteristics = null;
+        CameraCharacteristics cameraCharacteristics;
+        float maxZoom = 4;
 
         try {
             cameraCharacteristics = manager.getCameraCharacteristics(cameraDeviceId);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
-        float maxZoom = 4;
-        try {
             maxZoom = cameraCharacteristics.get(
                     CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
         } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
 
         return maxZoom;
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static class CompareSizesByArea implements Comparator<Size> {
         @Override
         public int compare(Size lhs, Size rhs) {

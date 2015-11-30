@@ -179,4 +179,10 @@ public class UploadQueueItem extends Submission{
     public boolean isUploadComplete(final Context context) {
         return getNoOfPayloadsUploaded(context) == getNoOfImages();
     }
+
+    public void delete(Context context) {
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        dbHelper.deleteQueueItem(id);
+        dbHelper.close();
+    }
 }

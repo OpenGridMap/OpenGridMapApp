@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="tanuj.opengridmap.SubmitActivityFragment"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:layout_centerHorizontal="true" >
+
+    <ImageView
+        android:id="@+id/image_preview"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:scaleType="fitCenter" />
+
+    <ProgressBar
+        android:id="@+id/location_quality_indicator"
+        style="?android:progressBarStyleHorizontal"
+        android:layout_marginTop="7dp"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:max="100"
+        android:progressDrawable="@xml/progressbar_drawable"
+        android:progress="60"/>
+
+    <TextView
+        android:id="@+id/location_feedback"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        style="?textAppearanceSearchResultTitle" />
+
+    <com.dd.CircularProgressButton
+        android:id="@+id/submit_button"
+        android:layout_width="196dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="16dp"
+        android:textColor="@color/cpb_white"
+        android:textSize="18sp"
+        app:cpb_textComplete="@string/Complete"
+        app:cpb_textError="@string/Error"
+        app:cpb_textIdle="@string/Upload"
+        android:enabled="false" />
+
+    <com.dd.CircularProgressButton
+        android:id="@+id/retry_button"
+        android:layout_width="196dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        android:textColor="@color/cpb_white"
+        android:textSize="18sp"
+        app:cpb_textIdle="@string/Retry"
+        android:enabled="false"/>
+
+</LinearLayout>

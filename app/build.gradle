@@ -8,13 +8,12 @@ android {
         applicationId "tanuj.opengridmap"
         minSdkVersion 14
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
     }
     buildTypes {
         release {
-            debuggable true
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -25,5 +24,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile 'com.android.support:support-v4:22.2.1'
     compile 'com.android.support:cardview-v7:22.2.1'
-    compile 'com.google.android.gms:play-services:7.8.0'
+    compile 'com.google.android.gms:play-services:8.3.0'
+    compile 'com.squareup.okhttp:okhttp:2.6.0'
+    compile 'com.github.dmytrodanylyk.circular-progress-button:library:1.1.3'
 }

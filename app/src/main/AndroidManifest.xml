@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="tanuj.opengridmap" >
+    package="tanuj.opengridmap">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -16,19 +16,15 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
 
-    <!-- To auto-complete the email text field in the login form with the user's emails -->
-    <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-
     <application
         android:allowBackup="true"
         android:icon="@drawable/open_grid_map_logo_rounded"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".views.activities.LoginActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -38,13 +34,12 @@
         <activity
             android:name=".views.activities.MainActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait" >
-        </activity>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".views.activities.CameraActivity"
             android:label="@string/title_activity_camera"
             android:launchMode="singleTop"
-            android:parentActivityName=".views.activities.MainActivity" >
+            android:parentActivityName=".views.activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
@@ -52,7 +47,7 @@
         <activity
             android:name=".views.activities.SubmissionsActivity"
             android:label="@string/title_activity_submissions"
-            android:parentActivityName=".views.activities.MainActivity" >
+            android:parentActivityName=".views.activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
@@ -60,7 +55,7 @@
         <activity
             android:name=".views.activities.SubmissionActivity"
             android:label="@string/title_activity_submission"
-            android:parentActivityName=".views.activities.SubmissionsActivity" >
+            android:parentActivityName=".views.activities.SubmissionsActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.SubmissionsActivity" />
@@ -69,24 +64,29 @@
             android:name=".views.activities.TagSelectionActivity"
             android:label="@string/title_activity_tag_selection"
             android:parentActivityName=".views.activities.MainActivity"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
         <activity
             android:name=".views.activities.AboutActivity"
-            android:label="@string/title_activity_about" >
+            android:label="@string/title_activity_about">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
-        <activity android:name=".views.activities.SettingsActivity" >
+        <activity android:name=".views.activities.SettingsActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
-        <activity android:name=".views.activities.MapActivity" >
+        <activity android:name=".views.activities.MapActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".views.activities.MainActivity" />
+        </activity>
+        <activity android:name=".SubmitActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
@@ -95,7 +95,7 @@
         <receiver
             android:name=".broadcastreceivers.WifiStateReceiver"
             android:enabled="true"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
@@ -104,13 +104,20 @@
         <service
             android:name=".services.ThumbnailGenerationService"
             android:enabled="true"
-            android:exported="false" >
-        </service>
+            android:exported="false" />
         <service
             android:name=".services.UploadService"
             android:enabled="true"
-            android:exported="false" >
-        </service>
+            android:exported="false" />
+
+        <service
+            android:name=".services.LocationService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <service
+            android:name=".services.UploadSubmissionService"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.gms.version"

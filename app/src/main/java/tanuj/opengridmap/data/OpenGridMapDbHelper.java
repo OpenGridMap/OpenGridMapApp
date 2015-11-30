@@ -314,6 +314,15 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return status;
     }
 
+    public boolean deleteSubmission(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        int res = db.delete(SubmissionEntry.TABLE_NAME, SubmissionEntry._ID + " = ?",
+                new String[]{Long.toString(id)});
+        db.close();
+
+        return res > 0;
+    }
+
     public List<Image> getImages() {
         List<Image> images = new ArrayList<Image>();
 
@@ -352,6 +361,30 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         db.close();
 
         return images;
+    }
+
+    public Image getImageBySubmissionOffset(long submissionId, int offset) {
+        SQLiteDatabase db = getReadableDatabase();
+        Image image = null;
+
+        Cursor cursor = db.query(ImageEntry.TABLE_NAME, imageColumns, ImageEntry.COLUMN_SUBMISSION_ID +
+                "= ?", new String[]{Long.toString((submissionId))}, null, null, null, "1 OFFSET " +
+                offset);
+
+        if (cursor.moveToFirst()) {
+            image = getImageFromCursor(cursor);
+        }
+
+        return image;
+    }
+
+    public boolean deleteImage(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        int res = db.delete(ImageEntry.TABLE_NAME, ImageEntry._ID + " = ?",
+                new String[]{Long.toString(id)});
+        db.close();
+
+        return res > 0;
     }
 
     private Image getImageFromCursor(Cursor cursor) {
@@ -609,7 +642,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return uploadQueueItems;
     }
 
-    public UploadQueueItem getPendingQueueItem() {
+    public UploadQueueItem getPendingQueueItem(int offset) {
         UploadQueueItem queueItem = null;
 
         SQLiteDatabase db = getReadableDatabase();
@@ -617,7 +650,26 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(UploadQueueEntry.TABLE_NAME, uploadQueueColumns,
                 UploadQueueEntry.COLUMN_STATUS + " < ?",
                 new String[]{Integer.toString(UploadQueueItem.STATUS_UPLOAD_COMPLETE)}, null,
-                null, null, Integer.toString(1));
+                null, null,  "1 OFFSET " + offset);
+
+        if (cursor.moveToFirst()) {
+            queueItem = getUploadQueueItemFromCursor(cursor);
+        }
+
+        cursor.close();
+        db.close();
+
+        return queueItem;
+    }
+
+    public UploadQueueItem getQueueItem(long id) {
+        UploadQueueItem queueItem = null;
+
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor cursor = db.query(UploadQueueEntry.TABLE_NAME, uploadQueueColumns,
+                UploadQueueEntry._ID + " = ",
+                new String[]{Long.toString(id)}, null, null, null);
 
         if (cursor.moveToFirst()) {
             queueItem = getUploadQueueItemFromCursor(cursor);

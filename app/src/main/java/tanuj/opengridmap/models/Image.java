@@ -16,6 +16,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 import tanuj.opengridmap.R;
+import tanuj.opengridmap.data.OpenGridMapDbHelper;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -288,5 +289,14 @@ public class Image {
                 R.string.west);
 
         return coords;
+    }
+
+    public void delete(Context context) {
+        File file = new File(getSrc());
+        file.delete();
+
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        dbHelper.deleteImage(getId());
+        dbHelper.close();
     }
 }

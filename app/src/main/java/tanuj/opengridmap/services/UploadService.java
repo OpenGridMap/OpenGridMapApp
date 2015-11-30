@@ -1,10 +1,12 @@
 package tanuj.opengridmap.services;
 
 import android.accounts.Account;
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -29,6 +31,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Objects;
 
+import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Payload;
@@ -39,7 +42,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
         GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = UploadService.class.getSimpleName();
 
-    public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
+    public static final String UPLOAD_UPDATE_BROADCAST = BuildConfig.APPLICATION_ID + ".upload.update";
 
     private static final int MAX_UPLOAD_ATTEMPTS = 3;
 
@@ -47,15 +50,15 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
     private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
 
-    private static final String TOKEN_URL = SERVER_BASE_URL + "/submissions/create";
+    private static final String SUBMISSION_URL = SERVER_BASE_URL + "/submissions/create";
 
     private OpenGridMapDbHelper dbHelper;
 
     private GoogleApiClient googleApiClient;
 
-    private static int noOfFailedAttempts;
+    private int noOfFailedAttempts;
 
-    Intent intent;
+    private Intent intent;
 
     public UploadService() {}
 
@@ -190,7 +193,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
             UploadQueueItem queueItem;
 
-            while ((queueItem = dbHelper.getPendingQueueItem()) != null) {
+            while ((queueItem = dbHelper.getPendingQueueItem(0)) != null) {
                 int noOfPayloads = queueItem.getNoOfPayloads();
 
                 for (int j = 0; j < noOfPayloads; j++) {
@@ -202,12 +205,14 @@ public class UploadService extends Service implements GoogleApiClient.Connection
 
                 if (queueItem.isUploadComplete(context)) {
                     queueItem.updateStatus(context, UploadQueueItem.STATUS_UPLOAD_COMPLETE);
+                    queueItem.delete(getApplicationContext());
                     queueItem.getSubmission().uploadComplete(context);
                 }
             }
             publishProgress(null);
         }
 
+        @TargetApi(Build.VERSION_CODES.KITKAT)
         private void handlePayload(Context context, HttpClient httpClient,
                                    UploadQueueItem queueItem, int j) {
             Log.v(TAG, "Starting Upload for Payload " + (j + 1) + " of Submission " +
@@ -251,7 +256,7 @@ public class UploadService extends Service implements GoogleApiClient.Connection
             if (ttl > 0) {
                 Log.v(TAG, "Attempt " + (MAX_UPLOAD_ATTEMPTS - ttl + 1));
 
-                HttpPost httpPost = new HttpPost(TOKEN_URL);
+                HttpPost httpPost = new HttpPost(SUBMISSION_URL);
 
                 try {
                     StringEntity stringEntity = new StringEntity(payload.getPayloadEntity(),

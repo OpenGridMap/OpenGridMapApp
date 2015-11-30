@@ -3,7 +3,6 @@ package tanuj.opengridmap.models;
 import android.content.Context;
 import android.location.Location;
 import android.provider.Settings;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -168,10 +167,10 @@ public class Submission {
     public void addPowerElementById(Context context, long id) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         PowerElement powerElement = dbHelper.getPowerElement(id);
+        dbHelper.close();
 
         this.addPowerElement(context, powerElement);
-        dbHelper.addPowerElementToSubmission(powerElement, this);
-        dbHelper.close();
+//        dbHelper.addPowerElementToSubmission(powerElement, this);
     }
 
     public List<Image> getImages() {
@@ -293,14 +292,25 @@ public class Submission {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.d(TAG, json.toString());
         return json;
     }
 
     public void uploadComplete(Context context) {
-        if (status == STATUS_UPLOAD_IN_PROGRESS) {
-            updateStatus(context, STATUS_SUBMITTED_PENDING_REVIEW);
+//        if (status == STATUS_UPLOAD_IN_PROGRESS) {
+//            updateStatus(context, STATUS_SUBMITTED_PENDING_REVIEW);
+
+            deleteSubmission(context);
+//        }
+    }
+
+    private void deleteSubmission(Context context) {
+        for (Image image: getImages()) {
+            image.delete(context);
         }
+
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        dbHelper.deleteSubmission(getId());
+        dbHelper.close();
     }
 
     public void submissionApproved(Context context) {

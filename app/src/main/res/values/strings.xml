@@ -128,4 +128,14 @@
     <string name="pref_key_sync_wifi_only">pref_key_sync_wifi_only</string>
     <string name="pref_title_sync_wifi_only">Wi-Fi Only</string>
     <string name="pref_key_signed_in">pref_key_signed_in</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="key_location_start">location_start</string>
+    <string name="key_location_result">location_result</string>
+    <string name="key_image_src">image_src</string>
+
+    <string name="Complete">Complete</string>
+    <string name="Error">Error</string>
+    <string name="Upload">Upload</string>
+    <string name="Retry">Retry</string>
 </resources>
