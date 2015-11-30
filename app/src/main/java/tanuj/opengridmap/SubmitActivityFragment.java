@@ -45,8 +45,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private Location location;
 
-    private Location locationCurrent;
-
     private long powerElementId;
 
     private String imageSrc;
@@ -61,7 +59,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private CircularProgressButton retryButton;
 
-    private static LocationService locationService;
+    private LocationService locationService;
 
     private boolean locationServiceBindingStatus = false;
 
@@ -287,6 +285,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             retryButton.setEnabled(false);
             retryButton.setVisibility(View.GONE);
         }
+        setLocationQualityIndicator();
     }
 
     private void processUploadUpdate(long submissionid, int uploadCompletion) {
@@ -301,6 +300,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             submitButton.setEnabled(true);
             retryButton.setEnabled(false);
         }
+
+        submitButton.setProgress(uploadCompletion);
     }
 
     public void setOptimizedImageBitmap(String src) {
@@ -358,5 +359,15 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private Uri getOutputMediaFileUri(){
         return Uri.fromFile(new File(imageSrc));
+    }
+
+    private void setLocationQualityIndicator() {
+        int accuracy = (int) location.getAccuracy();
+
+        accuracy = 110 - accuracy;
+        if (accuracy < 0)
+            accuracy = 0;
+
+        locationQualityIndicator.setProgress(accuracy);
     }
 }

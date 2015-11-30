@@ -34,7 +34,7 @@ import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
 public class MainActivityFragment extends Fragment {
     public static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    private static LocationService locationService;
+    private LocationService locationService;
 
     private boolean locationServiceBindingStatus = false;
 

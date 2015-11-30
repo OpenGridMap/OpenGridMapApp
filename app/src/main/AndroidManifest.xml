@@ -36,40 +36,6 @@
             android:label="@string/app_name"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".views.activities.CameraActivity"
-            android:label="@string/title_activity_camera"
-            android:launchMode="singleTop"
-            android:parentActivityName=".views.activities.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.MainActivity" />
-        </activity>
-        <activity
-            android:name=".views.activities.SubmissionsActivity"
-            android:label="@string/title_activity_submissions"
-            android:parentActivityName=".views.activities.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.MainActivity" />
-        </activity>
-        <activity
-            android:name=".views.activities.SubmissionActivity"
-            android:label="@string/title_activity_submission"
-            android:parentActivityName=".views.activities.SubmissionsActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.SubmissionsActivity" />
-        </activity>
-        <activity
-            android:name=".views.activities.TagSelectionActivity"
-            android:label="@string/title_activity_tag_selection"
-            android:parentActivityName=".views.activities.MainActivity"
-            android:screenOrientation="portrait">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".views.activities.MainActivity" />
-        </activity>
-        <activity
             android:name=".views.activities.AboutActivity"
             android:label="@string/title_activity_about">
             <meta-data
@@ -86,7 +52,8 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
-        <activity android:name=".SubmitActivity">
+        <activity android:name=".SubmitActivity"
+            android:label="">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
@@ -94,21 +61,12 @@
 
         <receiver
             android:name=".broadcastreceivers.WifiStateReceiver"
-            android:enabled="true"
-            android:exported="true">
+            android:enabled="false"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-
-        <service
-            android:name=".services.ThumbnailGenerationService"
-            android:enabled="true"
-            android:exported="false" />
-        <service
-            android:name=".services.UploadService"
-            android:enabled="true"
-            android:exported="false" />
 
         <service
             android:name=".services.LocationService"

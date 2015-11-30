@@ -42,11 +42,11 @@ public class UploadSubmissionService extends IntentService implements Callback,
 
     public static final int UPLOAD_STATUS_SUCCESS = 100;
 
-    private static final int MAX_UPLOAD_ATTEMPTS = 3;
-
-    private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
+    private static final int MAX_UPLOAD_ATTEMPTS = 1;
 
     private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
+
+    private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
 
     private static final String SUBMISSION_URL = SERVER_BASE_URL + "/submissions/create";
 
@@ -105,7 +105,7 @@ public class UploadSubmissionService extends IntentService implements Callback,
             Log.d(TAG, "Disconnected from Google Play Services");
         }
 
-        Log.v(TAG, "Stopping UploadService");
+        Log.v(TAG, "Stopping " + TAG);
         super.onDestroy();
     }
 
@@ -146,7 +146,8 @@ public class UploadSubmissionService extends IntentService implements Callback,
         Submission submission = dbHelper.getSubmission(submissionId);
         if (submission == null) return;
 
-        final String json = submission.getUploadPayload(getApplicationContext(), idToken, 0).toString();
+        final String json = submission.getUploadPayload(getApplicationContext(), idToken, 0)
+                .getPayloadEntity();
 
         try {
             handlePayload(json);
@@ -155,7 +156,7 @@ public class UploadSubmissionService extends IntentService implements Callback,
         }
     }
 
-    public void handlePayload(String json) throws IOException {
+    public void handlePayload(final String json) throws IOException {
         OkHttpClient client = new OkHttpClient();
 //        client.setConnectTimeout(CONNECT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 //        client.setReadTimeout(READ_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
@@ -167,9 +168,8 @@ public class UploadSubmissionService extends IntentService implements Callback,
                 // try the request
                 Response response = chain.proceed(request);
 
-                int tryCount = 0;
+                int tryCount = 1;
                 while (!response.isSuccessful() && tryCount < MAX_UPLOAD_ATTEMPTS) {
-
                     Log.d(TAG, "Upload attempt " + tryCount + " not successful - " + tryCount);
 
                     tryCount++;
@@ -186,6 +186,10 @@ public class UploadSubmissionService extends IntentService implements Callback,
         final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
         RequestBody body = RequestBody.create(JSON, json);
+
+        String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
+
+        String SUBMISSION_URL = SERVER_BASE_URL + "/submissions/create";
 
         final Request request = new Request.Builder()
                 .header("Content-Type", "application/json")

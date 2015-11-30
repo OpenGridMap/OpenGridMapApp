@@ -47,10 +47,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
-            case R.id.action_submissions: {
-                startActivity(SubmissionsActivity.class);
-                break;
-            }
             case R.id.action_map: {
                 startActivity(MapActivity.class);
                 break;
