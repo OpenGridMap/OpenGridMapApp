@@ -25,8 +25,6 @@ import com.google.android.gms.plus.Plus;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import tanuj.opengridmap.BuildConfig;
-
 public class LocationService extends Service implements
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
@@ -34,10 +32,7 @@ public class LocationService extends Service implements
         ResultCallback<LocationSettingsResult> {
     private static final String TAG = LocationService.class.getSimpleName();
 
-    private static LocationService locationService;
-
-    public static final String LOCATION_UPDATE_BROADCAST = BuildConfig.APPLICATION_ID +
-            ".broadcast.location";
+    public static final String LOCATION_UPDATE_BROADCAST = "tanuj.opengridmap.broadcast.location";
 
     private static final long INTERVAL = 10;
 
@@ -51,7 +46,7 @@ public class LocationService extends Service implements
 
     private Location location;
 
-    private IBinder iBinder = new LocalBinder();
+    private final IBinder iBinder = new LocalBinder();
 
     private int bindingsCount = 0;
 
@@ -233,11 +228,12 @@ public class LocationService extends Service implements
 
     public class LocalBinder extends Binder {
         public LocationService getServiceInstance() {
-            if (locationService == null) {
-                locationService = LocationService.this;
-            }
-
-            return locationService;
+//            if (locationService == null) {
+//                locationService = LocationService.this;
+//            }
+//
+//            return locationService;
+            return LocationService.this;
         }
     }
 

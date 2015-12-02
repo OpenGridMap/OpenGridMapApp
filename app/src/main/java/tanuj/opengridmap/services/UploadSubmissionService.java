@@ -14,45 +14,36 @@ import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.plus.Plus;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 
-import tanuj.opengridmap.BuildConfig;
+import cz.msebera.android.httpclient.Header;
+import tanuj.opengridmap.PGISRestClient;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
 
-public class UploadSubmissionService extends IntentService implements Callback,
+public class UploadSubmissionService extends IntentService implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
         private static final String TAG = UploadSubmissionService.class.getSimpleName();
 
-    public static final String UPLOAD_UPDATE_BROADCAST = BuildConfig.APPLICATION_ID + ".upload.update";
+    public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
 
     public static final int UPLOAD_STATUS_FAIL = -1;
 
     public static final int UPLOAD_STATUS_SUCCESS = 100;
 
-    private static final int MAX_UPLOAD_ATTEMPTS = 1;
+    private static final int MAX_UPLOAD_ATTEMPTS = 3;
 
     private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
 
-    private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
+    private static final String ACTION_UPLOAD = "tanuj.opengridmap.services.action.upload";
 
-    private static final String SUBMISSION_URL = SERVER_BASE_URL + "/submissions/create";
-
-    private static final String ACTION_UPLOAD = BuildConfig.APPLICATION_ID + ".services.action.upload";
-
-    private static final String EXTRA_SUBMISSION_ID = BuildConfig.APPLICATION_ID + ".services.extra.upload_queue_item";
+    private static final String EXTRA_SUBMISSION_ID = "tanuj.opengridmap.services.extra.upload_queue_item";
 
     private GoogleApiClient googleApiClient;
 
@@ -157,77 +148,42 @@ public class UploadSubmissionService extends IntentService implements Callback,
     }
 
     public void handlePayload(final String json) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-//        client.setConnectTimeout(CONNECT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-//        client.setReadTimeout(READ_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        client.interceptors().add(new Interceptor() {
+        PGISRestClient.postSubmission(this, json, new JsonHttpResponseHandler() {
             @Override
-            public Response intercept(Chain chain) throws IOException {
-                Request request = chain.request();
+            public void onStart() {
+                Log.d(TAG, "Starting Upload");
+            }
 
-                // try the request
-                Response response = chain.proceed(request);
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Log.d(TAG, response.toString());
 
-                int tryCount = 1;
-                while (!response.isSuccessful() && tryCount < MAX_UPLOAD_ATTEMPTS) {
-                    Log.d(TAG, "Upload attempt " + tryCount + " not successful - " + tryCount);
-
-                    tryCount++;
-
-                    // retry the request
-                    response = chain.proceed(request);
+                try {
+                    if (response.has(getString(R.string.response_key_status)) &&
+                            response.getString(getString(R.string.response_key_status))
+                                    .equals(getString(R.string.response_status_ok))) {
+                        broadcastUpdate(UPLOAD_STATUS_SUCCESS);
+                    } else {
+                        broadcastUpdate(UPLOAD_STATUS_FAIL);
+                    }
+                } catch (JSONException e) {
+                    broadcastUpdate(UPLOAD_STATUS_FAIL);
+                    e.printStackTrace();
                 }
+            }
 
-                // otherwise just pass the original response on
-                return response;
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                broadcastUpdate(UPLOAD_STATUS_FAIL);
+                Log.d(TAG, responseString);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                broadcastUpdate(UPLOAD_STATUS_FAIL);
+                Log.d(TAG, errorResponse.toString());
             }
         });
-
-        final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
-        RequestBody body = RequestBody.create(JSON, json);
-
-        String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
-
-        String SUBMISSION_URL = SERVER_BASE_URL + "/submissions/create";
-
-        final Request request = new Request.Builder()
-                .header("Content-Type", "application/json")
-                .url(SUBMISSION_URL)
-                .post(body)
-                .build();
-
-//        Response response = client.newCall(request).execute();
-
-        client.newCall(request).enqueue(this);
-    }
-
-    @Override
-    public void onFailure(Request request, IOException e) {
-        Log.e(TAG, "Fail");
-        e.printStackTrace();
-        broadcastUpdate(UPLOAD_STATUS_FAIL);
-    }
-
-    @Override
-    public void onResponse(Response response) throws IOException {
-        String responseStr = response.body().string();
-        Log.d(TAG, responseStr);
-
-        try {
-            JSONObject responseJSON = new JSONObject(responseStr);
-
-            if (responseJSON.has(getString(R.string.response_key_status)) &&
-                    responseJSON.getString(getString(R.string.response_key_status))
-                            .equals(getString(R.string.response_status_ok))) {
-                    broadcastUpdate(UPLOAD_STATUS_SUCCESS);
-            } else {
-                broadcastUpdate(UPLOAD_STATUS_FAIL);
-            }
-        } catch (JSONException e) {
-            broadcastUpdate(UPLOAD_STATUS_FAIL);
-            e.printStackTrace();
-        }
     }
 
     public void setIdToken(String idToken) {

@@ -34,7 +34,7 @@ import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
 public class MainActivityFragment extends Fragment {
     public static final String TAG = MainActivityFragment.class.getSimpleName();
 
-    private LocationService locationService;
+    private static LocationService locationService;
 
     private boolean locationServiceBindingStatus = false;
 
@@ -207,16 +207,18 @@ public class MainActivityFragment extends Fragment {
     }
 
     protected void bindLocationService() {
-        final Context context = getActivity();
 //        if (!locationServiceBindingStatus) {
-            Intent locationServiceIntent = new Intent(context, LocationService.class);
-            context.bindService(locationServiceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
+        Log.v(TAG, "Binding Location Service");
+        Context context = getActivity();
+        Intent locationServiceIntent = new Intent(context, LocationService.class);
+        context.bindService(locationServiceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
 //        }
     }
 
     private void unbindLocationService() {
         if (locationServiceBindingStatus) {
             getActivity().unbindService(locationServiceConnection);
+            locationServiceBindingStatus = false;
         }
     }
 

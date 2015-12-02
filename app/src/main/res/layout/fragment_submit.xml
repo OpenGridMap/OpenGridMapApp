@@ -1,6 +1,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/fragment_submit_parent_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="tanuj.opengridmap.SubmitActivityFragment"
@@ -12,7 +13,7 @@
         android:id="@+id/image_preview"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:scaleType="fitCenter" />
+        android:scaleType="centerCrop" />
 
     <ProgressBar
         android:id="@+id/location_quality_indicator"

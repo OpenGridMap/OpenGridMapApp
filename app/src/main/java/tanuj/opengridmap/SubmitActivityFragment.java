@@ -20,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +29,7 @@ import com.dd.CircularProgressButton;
 
 import java.io.File;
 
+import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.services.LocationService;
@@ -59,11 +61,15 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private CircularProgressButton retryButton;
 
-    private LocationService locationService;
+    private static LocationService locationService;
+
+    private Submission submission;
 
     private boolean locationServiceBindingStatus = false;
 
     private long submissionId;
+
+    private boolean uploadComplete = false;
 
     private ServiceConnection locationServiceConnection = new ServiceConnection() {
         @Override
@@ -136,19 +142,19 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     @Override
     public void onStart() {
         super.onStart();
-        bindLocationService();
+//        bindLocationService();
     }
 
     @Override
     public void onStop() {
-        unbindLocationService();
+//        unbindLocationService();
         super.onStop();
     }
 
     @Override
     public void onPause() {
+        unbindLocationService();
         Context context = getActivity();
-
         context.unregisterReceiver(locationUpdateBroadcastReceiver);
         context.unregisterReceiver(uploadUpdateBroadcastReceiver);
         super.onPause();
@@ -157,8 +163,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     @Override
     public void onResume() {
         super.onResume();
+        bindLocationService();
         Context context = getActivity();
-
         context.registerReceiver(locationUpdateBroadcastReceiver,
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
         context.registerReceiver(uploadUpdateBroadcastReceiver,
@@ -166,14 +172,34 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong(getString(R.string.key_power_element_id), powerElementId);
+        outState.putLong(getString(R.string.key_submission_id), submissionId);
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.submit_button: {
-                submit();
+                if (!uploadComplete) submit();
+                else finish();
                 break;
             }
             case R.id.retry_button: {
-                launchCamera();
+                if (!uploadComplete)
+                    launchCamera();
+                else {
+                    Log.d(TAG, "finish");
+                    finish();
+                }
+                break;
+            }
+            case R.id.fragment_submit_parent_layout: {
+                if (uploadComplete)  {
+                    Log.d(TAG, "finish");
+                    finish();
+                }
                 break;
             }
         }
@@ -199,6 +225,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
+    private void finish() {
+        Log.d(TAG, "finish");
+        getActivity().finish();
+    }
+
     protected void bindLocationService() {
         final Context context = getActivity();
 //        if (!locationServiceBindingStatus) {
@@ -210,6 +241,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     private void unbindLocationService() {
         if (locationServiceBindingStatus) {
             getActivity().unbindService(locationServiceConnection);
+            locationServiceBindingStatus = false;
         }
     }
 
@@ -238,28 +270,30 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         int locationStatus = getLocationStatus(location);
         String msg = "";
         if (locationStatus > LOCATION_STATUS_NOT_AVAILABLE) {
-            msg += "Accuracy  : " + String.format("%.2f", location.getAccuracy()) + "m\n";
+            msg += getString(R.string.accuracy) + getString(R.string.colon) + String.format("%.2f",
+                    location.getAccuracy()) + getString(R.string.meter) +
+                    getString(R.string.newline);
         }
 
         switch (locationStatus) {
             case LOCATION_STATUS_NOT_AVAILABLE: {
-                msg += "Location not available";
+                msg += getString(R.string.location_not_available);
                 break;
             }
             case LOCATION_STATUS_NOT_ACCEPTABLE: {
-                msg += "Accuracy too low";
+                msg += getString(R.string.location_accuracy_not_acceptable);
                 break;
             }
             case LOCATION_STATUS_OK: {
-                msg += "Accuracy not the best...Try again?";
+                msg += getString(R.string.location_accuracy_not_ideal);
                 break;
             }
             case LOCATION_STATUS_GOOD: {
-                msg += "Good data...Try again for better accuracy?";
+                msg += getString(R.string.location_accuracy_good);
                 break;
             }
             case LOCATION_STATUS_EXCELLENT: {
-                msg += "Nice Work!!!...Excellent accuracy";
+                msg += getString(R.string.location_accuracy_excellent);
                 break;
             }
         }
@@ -288,17 +322,23 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         setLocationQualityIndicator();
     }
 
-    private void processUploadUpdate(long submissionid, int uploadCompletion) {
-        if (this.submissionId != submissionid) return;
+    private void processUploadUpdate(long submissionId, int uploadCompletion) {
+        if (this.submissionId != submissionId) return;
 
-        if (uploadCompletion == 100) {
-            submitButton.setEnabled(false);
+        if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_SUCCESS) {
+            submitButton.setClickable(true);
             retryButton.setEnabled(false);
             retryButton.setVisibility(View.GONE);
-        } else if (uploadCompletion == -1) {
-            submitButton.setText("Retry Upload");
-            submitButton.setEnabled(true);
+            locationFeedbackTextView.setText("Upload Complete");
+
+            ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
+
+            uploadComplete = true;
+        } else if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_FAIL) {
+//            submitButton.setText("Ret1ry Upload");
+            submitButton.setClickable(true);
             retryButton.setEnabled(false);
+            retryButton.setVisibility(View.GONE);
         }
 
         submitButton.setProgress(uploadCompletion);
@@ -308,7 +348,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         File file = new File(src);
         Bitmap bitmap = null;
         final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 4;
+        options.inSampleSize = 8;
         options.inDensity = 1;
 
         if (file.exists()) {
@@ -319,20 +359,34 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void submit() {
+        submitButton.setProgress(0);
         submitButton.setProgress(1);
+        submitButton.setClickable(false);
+        retryButton.setEnabled(false);
+        retryButton.setVisibility(View.GONE);
+
         Context context = getActivity();
 
-        Submission submission = new Submission(context);
-        submission.addPowerElementById(context, powerElementId);
-        submission.addImage(context, new Image(getNewFileName(), location));
-        submission.confirmSubmission(context);
-
-        submissionId = submission.getId();
+        if (submission == null) {
+            submission = new Submission(context);
+            submission.addPowerElementById(context, powerElementId);
+            submission.addImage(context, new Image(getNewFileName(), location));
+            submission.confirmSubmission(context);
+            submissionId = submission.getId();
+        } else if (submissionId > 0) {
+            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+            submission = dbHelper.getSubmission(submissionId);
+            dbHelper.close();
+        }
 
         UploadSubmissionService.startUpload(context, submission.getId());
+        locationFeedbackTextView.setText("Uploading...");
     }
 
     private void launchCamera() {
+        if (submission != null)
+            submission.getImage(0).delete(getActivity());
+
         Uri fileUri = getOutputMediaFileUri();
         Log.d(TAG, fileUri.toString());
 
@@ -351,10 +405,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         File to = new File(storageDir.getPath() + File.separator +
                 String.valueOf(System.currentTimeMillis()));
 
+        String path = null;
         if (from.exists()) {
-            return from.renameTo(to)? to.getPath() : null;
+            path = from.renameTo(to)? to.getPath() : from.getPath();
         }
-        return null;
+        return path;
     }
 
     private Uri getOutputMediaFileUri(){

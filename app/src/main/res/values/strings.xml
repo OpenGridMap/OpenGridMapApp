@@ -68,9 +68,8 @@
     <string name="json_key_timestamp" translatable="false">timestamp</string>
     <string name="json_key_power_element_tags" translatable="false">power_element_tags</string>
     <string name="json_value_point" translatable="false">point</string>
-    <string name="title_activity_alt_submission">AltSubmissionActivity</string>
-    <string name="response_key_status">status</string>
-    <string name="response_key_received_data">received_data</string>
+    <string name="response_key_status" translatable="false">status</string>
+    <string name="response_key_received_data" translatable="false">received_data</string>
     <string name="response_error_invalid_id_token" translatable="false">Invalid Id Token</string>
     <string name="response_status_ok" translatable="false">ok</string>
 
@@ -129,13 +128,21 @@
     <string name="pref_title_sync_wifi_only">Wi-Fi Only</string>
     <string name="pref_key_signed_in">pref_key_signed_in</string>
 
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="key_location_start">location_start</string>
     <string name="key_location_result">location_result</string>
     <string name="key_image_src">image_src</string>
 
     <string name="Complete">Complete</string>
-    <string name="Error">Error</string>
+    <string name="Error">Error..Try Uploading again</string>
     <string name="Upload">Upload</string>
     <string name="Retry">Retry</string>
+    <string name="location_not_available">Location not available</string>
+    <string name="location_accuracy_not_acceptable">Accuracy too low</string>
+    <string name="location_accuracy_not_ideal">Accuracy not the best…Try again?</string>
+    <string name="location_accuracy_good">Good data…Try again for better accuracy?</string>
+    <string name="location_accuracy_excellent">Nice Work!!!…Excellent accuracy</string>
+    <string name="accuracy">Accuracy</string>
+    <string name="colon">"  : "</string>
+    <string name="meter">m</string>
+    <string name="newline">\n</string>
 </resources>

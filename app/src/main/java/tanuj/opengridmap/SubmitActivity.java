@@ -2,6 +2,7 @@ package tanuj.opengridmap;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 
 public class SubmitActivity extends AppCompatActivity {
@@ -11,6 +12,9 @@ public class SubmitActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_submit);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+            actionBar.hide();
     }
 
     @Override

@@ -260,7 +260,8 @@ public class Image {
     public String getBase64EncodedImage() {
         Bitmap bitmap = getImageBitmap();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+        int compressionParam = 70;
+        bitmap.compress(Bitmap.CompressFormat.JPEG, compressionParam, outputStream);
         byte[] imageByteArray = outputStream.toByteArray();
 
         return Base64.encodeToString(imageByteArray, Base64.DEFAULT);
