@@ -24,10 +24,11 @@ import android.widget.Toast;
 
 import java.io.File;
 
-import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.SubmitActivity;
 import tanuj.opengridmap.data.PowerElementsSeedData;
+import tanuj.opengridmap.services.LocationService;
+import tanuj.opengridmap.utils.LocationUtils;
 import tanuj.opengridmap.utils.ServiceUtils;
 import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
 
@@ -57,6 +58,7 @@ public class MainActivityFragment extends Fragment {
         public void onServiceDisconnected(ComponentName name) {
             Log.d(TAG, "LocationService Disconnected");
             locationServiceBindingStatus = false;
+            locationService = null;
         }
     };
 
@@ -75,6 +77,9 @@ public class MainActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context context = getActivity();
+
+        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
+
         if (!ServiceUtils.isMyServiceRunning((ActivityManager)
                 context.getSystemService(Context.ACTIVITY_SERVICE))) {
             Log.d(TAG, "Starting Location Service");
@@ -150,6 +155,7 @@ public class MainActivityFragment extends Fragment {
 
         if (requestCode == 100) {
             if (resultCode == Activity.RESULT_OK) {
+                LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
                 locationResult = locationService.getLocation();
                 submit();
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -161,6 +167,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     private void launchCamera() {
+        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
         Uri fileUri = getOutputMediaFileUri();
         Log.d(TAG, fileUri.toString());
 
@@ -182,6 +189,7 @@ public class MainActivityFragment extends Fragment {
         intent.putExtra(getString(R.string.key_location_result), locationResult);
         intent.putExtra(getString(R.string.key_power_element_id), powerElementId);
         intent.putExtra(getString(R.string.key_image_src), getOutputMediaFile().getAbsolutePath());
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         powerElementId = -1;
 
@@ -195,8 +203,6 @@ public class MainActivityFragment extends Fragment {
     private File getOutputMediaFile(){
         File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
 
-        Log.d(TAG, storageDir.getAbsolutePath());
-
         if (!storageDir.exists()){
             if (!storageDir.mkdirs()){
                 return null;
@@ -207,12 +213,12 @@ public class MainActivityFragment extends Fragment {
     }
 
     protected void bindLocationService() {
-//        if (!locationServiceBindingStatus) {
-        Log.v(TAG, "Binding Location Service");
-        Context context = getActivity();
-        Intent locationServiceIntent = new Intent(context, LocationService.class);
-        context.bindService(locationServiceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
-//        }
+        if (!locationServiceBindingStatus) {
+            Log.v(TAG, "Binding Location Service");
+            Context context = getActivity();
+            Intent locationServiceIntent = new Intent(context, LocationService.class);
+            context.bindService(locationServiceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     private void unbindLocationService() {
@@ -223,6 +229,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     public void onUserLeaveHint() {
-        locationService.resolveServiceShutdown();
+        if (locationService != null)
+            locationService.resolveServiceShutdown();
     }
 }

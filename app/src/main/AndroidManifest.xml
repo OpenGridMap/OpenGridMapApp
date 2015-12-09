@@ -60,14 +60,14 @@
                 android:value=".views.activities.MainActivity" />
         </activity>
 
-        <receiver
-            android:name=".broadcastreceivers.WifiStateReceiver"
-            android:enabled="false"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            </intent-filter>
-        </receiver>
+        <!--<receiver-->
+            <!--android:name=".broadcastreceivers.WifiStateReceiver"-->
+            <!--android:enabled="false"-->
+            <!--android:exported="false">-->
+            <!--<intent-filter>-->
+                <!--<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />-->
+            <!--</intent-filter>-->
+        <!--</receiver>-->
 
         <service
             android:name=".services.LocationService"

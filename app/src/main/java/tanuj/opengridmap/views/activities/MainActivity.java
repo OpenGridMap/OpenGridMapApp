@@ -1,17 +1,18 @@
 package tanuj.opengridmap.views.activities;
 
-import android.content.Context;
 import android.content.Intent;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+
+import java.util.List;
 
 import tanuj.opengridmap.R;
+import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.views.fragments.MainActivityFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,19 +22,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final Context context = getApplicationContext();
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
+        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
+
+        for (Submission submission: submissions) {
+            Log.d(TAG, String.valueOf(submission.getId()));
+        }
 
         setContentView(R.layout.activity_main);
-
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        boolean locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-        if (!locationEnabled) {
-            Toast.makeText(context, "Please Enable High Accuracy Mode in Location Settings", Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
-        }
     }
 
 
@@ -51,10 +47,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(MapActivity.class);
                 break;
             }
-            case R.id.action_settings: {
-                startActivity(SettingsActivity.class);
-                break;
-            }
+//            case R.id.action_settings: {
+//                startActivity(SettingsActivity.class);
+//                break;
+//            }
             case R.id.action_about: {
                 startActivity(AboutActivity.class);
                 break;

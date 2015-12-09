@@ -29,11 +29,13 @@ import tanuj.opengridmap.models.Submission;
 
 public class UploadSubmissionService extends IntentService implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-        private static final String TAG = UploadSubmissionService.class.getSimpleName();
+    private static final String TAG = UploadSubmissionService.class.getSimpleName();
 
     public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
 
     public static final int UPLOAD_STATUS_FAIL = -1;
+
+    public static final int SUBMISSION_NOT_FOUND = -2;
 
     public static final int UPLOAD_STATUS_SUCCESS = 100;
 
@@ -45,9 +47,9 @@ public class UploadSubmissionService extends IntentService implements
 
     private static final String EXTRA_SUBMISSION_ID = "tanuj.opengridmap.services.extra.upload_queue_item";
 
-    private GoogleApiClient googleApiClient;
+    private int getPayloadAttempts = 0;
 
-    private String idToken;
+    private GoogleApiClient googleApiClient;
 
     private long submissionId;
 
@@ -131,17 +133,25 @@ public class UploadSubmissionService extends IntentService implements
         return builder.build();
     }
 
-    private void handleUpload() {
+    private void handleUpload(String idToken) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
-
         Submission submission = dbHelper.getSubmission(submissionId);
-        if (submission == null) return;
+        dbHelper.close();
 
-        final String json = submission.getUploadPayload(getApplicationContext(), idToken, 0)
-                .getPayloadEntity();
+        if (submission == null)
+            broadcastUpdate(SUBMISSION_NOT_FOUND);
 
         try {
+            final String json = submission.getUploadPayload(getApplicationContext(), idToken, 0)
+                    .getPayloadEntity();
             handlePayload(json);
+        } catch (OutOfMemoryError e) {
+            if (getPayloadAttempts++ < MAX_UPLOAD_ATTEMPTS) {
+                System.gc();
+                handleUpload(idToken);
+            } else {
+                handleFailure();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -156,38 +166,59 @@ public class UploadSubmissionService extends IntentService implements
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                Log.d(TAG, response.toString());
+//                Log.d(TAG, response.toString());
 
                 try {
                     if (response.has(getString(R.string.response_key_status)) &&
                             response.getString(getString(R.string.response_key_status))
                                     .equals(getString(R.string.response_status_ok))) {
-                        broadcastUpdate(UPLOAD_STATUS_SUCCESS);
+                        handleSuccess();
                     } else {
-                        broadcastUpdate(UPLOAD_STATUS_FAIL);
+                        handleFailure();
                     }
                 } catch (JSONException e) {
-                    broadcastUpdate(UPLOAD_STATUS_FAIL);
+                    handleFailure();
                     e.printStackTrace();
                 }
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                broadcastUpdate(UPLOAD_STATUS_FAIL);
-                Log.d(TAG, responseString);
+                handleFailure(responseString);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                broadcastUpdate(UPLOAD_STATUS_FAIL);
-                Log.d(TAG, errorResponse.toString());
+                handleFailure(errorResponse);
             }
         });
     }
 
-    public void setIdToken(String idToken) {
-        this.idToken = idToken;
+    private void handleFailure() {
+        broadcastUpdate(UPLOAD_STATUS_FAIL);
+
+        Context context = getApplicationContext();
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        dbHelper.getSubmission(submissionId).deleteSubmission(context);
+        dbHelper.close();
+    }
+
+    private void handleFailure(String response) {
+        handleFailure();
+        Log.d(TAG, response);
+    }
+
+    private void handleFailure(JSONObject response) {
+        handleFailure();
+        Log.d(TAG, response.toString());
+    }
+
+    private void handleSuccess() {
+        Context context = getApplicationContext();
+        broadcastUpdate(UPLOAD_STATUS_SUCCESS);
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        dbHelper.getSubmission(submissionId).deleteSubmission(context);
+        dbHelper.close();
     }
 
     private void broadcastUpdate(int uploadCompletion) {
@@ -207,14 +238,16 @@ public class UploadSubmissionService extends IntentService implements
         @Override
         protected Void doInBackground(Void... params) {
             idToken = getIdToken();
-
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            setIdToken(idToken);
-            handleUpload();
+            if (idToken == null) {
+                Log.e(TAG, "Error Retrieving idToken");
+            }
+            System.gc();
+            handleUpload(idToken);
         }
 
         private String getIdToken() {
@@ -236,6 +269,7 @@ public class UploadSubmissionService extends IntentService implements
                 e.printStackTrace();
                 Log.e(TAG, "Error Retrieving ID Token : " + e);
             }
+
             return token;
         }
     }

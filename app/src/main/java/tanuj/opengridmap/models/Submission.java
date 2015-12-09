@@ -303,7 +303,7 @@ public class Submission {
 //        }
     }
 
-    private void deleteSubmission(Context context) {
+    public void deleteSubmission(Context context) {
         for (Image image: getImages()) {
             image.delete(context);
         }

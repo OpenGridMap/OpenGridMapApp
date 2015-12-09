@@ -3,11 +3,9 @@ package tanuj.opengridmap.services;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -24,6 +22,8 @@ import com.google.android.gms.plus.Plus;
 
 import java.util.Timer;
 import java.util.TimerTask;
+
+import tanuj.opengridmap.utils.LocationUtils;
 
 public class LocationService extends Service implements
         LocationListener,
@@ -63,15 +63,8 @@ public class LocationService extends Service implements
     public void onCreate() {
         super.onCreate();
 
-        Log.d(TAG, "onCreate");
-
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        boolean locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-        if (!locationEnabled) {
-            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(intent);
+        if (!LocationUtils.isLocationEnabled(getApplicationContext())) {
+            stopSelf();
         }
 
         buildLocationSettingsRequest();

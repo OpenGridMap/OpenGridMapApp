@@ -257,14 +257,36 @@ public class Image {
         }
     }
 
-    public String getBase64EncodedImage() {
-        Bitmap bitmap = getImageBitmap();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        int compressionParam = 70;
-        bitmap.compress(Bitmap.CompressFormat.JPEG, compressionParam, outputStream);
-        byte[] imageByteArray = outputStream.toByteArray();
+    public String getBase64EncodedImage(int jpegCompression) {
+        if (jpegCompression <= 0) return null;
 
-        return Base64.encodeToString(imageByteArray, Base64.DEFAULT);
+        String b = null;
+        Bitmap bitmap = null;
+        try {
+            Log.v(TAG, "Attempting to decode at jpeg compression : " + jpegCompression);
+            bitmap = getImageBitmap();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, jpegCompression, outputStream);
+            byte[] imageByteArray = outputStream.toByteArray();
+
+            b = Base64.encodeToString(imageByteArray, Base64.DEFAULT);
+        } catch (OutOfMemoryError e) {
+            jpegCompression -= 10;
+            if (jpegCompression > 30) {
+                System.gc();
+                b = getBase64EncodedImage(jpegCompression);
+            }
+        } finally {
+            if (bitmap != null) bitmap.recycle();
+        }
+
+        return b;
+    }
+
+    public String getBase64EncodedImage() {
+        int jpegCompression = 70;
+
+        return getBase64EncodedImage(jpegCompression);
     }
 
     public String[] getLocationInDegrees(final Context context) {

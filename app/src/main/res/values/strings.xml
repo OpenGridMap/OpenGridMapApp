@@ -145,4 +145,8 @@
     <string name="colon">"  : "</string>
     <string name="meter">m</string>
     <string name="newline">\n</string>
+    <string name="upload_complete">Upload Complete</string>
+    <string name="upload_failed">Upload Failed</string>
+    <string name="upload_submission_error">Error Saving Submission</string>
+    <string name="upload_in_progress">Uploading...</string>
 </resources>
