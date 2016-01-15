@@ -67,9 +67,18 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onUserLeaveHint() {
+        getMainActivityFragment().onUserLeaveHint();
+    }
+
+    private MainActivityFragment getMainActivityFragment() {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        MainActivityFragment fragment = (MainActivityFragment) fragmentManager.findFragmentById(
+        return (MainActivityFragment) fragmentManager.findFragmentById(
                 R.id.fragment);
-        fragment.onUserLeaveHint();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        getMainActivityFragment().onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }

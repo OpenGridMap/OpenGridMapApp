@@ -10,6 +10,7 @@ import android.widget.Toast;
  * Created by Tanuj on 9/12/2015.
  */
 public class LocationUtils {
+    private static final String TAG = LocationUtils.class.getSimpleName();
 
     public static boolean isLocationEnabled(Context context) {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);

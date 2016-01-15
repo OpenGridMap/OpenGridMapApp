@@ -11,7 +11,7 @@ import tanuj.opengridmap.R;
 /**
  * Created by Tanuj on 12/10/2015.
  */
-public class ConnectivityUtil {
+public class ConnectivityUtils {
     public static NetworkInfo getWifiNetworkInfo(final Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(
                 Context.CONNECTIVITY_SERVICE);

@@ -4,7 +4,7 @@
     android:id="@+id/fragment_submit_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="tanuj.opengridmap.SubmitActivityFragment"
+    tools:context=".views.fragments.SubmitActivityFragment"
     android:orientation="vertical"
     android:gravity="center_horizontal"
     android:layout_centerHorizontal="true" >

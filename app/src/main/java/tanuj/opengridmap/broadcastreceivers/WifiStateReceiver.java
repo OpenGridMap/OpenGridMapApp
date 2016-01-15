@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import tanuj.opengridmap.utils.ConnectivityUtil;
+import tanuj.opengridmap.utils.ConnectivityUtils;
 
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getSimpleName();
@@ -14,7 +14,7 @@ public class WifiStateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (ConnectivityUtil.isConnectionPermitted(context)) {
+        if (ConnectivityUtils.isConnectionPermitted(context)) {
 //            Intent serviceIntent = new Intent(context, UploadService.class);
 //            context.startService(serviceIntent);
         }

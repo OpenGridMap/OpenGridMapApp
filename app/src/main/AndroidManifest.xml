@@ -53,7 +53,7 @@
                 android:value=".views.activities.MainActivity" />
         </activity>
         <activity
-            android:name=".SubmitActivity"
+            android:name=".views.activities.SubmitActivity"
             android:label="">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

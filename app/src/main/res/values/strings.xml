@@ -132,8 +132,8 @@
     <string name="key_location_result">location_result</string>
     <string name="key_image_src">image_src</string>
 
-    <string name="Complete">Complete</string>
-    <string name="Error">Error..Try Uploading again</string>
+    <string name="Complete">Finish</string>
+    <string name="Error">Error…Try Uploading again</string>
     <string name="Upload">Upload</string>
     <string name="Retry">Retry</string>
     <string name="location_not_available">Location not available</string>
@@ -145,8 +145,9 @@
     <string name="colon">"  : "</string>
     <string name="meter">m</string>
     <string name="newline">\n</string>
-    <string name="upload_complete">Upload Complete</string>
-    <string name="upload_failed">Upload Failed</string>
-    <string name="upload_submission_error">Error Saving Submission</string>
-    <string name="upload_in_progress">Uploading...</string>
+    <string name="upload_complete">Upload Complete\n</string>
+    <string name="upload_failed">Upload Failed\n</string>
+    <string name="upload_submission_error">Error Saving Submission\n</string>
+    <string name="upload_in_progress">Uploading…\n</string>
+    <string name="no_internet">No Internet Connectivity\n</string>
 </resources>

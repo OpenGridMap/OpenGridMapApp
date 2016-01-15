@@ -12,7 +12,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -28,8 +27,7 @@ import tanuj.opengridmap.utils.LocationUtils;
 public class LocationService extends Service implements
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        ResultCallback<LocationSettingsResult> {
+        GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = LocationService.class.getSimpleName();
 
     public static final String LOCATION_UPDATE_BROADCAST = "tanuj.opengridmap.broadcast.location";
@@ -52,6 +50,8 @@ public class LocationService extends Service implements
 
     private Intent intent;
 
+    private boolean receivingLocationUpdates = false;
+
     private boolean resolvingShutDown = false;
 
     private int externalIntentNo = 0;
@@ -63,11 +63,10 @@ public class LocationService extends Service implements
     public void onCreate() {
         super.onCreate();
 
-        if (!LocationUtils.isLocationEnabled(getApplicationContext())) {
-            stopSelf();
-        }
+//        if (!LocationUtils.isLocationEnabled(getApplicationContext())) {
+//            stopSelf();
+//        }
 
-        buildLocationSettingsRequest();
 
         if (isGooglePlayServicesAvailable()) {
             Log.d(TAG, "Google Play Services Available");
@@ -77,6 +76,8 @@ public class LocationService extends Service implements
 
         createLocationRequest();
         buildGoogleApiClient();
+
+        buildLocationSettingsRequest();
 
         intent = new Intent(LOCATION_UPDATE_BROADCAST);
     }
@@ -137,7 +138,7 @@ public class LocationService extends Service implements
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "Location Updated, location : " + location.toString());
+        Log.v(TAG, "Location Updated, location : " + location.toString());
         this.location = location;
         sendLocationBroadcast(location);
         resolveServiceShutdown();
@@ -160,6 +161,14 @@ public class LocationService extends Service implements
         locationSettingsRequestBuilder.setAlwaysShow(true);
     }
 
+    public PendingResult<LocationSettingsResult> getLocationSettingsPendingResult() {
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.
+                checkLocationSettings(googleApiClient, locationSettingsRequestBuilder.build());
+        Log.d(TAG, "Awaiting Location Settings Check");
+
+        return result;
+    }
+
     private void connectToGoogleApiClient() {
         Log.d(TAG, "Connecting to Google API Client.......");
         if (null != googleApiClient && !googleApiClient.isConnected() &&
@@ -177,21 +186,21 @@ public class LocationService extends Service implements
         }
     }
 
-    private void startLocationUpdates() {
-        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.
-                checkLocationSettings(googleApiClient, locationSettingsRequestBuilder.build());
-        Log.d(TAG, "Awaiting Location Settings Check");
-        result.setResultCallback(this);
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest,
-                this);
-        Log.d(TAG, "Starting Location Updates");
+    public void startLocationUpdates() {
+        if (LocationUtils.isLocationEnabled(this) && !receivingLocationUpdates) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest,
+                    this);
+            Log.d(TAG, "Starting Location Updates");
+            receivingLocationUpdates = true;
+        }
     }
 
     private void stopLocationUpdates() {
-        if (googleApiClient != null && googleApiClient.isConnected())
+        if (googleApiClient != null && googleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
-        Log.d(TAG, "Stopping Location Updates");
+            Log.d(TAG, "Stopping Location Updates");
+            receivingLocationUpdates = false;
+        }
     }
 
     public void createLocationRequest() {
@@ -208,11 +217,6 @@ public class LocationService extends Service implements
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-    }
-
-    @Override
-    public void onResult(LocationSettingsResult locationSettingsResult) {
-        Log.d(TAG, locationSettingsResult.toString());
     }
 
     public Location getLocation() {
@@ -273,22 +277,22 @@ public class LocationService extends Service implements
             resolvingShutDown = true;
 
             new Timer().schedule(
-                    new TimerTask() {
-                        @Override
-                        public void run() {
-                            if (bindingsCount == 0) {
-                                shutdownService();
-                            } else {
-                                Log.d(TAG, "Service Shutdown Cancelled");
-                            }
-                            resolvingShutDown = false;
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (bindingsCount == 0) {
+                            shutdownService();
+                        } else {
+                            Log.d(TAG, "Service Shutdown Cancelled");
                         }
-                    }, 10000);
+                        resolvingShutDown = false;
+                    }
+                }, 10000);
         }
     }
 
     private void shutdownService() {
-        stopLocationUpdates();
+//        stopLocationUpdates();
         Log.d(TAG, "Shutting down Service");
         stopSelf();
         Log.d(TAG, "Service Shutdown Successfully");

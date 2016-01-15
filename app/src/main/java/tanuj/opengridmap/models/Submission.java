@@ -371,7 +371,7 @@ public class Submission {
 
     public Float getMeanDistanceBetweenImages() {
         if (getNoOfImages() == 1) {
-            return Float.valueOf(0);
+            return (float) 0;
         }
 
         float meanDistance = 0;

@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.data;
 
 import android.content.Context;
 

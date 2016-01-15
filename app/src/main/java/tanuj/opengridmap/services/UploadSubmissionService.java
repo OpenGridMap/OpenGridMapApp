@@ -22,7 +22,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 import cz.msebera.android.httpclient.Header;
-import tanuj.opengridmap.PGISRestClient;
+import tanuj.opengridmap.data.PGISRestClient;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
@@ -33,13 +33,15 @@ public class UploadSubmissionService extends IntentService implements
 
     public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
 
-    public static final int UPLOAD_STATUS_FAIL = -1;
+    public static final short NO_INTERNET_CONNECTIVITY = -3;
 
-    public static final int SUBMISSION_NOT_FOUND = -2;
+    public static final short SUBMISSION_NOT_FOUND = -2;
 
-    public static final int UPLOAD_STATUS_SUCCESS = 100;
+    public static final short UPLOAD_STATUS_FAIL = -1;
 
-    private static final int MAX_UPLOAD_ATTEMPTS = 3;
+    public static final short UPLOAD_STATUS_SUCCESS = 100;
+
+    private static final short MAX_UPLOAD_ATTEMPTS = 3;
 
     private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
 
@@ -133,7 +135,22 @@ public class UploadSubmissionService extends IntentService implements
         return builder.build();
     }
 
-    private void handleUpload(String idToken) {
+    private void handleUpload(String jsonPayload) {
+        try {
+            handlePayload(jsonPayload);
+        } catch (OutOfMemoryError e) {
+            if (getPayloadAttempts++ < MAX_UPLOAD_ATTEMPTS) {
+                System.gc();
+                handleUpload(jsonPayload);
+            } else {
+                handleFailure();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getJsonPayload(String idToken) {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
         Submission submission = dbHelper.getSubmission(submissionId);
         dbHelper.close();
@@ -141,20 +158,8 @@ public class UploadSubmissionService extends IntentService implements
         if (submission == null)
             broadcastUpdate(SUBMISSION_NOT_FOUND);
 
-        try {
-            final String json = submission.getUploadPayload(getApplicationContext(), idToken, 0)
-                    .getPayloadEntity();
-            handlePayload(json);
-        } catch (OutOfMemoryError e) {
-            if (getPayloadAttempts++ < MAX_UPLOAD_ATTEMPTS) {
-                System.gc();
-                handleUpload(idToken);
-            } else {
-                handleFailure();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return submission.getUploadPayload(getApplicationContext(), idToken, 0)
+                        .getPayloadEntity();
     }
 
     public void handlePayload(final String json) throws IOException {
@@ -184,12 +189,12 @@ public class UploadSubmissionService extends IntentService implements
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                handleFailure(responseString);
+                handleFailure(throwable, responseString);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                handleFailure(errorResponse);
+                handleFailure(throwable, errorResponse);
             }
         });
     }
@@ -203,14 +208,18 @@ public class UploadSubmissionService extends IntentService implements
         dbHelper.close();
     }
 
-    private void handleFailure(String response) {
-        handleFailure();
-        Log.d(TAG, response);
+    private void handleFailure(Throwable throwable, String response) {
+        if (throwable instanceof IOException)
+            broadcastUpdate(NO_INTERNET_CONNECTIVITY);
+
+//        handleFailure();
     }
 
-    private void handleFailure(JSONObject response) {
-        handleFailure();
-        Log.d(TAG, response.toString());
+    private void handleFailure(Throwable throwable, JSONObject response) {
+        if (throwable instanceof IOException)
+            broadcastUpdate(NO_INTERNET_CONNECTIVITY);
+
+//        handleFailure();
     }
 
     private void handleSuccess() {
@@ -221,7 +230,7 @@ public class UploadSubmissionService extends IntentService implements
         dbHelper.close();
     }
 
-    private void broadcastUpdate(int uploadCompletion) {
+    private void broadcastUpdate(short uploadCompletion) {
         Log.v(TAG, "Upload Completion for Submission " + submissionId + " : " + uploadCompletion);
 
         Intent intent = new Intent(UPLOAD_UPDATE_BROADCAST);
@@ -247,7 +256,8 @@ public class UploadSubmissionService extends IntentService implements
                 Log.e(TAG, "Error Retrieving idToken");
             }
             System.gc();
-            handleUpload(idToken);
+//            handleUpload(idToken);
+            new GetPayloadTask().execute(idToken);
         }
 
         private String getIdToken() {
@@ -271,6 +281,21 @@ public class UploadSubmissionService extends IntentService implements
             }
 
             return token;
+        }
+    }
+
+    private class GetPayloadTask extends AsyncTask<String, Void, Void> {
+        private String jsonPayload;
+
+        @Override
+        protected Void doInBackground(String... params) {
+            jsonPayload = getJsonPayload(params[0]);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            handleUpload(jsonPayload);
         }
     }
 }

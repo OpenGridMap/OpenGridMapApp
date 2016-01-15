@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.net.Uri;
@@ -22,18 +23,38 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+
 import java.io.File;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.SubmitActivity;
+import tanuj.opengridmap.views.activities.SubmitActivity;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.utils.LocationUtils;
 import tanuj.opengridmap.utils.ServiceUtils;
 import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
 
-public class MainActivityFragment extends Fragment {
+public class MainActivityFragment extends Fragment implements
+        ResultCallback<LocationSettingsResult> {
     public static final String TAG = MainActivityFragment.class.getSimpleName();
+
+    private static final short STATE_DEFAULT = 0;
+
+    private static final short STATE_CAMERA_LAUNCH_CHECK = 1;
+
+    private static final short STATE_LAUNCH_CAMERA = 2;
+
+    private static final short STATE_SUBMIT = 3;
+
+    private static final short REQUEST_CHECK_SETTINGS = 101;
+
+    public static final short REQUEST_CAMERA = 100;
+
+    private short state = STATE_DEFAULT;
 
     private static LocationService locationService;
 
@@ -52,6 +73,8 @@ public class MainActivityFragment extends Fragment {
             LocationService.LocalBinder localBinder = (LocationService.LocalBinder) service;
             locationService = localBinder.getServiceInstance();
             locationServiceBindingStatus = true;
+
+            checkLocationSettings();
         }
 
         @Override
@@ -67,7 +90,7 @@ public class MainActivityFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra("location");
 
-            Log.d(TAG, location.toString());
+            Log.v(TAG, location.toString());
         }
     };
 
@@ -78,7 +101,7 @@ public class MainActivityFragment extends Fragment {
         super.onCreate(savedInstanceState);
         Context context = getActivity();
 
-        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
+//        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
 
         if (!ServiceUtils.isMyServiceRunning((ActivityManager)
                 context.getSystemService(Context.ACTIVITY_SERVICE))) {
@@ -88,6 +111,8 @@ public class MainActivityFragment extends Fragment {
         } else {
             Log.d(TAG, "Location Service already active");
         }
+
+        bindLocationService();
     }
 
     @Override
@@ -112,12 +137,12 @@ public class MainActivityFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        bindLocationService();
+//        bindLocationService();
     }
 
     @Override
     public void onStop() {
-        unbindLocationService();
+//        unbindLocationService();
         super.onStop();
     }
 
@@ -135,6 +160,12 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
+    public void onDestroy() {
+        unbindLocationService();
+        super.onDestroy();
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putLong(getString(R.string.key_power_element_id), powerElementId);
         super.onSaveInstanceState(outState);
@@ -144,30 +175,126 @@ public class MainActivityFragment extends Fragment {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             powerElementId = PowerElementsSeedData.powerElements.get(position).getId();
-            launchCamera();
+            state = STATE_CAMERA_LAUNCH_CHECK;
+
+            process();
         }
     };
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         final Context context = getActivity();
-        locationService.handleExternalIntentResult();
 
-        if (requestCode == 100) {
-            if (resultCode == Activity.RESULT_OK) {
-                LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
-                locationResult = locationService.getLocation();
-                submit();
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(context, "Failed", Toast.LENGTH_SHORT).show();
+        switch (requestCode) {
+            case REQUEST_CAMERA: {
+                locationService.handleExternalIntentResult();
+
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
+                        locationResult = locationService.getLocation();
+                        state = STATE_SUBMIT;
+                        process();
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED: {
+                        state = STATE_DEFAULT;
+                        Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                    default: {
+                        state = STATE_DEFAULT;
+                        Toast.makeText(context, "Failed", Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+                break;
+            }
+            case REQUEST_CHECK_SETTINGS: {
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        if (locationService != null)
+                            locationService.startLocationUpdates();
+
+                        if (state == STATE_CAMERA_LAUNCH_CHECK)
+                            state = STATE_LAUNCH_CAMERA;
+
+                        process();
+
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED: {
+                        checkLocationSettings();
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onResult(LocationSettingsResult result) {
+        final Status status = result.getStatus();
+
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS: {
+                process();
+                break;
+            }
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED: {
+                try {
+                    status.startResolutionForResult(getActivity(), REQUEST_CHECK_SETTINGS);
+                } catch (IntentSender.SendIntentException e) {}
+                break;
+            }
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE: {
+                break;
             }
         }
     }
 
+    private void process() {
+        switch (state) {
+            case STATE_DEFAULT: {
+                break;
+            }
+            case STATE_CAMERA_LAUNCH_CHECK: {
+                if (LocationUtils.isLocationEnabled(getActivity())) {
+                    state = STATE_LAUNCH_CAMERA;
+                    process();
+                } else {
+                    checkLocationSettings();
+                }
+                break;
+            }
+            case STATE_LAUNCH_CAMERA: {
+                launchCamera();
+                break;
+            }
+            case STATE_SUBMIT: {
+                submit();
+                break;
+            }
+        }
+    }
+
+    private void checkLocationSettings() {
+        if (!LocationUtils.isLocationEnabled(getActivity())) {
+            if (locationService == null) {
+                Log.d(TAG, "Location Service Null");
+                return;
+            }
+
+            Log.d(TAG, "Checking Location Settings");
+            locationService.getLocationSettingsPendingResult().setResultCallback(this);
+        }
+    }
+
     private void launchCamera() {
-        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
+//        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
         Uri fileUri = getOutputMediaFileUri();
         Log.d(TAG, fileUri.toString());
 
@@ -177,7 +304,7 @@ public class MainActivityFragment extends Fragment {
         locationService.handleExternalIntent();
         locationStart = locationService.getLocation();
 
-        startActivityForResult(cameraIntent, 100);
+        startActivityForResult(cameraIntent, REQUEST_CAMERA);
     }
 
     private void submit() {

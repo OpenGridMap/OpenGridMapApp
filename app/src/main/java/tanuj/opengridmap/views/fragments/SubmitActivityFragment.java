@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.fragments;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,11 +28,13 @@ import com.dd.CircularProgressButton;
 
 import java.io.File;
 
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.services.UploadSubmissionService;
+import tanuj.opengridmap.utils.ConnectivityUtils;
 import tanuj.opengridmap.utils.LocationUtils;
 
 public class SubmitActivityFragment extends Fragment implements View.OnClickListener {
@@ -54,7 +55,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private ImageView imageView;
 
-    private TextView locationFeedbackTextView;
+    private TextView feedbackTextView;
 
     private ProgressBar locationQualityIndicator;
 
@@ -95,7 +96,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                 setLocationFeedback();
             }
 
-            Log.d(TAG, location.toString());
+            Log.v(TAG, location.toString());
         }
     };
 
@@ -103,7 +104,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         @Override
         public void onReceive(Context context, Intent intent) {
             processUploadUpdate(intent.getLongExtra(getString(R.string.key_submission_id), -1),
-                    intent.getIntExtra(getString(R.string.key_upload_completion), -1));
+                    intent.getShortExtra(getString(R.string.key_upload_completion), (short) -1));
         }
     };
 
@@ -115,7 +116,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         View view = inflater.inflate(R.layout.fragment_submit, container, false);
 
         imageView = (ImageView) view.findViewById(R.id.image_preview);
-        locationFeedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
+        feedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
         locationQualityIndicator = (ProgressBar) view.findViewById(R.id.location_quality_indicator);
         submitButton = (CircularProgressButton) view.findViewById(R.id.submit_button);
         retryButton = (CircularProgressButton) view.findViewById(R.id.retry_button);
@@ -189,7 +190,17 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.submit_button: {
-                if (!uploadComplete) submit();
+                if (!uploadComplete) {
+                    if (ConnectivityUtils.isInternetConnected(getActivity()))
+                        submit();
+                    else {
+                        feedbackTextView.setText(R.string.no_internet);
+                        submitButton.setProgress(-1);
+                        retryButton.setVisibility(View.GONE);
+
+                        Toast.makeText(getActivity(), R.string.no_internet, Toast.LENGTH_SHORT).show();
+                    }
+                }
                 else finish();
                 break;
             }
@@ -250,7 +261,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     public void onUserLeaveHint() {
-        locationService.resolveServiceShutdown();
+        if (locationService != null)
+            locationService.resolveServiceShutdown();
     }
 
     private int getLocationStatus(Location location) {
@@ -308,7 +320,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         String locationFeedback = getLocationFeedbackMsg(location);
         int locationStatus = getLocationStatus(location);
 
-        locationFeedbackTextView.setText(locationFeedback);
+        feedbackTextView.setText(locationFeedback);
 
         if (locationStatus > LOCATION_STATUS_NOT_AVAILABLE) {
             submitButton.setEnabled(true);
@@ -326,29 +338,65 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         setLocationQualityIndicator();
     }
 
-    private void processUploadUpdate(long submissionId, int uploadCompletion) {
+    private void processUploadUpdate(long submissionId, short uploadCompletion) {
         if (this.submissionId != submissionId) return;
 
-        if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_SUCCESS) {
-            submitButton.setClickable(true);
-            retryButton.setEnabled(false);
-            retryButton.setVisibility(View.GONE);
-            locationFeedbackTextView.setText(getString(R.string.upload_complete));
+        switch (uploadCompletion) {
+            case UploadSubmissionService.UPLOAD_STATUS_SUCCESS: {
+                submitButton.setClickable(true);
+                retryButton.setEnabled(false);
+                retryButton.setVisibility(View.GONE);
+                feedbackTextView.setText(R.string.upload_complete);
 
-            ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
+//                ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
 
-            uploadComplete = true;
-        } else if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_FAIL) {
-            locationFeedbackTextView.setText(getString(R.string.upload_failed));
-            submitButton.setClickable(true);
-            retryButton.setEnabled(false);
-            retryButton.setVisibility(View.GONE);
-        } else if (uploadCompletion == UploadSubmissionService.SUBMISSION_NOT_FOUND) {
-            locationFeedbackTextView.setText(getString(R.string.upload_submission_error));
-            submitButton.setClickable(false);
-            retryButton.setEnabled(true);
-            retryButton.setVisibility(View.VISIBLE);
+                uploadComplete = true;
+                break;
+            }
+            case UploadSubmissionService.UPLOAD_STATUS_FAIL: {
+                feedbackTextView.setText(R.string.upload_failed);
+                submitButton.setClickable(true);
+                retryButton.setEnabled(false);
+                retryButton.setVisibility(View.GONE);
+                break;
+            }
+            case UploadSubmissionService.SUBMISSION_NOT_FOUND: {
+                feedbackTextView.setText(R.string.upload_submission_error);
+                submitButton.setClickable(false);
+                retryButton.setEnabled(true);
+                retryButton.setVisibility(View.VISIBLE);
+                break;
+            }
+            case UploadSubmissionService.NO_INTERNET_CONNECTIVITY: {
+                feedbackTextView.setText(R.string.no_internet);
+                submitButton.setClickable(true);
+                submitButton.setEnabled(true);
+                break;
+            }
         }
+
+//        if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_SUCCESS) {
+//            submitButton.setClickable(true);
+//            retryButton.setEnabled(false);
+//            retryButton.setVisibility(View.GONE);
+//            feedbackTextView.setText(getString(R.string.upload_complete));
+//
+//            ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
+//
+//            uploadComplete = true;
+//        } else if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_FAIL) {
+//            feedbackTextView.setText(getString(R.string.upload_failed));
+//            submitButton.setClickable(true);
+//            retryButton.setEnabled(false);
+//            retryButton.setVisibility(View.GONE);
+//        } else if (uploadCompletion == UploadSubmissionService.SUBMISSION_NOT_FOUND) {
+//            feedbackTextView.setText(getString(R.string.upload_submission_error));
+//            submitButton.setClickable(false);
+//            retryButton.setEnabled(true);
+//            retryButton.setVisibility(View.VISIBLE);
+//        }
+        if (uploadCompletion < -1)
+            uploadCompletion = -1;
 
         submitButton.setProgress(uploadCompletion);
     }
@@ -389,12 +437,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
 
         UploadSubmissionService.startUpload(context, submission.getId());
-        locationFeedbackTextView.setText(getString(R.string.upload_in_progress));
+        feedbackTextView.setText(getString(R.string.upload_in_progress));
     }
 
     private void launchCamera() {
         if (submission != null)
             submission.getImage(0).delete(getActivity());
+
+        submitButton.setProgress(0);
 
         Uri fileUri = getOutputMediaFileUri();
         Log.d(TAG, fileUri.toString());
@@ -412,7 +462,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         File from = new File(imageSrc);
         File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
         File to = new File(storageDir.getPath() + File.separator +
-                String.valueOf(System.currentTimeMillis()));
+                String.valueOf(System.currentTimeMillis()) + ".jpg");
 
         String path = null;
         if (from.exists()) {
