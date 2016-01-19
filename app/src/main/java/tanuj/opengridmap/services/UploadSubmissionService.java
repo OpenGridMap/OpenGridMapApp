@@ -25,6 +25,7 @@ import cz.msebera.android.httpclient.Header;
 import tanuj.opengridmap.data.PGISRestClient;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.exceptions.MemoryLowException;
 import tanuj.opengridmap.models.Submission;
 
 public class UploadSubmissionService extends IntentService implements
@@ -32,6 +33,8 @@ public class UploadSubmissionService extends IntentService implements
     private static final String TAG = UploadSubmissionService.class.getSimpleName();
 
     public static final String UPLOAD_UPDATE_BROADCAST = "tanuj.opengridmap.upload.update";
+
+    public static final short LOW_MEMORY = -4;
 
     public static final short NO_INTERNET_CONNECTIVITY = -3;
 
@@ -150,7 +153,7 @@ public class UploadSubmissionService extends IntentService implements
         }
     }
 
-    private String getJsonPayload(String idToken) {
+    private String getJsonPayload(String idToken) throws MemoryLowException {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
         Submission submission = dbHelper.getSubmission(submissionId);
         dbHelper.close();
@@ -202,10 +205,10 @@ public class UploadSubmissionService extends IntentService implements
     private void handleFailure() {
         broadcastUpdate(UPLOAD_STATUS_FAIL);
 
-        Context context = getApplicationContext();
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-        dbHelper.getSubmission(submissionId).deleteSubmission(context);
-        dbHelper.close();
+//        Context context = getApplicationContext();
+//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+//        dbHelper.getSubmission(submissionId).deleteSubmission(context);
+//        dbHelper.close();
     }
 
     private void handleFailure(Throwable throwable, String response) {
@@ -286,16 +289,26 @@ public class UploadSubmissionService extends IntentService implements
 
     private class GetPayloadTask extends AsyncTask<String, Void, Void> {
         private String jsonPayload;
+        private Exception e;
 
         @Override
         protected Void doInBackground(String... params) {
-            jsonPayload = getJsonPayload(params[0]);
+            try {
+                jsonPayload = getJsonPayload(params[0]);
+            } catch (MemoryLowException e) {
+                e.printStackTrace();
+                this.e = e;
+            }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            handleUpload(jsonPayload);
+            if (e == null) {
+                handleUpload(jsonPayload);
+            } else {
+                broadcastUpdate(LOW_MEMORY);
+            }
         }
     }
 }

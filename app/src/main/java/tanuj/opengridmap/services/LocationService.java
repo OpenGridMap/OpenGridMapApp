@@ -187,7 +187,8 @@ public class LocationService extends Service implements
     }
 
     public void startLocationUpdates() {
-        if (LocationUtils.isLocationEnabled(this) && !receivingLocationUpdates) {
+        if (googleApiClient != null && googleApiClient.isConnected() &&
+                LocationUtils.isLocationEnabled(this) && !receivingLocationUpdates) {
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest,
                     this);
             Log.d(TAG, "Starting Location Updates");

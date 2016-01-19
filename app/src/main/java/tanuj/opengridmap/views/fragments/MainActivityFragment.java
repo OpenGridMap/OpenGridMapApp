@@ -191,7 +191,8 @@ public class MainActivityFragment extends Fragment implements
 
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
-                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
+                        checkLocationSettings();
+//                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
                         locationResult = locationService.getLocation();
                         state = STATE_SUBMIT;
                         process();

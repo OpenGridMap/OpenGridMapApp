@@ -17,6 +17,7 @@ import java.util.List;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.exceptions.MemoryLowException;
 import tanuj.opengridmap.utils.HashUtils;
 
 /**
@@ -223,12 +224,12 @@ public class Submission {
         return false;
     }
 
-    public Payload getUploadPayload(Context context, String idToken, int imageIndex) {
+    public Payload getUploadPayload(Context context, String idToken, int imageIndex) throws MemoryLowException {
         updateStatus(context, STATUS_UPLOAD_IN_PROGRESS);
         return getPayloadByImage(context, idToken, getImage(imageIndex));
     }
 
-    public ArrayList<Payload> getUploadPayloads(Context context, String idToken, int j) {
+    public ArrayList<Payload> getUploadPayloads(Context context, String idToken, int j) throws MemoryLowException {
         ArrayList<Payload> payloads = new ArrayList<Payload>();
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
 
@@ -247,12 +248,12 @@ public class Submission {
         return payloads;
     }
 
-    private Payload getPayloadByImage(Context context, String idToken, Image image) {
+    private Payload getPayloadByImage(Context context, String idToken, Image image) throws MemoryLowException {
         JSONObject json = getPayloadJsonObject(context, idToken, image);
         return new Payload(this.getId(), image.getId(), json);
     }
 
-    private JSONObject getPayloadJsonObject(Context context, String idToken, Image image) {
+    private JSONObject getPayloadJsonObject(Context context, String idToken, Image image) throws MemoryLowException {
         JSONObject json = new JSONObject();
         JSONObject dataPacket = new JSONObject();
         JSONObject point = new JSONObject();

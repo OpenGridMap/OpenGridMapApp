@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -25,6 +26,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dd.CircularProgressButton;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.io.File;
 
@@ -37,7 +42,7 @@ import tanuj.opengridmap.services.UploadSubmissionService;
 import tanuj.opengridmap.utils.ConnectivityUtils;
 import tanuj.opengridmap.utils.LocationUtils;
 
-public class SubmitActivityFragment extends Fragment implements View.OnClickListener {
+public class SubmitActivityFragment extends Fragment implements View.OnClickListener, ResultCallback<LocationSettingsResult> {
 
     private static final String TAG = SubmitActivityFragment.class.getSimpleName();
 
@@ -46,6 +51,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     private static final int LOCATION_STATUS_OK = 1;
     private static final int LOCATION_STATUS_GOOD = 2;
     private static final int LOCATION_STATUS_EXCELLENT = 3;
+
+    private static final short REQUEST_CHECK_SETTINGS = 101;
 
     private Location location;
 
@@ -127,10 +134,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
         if (location == null) {
             location = intent.getParcelableExtra(getString(R.string.key_location_result));
-        }
-
-        if (location == null) {
-            LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
+            checkLocationSettings();
+//            LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
         }
 
         powerElementId = intent.getLongExtra(getString(R.string.key_power_element_id), -1);
@@ -322,7 +327,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
         feedbackTextView.setText(locationFeedback);
 
-        if (locationStatus > LOCATION_STATUS_NOT_AVAILABLE) {
+        if (locationStatus > LOCATION_STATUS_NOT_ACCEPTABLE) {
             submitButton.setEnabled(true);
         } else {
             submitButton.setEnabled(false);
@@ -373,28 +378,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                 submitButton.setEnabled(true);
                 break;
             }
+            case UploadSubmissionService.LOW_MEMORY: {
+                feedbackTextView.setText(R.string.upload_failed);
+                submitButton.setClickable(true);
+                submitButton.setEnabled(true);
+                break;
+            }
         }
 
-//        if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_SUCCESS) {
-//            submitButton.setClickable(true);
-//            retryButton.setEnabled(false);
-//            retryButton.setVisibility(View.GONE);
-//            feedbackTextView.setText(getString(R.string.upload_complete));
-//
-//            ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
-//
-//            uploadComplete = true;
-//        } else if (uploadCompletion == UploadSubmissionService.UPLOAD_STATUS_FAIL) {
-//            feedbackTextView.setText(getString(R.string.upload_failed));
-//            submitButton.setClickable(true);
-//            retryButton.setEnabled(false);
-//            retryButton.setVisibility(View.GONE);
-//        } else if (uploadCompletion == UploadSubmissionService.SUBMISSION_NOT_FOUND) {
-//            feedbackTextView.setText(getString(R.string.upload_submission_error));
-//            submitButton.setClickable(false);
-//            retryButton.setEnabled(true);
-//            retryButton.setVisibility(View.VISIBLE);
-//        }
         if (uploadCompletion < -1)
             uploadCompletion = -1;
 
@@ -484,5 +475,38 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             accuracy = 0;
 
         locationQualityIndicator.setProgress(accuracy);
+    }
+
+    private void checkLocationSettings() {
+        if (!LocationUtils.isLocationEnabled(getActivity())) {
+            if (locationService == null) {
+                Log.d(TAG, "Location Service Null");
+                return;
+            }
+
+            Log.d(TAG, "Checking Location Settings");
+            locationService.getLocationSettingsPendingResult().setResultCallback(this);
+        }
+    }
+
+    @Override
+    public void onResult(LocationSettingsResult result) {
+        final Status status = result.getStatus();
+
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS: {
+//                process();
+                break;
+            }
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED: {
+                try {
+                    status.startResolutionForResult(getActivity(), REQUEST_CHECK_SETTINGS);
+                } catch (IntentSender.SendIntentException e) {}
+                break;
+            }
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE: {
+                break;
+            }
+        }
     }
 }

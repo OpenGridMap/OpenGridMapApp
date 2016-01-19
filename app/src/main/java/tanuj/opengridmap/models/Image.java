@@ -17,6 +17,7 @@ import java.util.Date;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.exceptions.MemoryLowException;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -257,8 +258,13 @@ public class Image {
         }
     }
 
-    public String getBase64EncodedImage(int jpegCompression) {
+    public String getBase64EncodedImage(int jpegCompression, int attempt) throws MemoryLowException {
         if (jpegCompression <= 0) return null;
+
+        if (attempt > 20)
+            throw new MemoryLowException();
+        else
+            attempt++;
 
         String b = null;
         Bitmap bitmap = null;
@@ -271,11 +277,12 @@ public class Image {
 
             b = Base64.encodeToString(imageByteArray, Base64.DEFAULT);
         } catch (OutOfMemoryError e) {
-            jpegCompression -= 10;
-            if (jpegCompression > 30) {
-                System.gc();
-                b = getBase64EncodedImage(jpegCompression);
-            }
+            System.gc();
+
+            if (jpegCompression >= 20)
+                jpegCompression -= 5;
+
+            b = getBase64EncodedImage(jpegCompression, attempt);
         } finally {
             if (bitmap != null) bitmap.recycle();
         }
@@ -283,10 +290,10 @@ public class Image {
         return b;
     }
 
-    public String getBase64EncodedImage() {
+    public String getBase64EncodedImage() throws MemoryLowException {
         int jpegCompression = 70;
 
-        return getBase64EncodedImage(jpegCompression);
+        return getBase64EncodedImage(jpegCompression, 0);
     }
 
     public String[] getLocationInDegrees(final Context context) {
