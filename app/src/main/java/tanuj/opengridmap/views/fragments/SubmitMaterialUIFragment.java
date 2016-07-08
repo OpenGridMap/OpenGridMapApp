@@ -681,11 +681,6 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
     public void onFABProgressAnimationEnd() {
         feedbackTextView.setText(R.string.upload_complete);
         submitButton.setActivated(true);
-
-        Log.d(TAG, String.valueOf(submitButton.isActivated()));
-        Log.d(TAG, String.valueOf(submitButton.isClickable()));
-        Log.d(TAG, String.valueOf(submitButton.isEnabled()));
-        Log.d(TAG, String.valueOf(submitButton.isContextClickable()));
 //        Snackbar.make(fabProgressCircle, R.string.upload_complete, Snackbar.LENGTH_INDEFINITE)
 //                .setAction("Action", null)
 //                .show();
