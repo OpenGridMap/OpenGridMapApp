@@ -3,6 +3,7 @@ package tanuj.opengridmap.models;
 import android.content.Context;
 import android.location.Location;
 import android.provider.Settings;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -259,10 +260,18 @@ public class Submission {
         JSONObject point = new JSONObject();
         JSONObject properties = new JSONObject();
         JSONObject tags = new JSONObject();
-        JSONArray powerElements = new JSONArray();
+        JSONArray powerElementsTags = new JSONArray();
 
-        for (PowerElement powerElement : this.powerElements) {
-            powerElements.put(powerElement.getName());
+//        Log.d(TAG, "OSM Power elements : " + getPowerElements().get(0).getOsmTags());
+
+        String[] powerElementTags = getPowerElements().get(0).getOsmTags().split(";");
+
+//        for (PowerElement powerElement : this.powerElementsTags) {
+//            powerElementsTags.put(powerElement.getName());
+//        }
+
+        for (String powerElementTag: powerElementTags) {
+            powerElementsTags.put(powerElementTag);
         }
 
         Location location = image.getLocation();
@@ -270,7 +279,7 @@ public class Submission {
         try {
             tags.put(context.getString(R.string.json_key_accuracy), location.getAccuracy());
             tags.put(context.getString(R.string.json_key_altitude), location.getAltitude());
-            tags.put(context.getString(R.string.json_key_power_element_tags), powerElements);
+            tags.put(context.getString(R.string.json_key_power_element_tags), powerElementsTags);
             tags.put(context.getString(R.string.json_key_timestamp), image.getCreatedTimestamp());
             tags.put(context.getString(R.string.json_key_type), context.getString(
                     R.string.json_value_point));

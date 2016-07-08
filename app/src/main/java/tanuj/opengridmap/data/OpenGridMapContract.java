@@ -13,6 +13,7 @@ public class OpenGridMapContract {
 
         public static final String COLUMN_POWER_ELEMENT_NAME = "name";
         public static final String COLUMN_DESCRIPTION = "description";
+        public static final String COLUMN_OSM_TAGS = "osm_tags";
     }
 
     public static final class SubmissionEntry implements BaseColumns {

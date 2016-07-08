@@ -32,7 +32,7 @@ import tanuj.opengridmap.utils.TimestampUtils;
 public class OpenGridMapDbHelper extends SQLiteOpenHelper {
     private static final String TAG = OpenGridMapDbHelper.class.getSimpleName();
 
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 3;
 
     private static final String DATABASE_NAME = "OpenGridMap.db";
     private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS ";
@@ -73,7 +73,8 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
     private static final String[] powerElementColumns = {
             PowerElementEntry._ID,
-            PowerElementEntry.COLUMN_POWER_ELEMENT_NAME};
+            PowerElementEntry.COLUMN_POWER_ELEMENT_NAME,
+            PowerElementEntry.COLUMN_OSM_TAGS};
 
     private static final String[] uploadQueueColumns = {
             UploadQueueEntry._ID,
@@ -82,6 +83,11 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
             UploadQueueEntry.COLUMN_PAYLOADS_UPLOADED,
             UploadQueueEntry.COLUMN_CREATED_TIMESTAMP,
             UploadQueueEntry.COLUMN_UPDATED_TIMESTAMP};
+    public static final String ALTER_TABLE = "ALTER TABLE ";
+    public static final String ADD = "ADD  ";
+    public static final String UPDATE_TABLE = "UPDATE ";
+    public static final String SET = "SET ";
+    public static final String WHERE = "WHERE ";
 
     public OpenGridMapDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -93,8 +99,9 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         final String CREATE_POWER_ELEMENTS_TABLE = CREATE_TABLE +
                 PowerElementEntry.TABLE_NAME + " (" +
                 PowerElementEntry._ID + TYPE_INTEGER + CONSTRAINT_PRIMARY_KEY + "," +
-                PowerElementEntry.COLUMN_POWER_ELEMENT_NAME + TYPE_TEXT + CONSTRAINT_UNIQUE +
-                CONSTRAINT_NOT_NULL + ", " + PowerElementEntry.COLUMN_DESCRIPTION + TYPE_TEXT + ");";
+                PowerElementEntry.COLUMN_POWER_ELEMENT_NAME + TYPE_TEXT + CONSTRAINT_UNIQUE + CONSTRAINT_NOT_NULL + ", " +
+                PowerElementEntry.COLUMN_DESCRIPTION + TYPE_TEXT + ", " +
+                PowerElementEntry.COLUMN_OSM_TAGS + TYPE_TEXT + CONSTRAINT_UNIQUE + CONSTRAINT_NOT_NULL + ");";
 
         final String CREATE_SUBMISSIONS_TABLE = CREATE_TABLE +
                 SubmissionEntry.TABLE_NAME + " (" +
@@ -163,6 +170,18 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+//        int currentVersion = oldVersion;
+
+//        while (currentVersion < newVersion) {
+//            switch (currentVersion) {
+//                case 1: {
+//                    db.execSQL(ALTER_TABLE + PowerElementEntry.TABLE_NAME + ADD + TYPE_TEXT);
+//                    currentVersion++;
+//                    break;
+//                }
+//            }
+//        }
+
         db.execSQL(DROP_TABLE + UploadQueueEntry.TABLE_NAME);
         db.execSQL(DROP_TABLE + ImageEntry.TABLE_NAME);
         db.execSQL(DROP_TABLE + PowerElementSubmissionEntry.TABLE_NAME);
@@ -208,8 +227,26 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
             submission.setPowerElements(this.getPowerElementsBySubmissionId(submission));
         }
 
-
         return submission;
+    }
+
+    public long getFirstSubmissionId() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] submissionColumns = {SubmissionEntry._ID};
+
+        Cursor cursor = db.query(SubmissionEntry.TABLE_NAME, submissionColumns,null, null, null, null, null, Integer.toString(1));
+
+        long submissionId = -1;
+
+        if (cursor.moveToFirst()) {
+            submissionId = cursor.getLong(0);
+        }
+
+        cursor.close();
+        db.close();
+
+        return submissionId;
     }
 
     public List<Submission> getSubmissions(int minStatus) {
@@ -424,6 +461,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         values.put(PowerElementEntry._ID, powerElement.getId());
         values.put(PowerElementEntry.COLUMN_POWER_ELEMENT_NAME, powerElement.getName());
         values.put(PowerElementEntry.COLUMN_DESCRIPTION, powerElement.getDescription());
+        values.put(PowerElementEntry.COLUMN_OSM_TAGS, powerElement.getOsmTags());
 
         db.insert(PowerElementEntry.TABLE_NAME, null, values);
     }
@@ -493,7 +531,11 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
 
         if (cursor.moveToFirst()) {
             do {
-                powerElements.add(getPowerElementFromCursor(cursor));
+                long id = cursor.getLong(0);
+                String name = cursor.getString(1);
+                String osmTags = cursor.getString(3);
+                System.out.println(osmTags);
+                powerElements.add(new PowerElement(id, name, osmTags));
             } while (cursor.moveToNext());
         }
 
@@ -507,8 +549,9 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         long id = cursor.getLong(0);
         String name = cursor.getString(1);
 //        String description = cursor.getString(2);
+        String osmTags = cursor.getString(2);
 
-        return new PowerElement(id, name);
+        return new PowerElement(id, name, osmTags);
     }
 
     public ArrayList<PowerElement> getNotTaggedPowerElements(Submission submission) {

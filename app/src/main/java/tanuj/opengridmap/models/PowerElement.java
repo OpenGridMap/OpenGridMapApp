@@ -1,5 +1,6 @@
 package tanuj.opengridmap.models;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -10,17 +11,20 @@ public class PowerElement implements Parcelable{
     private long id;
     private String name;
     private int imageId;
-    private String description;
+    private int description;
+    private String osmTags;
 
-    public PowerElement(long id, String name, int imageId) {
+    public PowerElement(long id, String name, int imageId, String osmTags) {
         this.id = id;
         this.name = name;
         this.imageId = imageId;
+        this.osmTags = osmTags;
     }
 
-    public PowerElement(long id, String name) {
+    public PowerElement(long id, String name, String osmTags) {
         this.id = id;
         this.name = name;
+        this.osmTags = osmTags;
     }
 
     public PowerElement(Parcel parcel) {
@@ -41,6 +45,11 @@ public class PowerElement implements Parcelable{
         }
     };
 
+    public PowerElement(long id, String name, int imageId, String osmTags, int description) {
+        this(id, name, imageId, osmTags);
+        this.description = description;
+    }
+
     public long getId() {
         return id;
     }
@@ -53,8 +62,11 @@ public class PowerElement implements Parcelable{
         return imageId;
     }
 
+    public String getDeviceDescription(Context context) {
+        return context.getString(description);
+    }
     public String getDescription() {
-        return description;
+        return null;
     }
 
     public void setId(int id) {
@@ -69,9 +81,9 @@ public class PowerElement implements Parcelable{
         this.imageId = imageId;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+//    public void setDescription(String description) {
+//        this.description = description;
+//    }
 
     @Override
     public int describeContents() {
@@ -97,4 +109,8 @@ public class PowerElement implements Parcelable{
             return new PowerElement[size];
         }
     };
+
+    public String getOsmTags() {
+        return osmTags;
+    }
 }

@@ -1,5 +1,6 @@
 package tanuj.opengridmap.views.fragments;
 
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -12,25 +13,29 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.dd.CircularProgressButton;
+import com.github.jorgecastilloprz.FABProgressCircle;
+import com.github.jorgecastilloprz.listeners.FABProgressListener;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 
@@ -46,9 +51,12 @@ import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
-public class SubmitActivityFragment extends Fragment implements View.OnClickListener, ResultCallback<LocationSettingsResult> {
-
-    private static final String TAG = SubmitActivityFragment.class.getSimpleName();
+/**
+ * A simple {@link Fragment} subclass.
+ */
+public class SubmitMaterialUIFragment extends Fragment implements View.OnClickListener,
+        ResultCallback<LocationSettingsResult>, FABProgressListener {
+    private static final String TAG = SubmitMaterialUIFragment.class.getSimpleName();
 
     private static final int LOCATION_STATUS_NOT_AVAILABLE = -1;
     private static final int LOCATION_STATUS_NOT_ACCEPTABLE = 0;
@@ -70,9 +78,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private ProgressBar locationQualityIndicator;
 
-    private CircularProgressButton submitButton;
+    private FABProgressCircle fabProgressCircle;
 
-    private CircularProgressButton retryButton;
+    private FloatingActionButton submitButton;
+
+    private FloatingActionButton retryButton;
 
     private static LocationService locationService;
 
@@ -84,7 +94,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private boolean uploadComplete = false;
 
+    private boolean uploadRunning = false;
+
     private boolean uploadFail = false;
+
+    private boolean cameraRunning = false;
 
     private ServiceConnection locationServiceConnection = new ServiceConnection() {
         @Override
@@ -121,18 +135,25 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
     };
 
-    public SubmitActivityFragment() {}
+
+    public SubmitMaterialUIFragment() {
+        // Required empty public constructor
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_submit, container, false);
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.fragment_submit_material_ui, container, false);
 
         imageView = (ImageView) view.findViewById(R.id.image_preview);
         feedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
         locationQualityIndicator = (ProgressBar) view.findViewById(R.id.location_quality_indicator);
-        submitButton = (CircularProgressButton) view.findViewById(R.id.submit_button);
-        retryButton = (CircularProgressButton) view.findViewById(R.id.retry_button);
+        submitButton = (FloatingActionButton) view.findViewById(R.id.submit_button);
+        retryButton = (FloatingActionButton) view.findViewById(R.id.retry_button);
+        fabProgressCircle = (FABProgressCircle) view.findViewById(R.id.circular_progress_bar);
+
 
         Intent intent = getActivity().getIntent();
 
@@ -148,11 +169,45 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         imageSrc = intent.getStringExtra(getString(R.string.key_image_src));
 
         submitButton.setOnClickListener(this);
+        submitButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    submitButton.callOnClick();
+                }
+                return false;
+            }
+        });
         retryButton.setOnClickListener(this);
+        retryButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    retryButton.callOnClick();
+                }
+                return false;
+            }
+        });
 
-        submitButton.setIndeterminateProgressMode(true);
+        fabProgressCircle.attachListener(this);
+        fabProgressCircle.setOnClickListener(this);
 
-        setOptimizedImageBitmap(imageSrc);
+        view.findViewById(R.id.layout).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (uploadComplete)
+                    finish();
+            }
+        });
+
+
+
+//        submitButton.setIndeterminateProgressMode(true);
+
+        Picasso.with(getActivity())
+                .load(new File(imageSrc))
+                .into(imageView);
+//        setOptimizedImageBitmap(imageSrc);
         setLocationFeedback();
 
         return view;
@@ -205,6 +260,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onClick(View v) {
+        Log.d(TAG, v.getClass().getSimpleName());
+
         switch (v.getId()) {
             case R.id.submit_button: {
                 if (!uploadComplete) {
@@ -212,13 +269,16 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                         submit();
                     else {
                         feedbackTextView.setText(R.string.no_internet);
-                        submitButton.setProgress(-1);
+//                        submitButton.setProgress(-1);
+                        fabProgressCircle.hide();
+//                        submitButton.setImageDrawable(getResources().getDrawable());
 //                        retryButton.setVisibility(View.GONE);
 
-                        retryButton.setEnabled(true);
-                        retryButton.setClickable(true);
-                        retryButton.setText(R.string.upload_later);
-                        retryButton.setVisibility(View.VISIBLE);
+//                        retryButton.setEnabled(true);
+//                        retryButton.setClickable(true);
+//                        retryButton.setText(R.string.upload_later);
+//                        retryButton.setVisibility(View.VISIBLE);
+                        retryButton.show();
                         uploadFail = true;
 
                         Toast.makeText(getActivity(), R.string.no_internet, Toast.LENGTH_SHORT).show();
@@ -243,6 +303,9 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                 if (uploadComplete) finish();
                 break;
             }
+            case R.id.circular_progress_bar:
+                if (uploadComplete) finish();
+                break;
         }
     }
 
@@ -252,11 +315,17 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         locationService.handleExternalIntentResult();
 
         if (requestCode == 100) {
+            cameraRunning = false;
             if (resultCode == Activity.RESULT_OK) {
                 if (location != null)
                     location = locationService.getLocation();
 
                 setOptimizedImageBitmap(imageSrc);
+//                Picasso
+//                        .with(getActivity())
+//                        .load(imageSrc)
+//                        .into(imageView);
+
                 setLocationFeedback();
             } else if (resultCode == Activity.RESULT_CANCELED) {
                 Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show();
@@ -350,18 +419,22 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         feedbackTextView.setText(locationFeedback);
 
         if (locationStatus > LOCATION_STATUS_NOT_ACCEPTABLE) {
-            submitButton.setEnabled(true);
+//            submitButton.setEnabled(true);
+            submitButton.show();
         } else {
-            submitButton.setEnabled(false);
+//            submitButton.setEnabled(false);
+            submitButton.hide();
         }
 
         if (locationStatus < LOCATION_STATUS_EXCELLENT) {
-            retryButton.setEnabled(true);
-            retryButton.setVisibility(View.VISIBLE);
+//            retryButton.setEnabled(true);
+//            retryButton.setVisibility(View.VISIBLE);
+            retryButton.show();
         } else {
-            retryButton.setEnabled(false);
 //            retryButton.setVisibility(View.GONE);
-            retryButton.setVisibility(View.INVISIBLE);
+//            retryButton.setVisibility(View.INVISIBLE);
+//            retryButton.setEnabled(false);
+            retryButton.hide();
         }
         setLocationQualityIndicator();
     }
@@ -371,42 +444,58 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
         switch (uploadCompletion) {
             case UploadSubmissionService.UPLOAD_STATUS_SUCCESS: {
-                submitButton.setClickable(true);
-                retryButton.setEnabled(false);
-                retryButton.setVisibility(View.GONE);
-                feedbackTextView.setText(R.string.upload_complete);
-
+//                submitButton.setClickable(true);
+//                retryButton.setEnabled(false);
+//                retryButton.setVisibility(View.GONE);
+                retryButton.hide();
+//                submitButton.setClickable(true);
 //                ((LinearLayout) submitButton.getParent()).setOnClickListener(this);
 
+                uploadRunning = false;
                 uploadComplete = true;
+
+                fabProgressCircle.beginFinalAnimation();
                 break;
             }
             case UploadSubmissionService.UPLOAD_STATUS_FAIL: {
                 feedbackTextView.setText(R.string.upload_failed);
-                submitButton.setClickable(true);
-                retryButton.setEnabled(false);
+//                submitButton.setClickable(true);
+                submitButton.show();
+
 //                retryButton.setVisibility(View.GONE);
-                retryButton.setVisibility(View.INVISIBLE);
+//                retryButton.setVisibility(View.INVISIBLE);
+
+//                retryButton.setEnabled(false);
+                uploadRunning = false;
+                retryButton.hide();
                 break;
             }
             case UploadSubmissionService.SUBMISSION_NOT_FOUND: {
                 feedbackTextView.setText(R.string.upload_submission_error);
-                submitButton.setClickable(false);
-                retryButton.setEnabled(true);
-                retryButton.setVisibility(View.VISIBLE);
+//                submitButton.setClickable(false);
+                submitButton.hide();
+
+//                retryButton.setEnabled(true);
+//                retryButton.setVisibility(View.VISIBLE);
+                uploadRunning = false;
+                retryButton.show();
                 break;
             }
             case UploadSubmissionService.NO_INTERNET_CONNECTIVITY: {
                 feedbackTextView.setText(R.string.no_internet);
-                submitButton.setClickable(true);
-                submitButton.setEnabled(true);
+//                submitButton.setClickable(true);
+//                submitButton.setEnabled(true);
+                submitButton.show();
                 uploadFail = true;
+                uploadRunning = false;
                 break;
             }
             case UploadSubmissionService.LOW_MEMORY: {
                 feedbackTextView.setText(R.string.upload_failed);
-                submitButton.setClickable(true);
-                submitButton.setEnabled(true);
+//                submitButton.setClickable(true);
+//                submitButton.setEnabled(true);
+                submitButton.show();
+                uploadRunning = false;
                 break;
             }
         }
@@ -414,7 +503,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         if (uploadCompletion < -1)
             uploadCompletion = -1;
 
-        submitButton.setProgress(uploadCompletion);
+//        submitButton.setProgress(uploadCompletion);
     }
 
     public void setOptimizedImageBitmap(String src) {
@@ -432,47 +521,62 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void submit() {
-        submitButton.setProgress(0);
-        submitButton.setProgress(1);
-        submitButton.setClickable(false);
-        retryButton.setEnabled(false);
-        retryButton.setVisibility(View.INVISIBLE);
+        if (!uploadRunning) {
+//        submitButton.setProgress(0);
+//        submitButton.setProgress(1);
+            fabProgressCircle.show();
+
+//        submitButton.setClickable(false);
+//        retryButton.setEnabled(false);
+//        retryButton.setVisibility(View.INVISIBLE);
+            retryButton.hide();
 //        retryButton.setVisibility(View.GONE);
 
-        Context context = getActivity();
+            Context context = getActivity();
 
-        if (submission == null) {
-            submission = new Submission(context);
-            submission.addPowerElementById(context, powerElementId);
-            submission.addImage(context, new Image(getNewFileName(), location));
-            submission.confirmSubmission(context);
-            submissionId = submission.getId();
-        } else if (submissionId > 0) {
-            OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-            submission = dbHelper.getSubmission(submissionId);
-            dbHelper.close();
+            if (submission == null) {
+                submission = new Submission(context);
+                submission.addPowerElementById(context, powerElementId);
+                submission.addImage(context, new Image(getNewFileName(), location));
+                submission.confirmSubmission(context);
+                submissionId = submission.getId();
+            } else if (submissionId > 0) {
+                OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+                submission = dbHelper.getSubmission(submissionId);
+                dbHelper.close();
+            }
+
+            Log.d(TAG, String.valueOf(submission));
+            Log.d(TAG, String.valueOf(submission.getImages()));
+
+            UploadSubmissionService.startUpload(context, submission.getId());
+            feedbackTextView.setText(getString(R.string.upload_in_progress));
+
+            uploadRunning = true;
         }
-
-        UploadSubmissionService.startUpload(context, submission.getId());
-        feedbackTextView.setText(getString(R.string.upload_in_progress));
     }
 
     private void launchCamera() {
-        if (submission != null)
-            submission.getImage(0).delete(getActivity());
+        if (!cameraRunning) {
+            if (submission != null)
+                submission.getImage(0).delete(getActivity());
 
-        submitButton.setProgress(0);
+//        submitButton.setProgress(0);
+            fabProgressCircle.hide();
 
-        Uri fileUri = getOutputMediaFileUri();
-        Log.d(TAG, fileUri.toString());
+            Uri fileUri = getOutputMediaFileUri();
+            Log.d(TAG, fileUri.toString());
 
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
-        locationService.handleExternalIntent();
-        location = locationService.getLocation();
+            locationService.handleExternalIntent();
+            location = locationService.getLocation();
 
-        startActivityForResult(cameraIntent, 100);
+            startActivityForResult(cameraIntent, 100);
+
+            cameraRunning = true;
+        }
     }
 
     private String getNewFileName() {
@@ -571,5 +675,19 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         );
 
         sequence.start();
+    }
+
+    @Override
+    public void onFABProgressAnimationEnd() {
+        feedbackTextView.setText(R.string.upload_complete);
+        submitButton.setActivated(true);
+
+        Log.d(TAG, String.valueOf(submitButton.isActivated()));
+        Log.d(TAG, String.valueOf(submitButton.isClickable()));
+        Log.d(TAG, String.valueOf(submitButton.isEnabled()));
+        Log.d(TAG, String.valueOf(submitButton.isContextClickable()));
+//        Snackbar.make(fabProgressCircle, R.string.upload_complete, Snackbar.LENGTH_INDEFINITE)
+//                .setAction("Action", null)
+//                .show();
     }
 }

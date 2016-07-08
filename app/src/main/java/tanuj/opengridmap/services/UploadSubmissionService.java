@@ -215,6 +215,8 @@ public class UploadSubmissionService extends IntentService implements
         if (throwable instanceof IOException)
             broadcastUpdate(NO_INTERNET_CONNECTIVITY);
 
+        Log.d(TAG, response);
+
 //        handleFailure();
     }
 
@@ -222,6 +224,7 @@ public class UploadSubmissionService extends IntentService implements
         if (throwable instanceof IOException)
             broadcastUpdate(NO_INTERNET_CONNECTIVITY);
 
+        Log.d(TAG, response.toString());
 //        handleFailure();
     }
 
@@ -231,6 +234,7 @@ public class UploadSubmissionService extends IntentService implements
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         dbHelper.getSubmission(submissionId).deleteSubmission(context);
         dbHelper.close();
+        Log.d(TAG, "Submission " + submissionId + " successfully uploaded");
     }
 
     private void broadcastUpdate(short uploadCompletion) {

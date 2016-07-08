@@ -137,9 +137,9 @@
     <string name="Upload">Upload</string>
     <string name="Retry">Retry</string>
     <string name="location_not_available">Location not available</string>
-    <string name="location_accuracy_not_acceptable">Accuracy too low</string>
-    <string name="location_accuracy_not_ideal">Accuracy not the best…Try again?</string>
-    <string name="location_accuracy_good">Good data…Try again for better accuracy?</string>
+    <string name="location_accuracy_not_acceptable">Location accuracy too low</string>
+    <string name="location_accuracy_not_ideal">Location accuracy not the best…Try again?</string>
+    <string name="location_accuracy_good">Good data…Try again for better location accuracy?</string>
     <string name="location_accuracy_excellent">Nice Work!!!…Excellent accuracy</string>
     <string name="accuracy">Accuracy</string>
     <string name="colon">"  : "</string>
@@ -150,4 +150,23 @@
     <string name="upload_submission_error">Error Saving Submission\n</string>
     <string name="upload_in_progress">Uploading…\n</string>
     <string name="no_internet">No Internet Connectivity\n</string>
+    <string name="upload_later">Upload later</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_power_element_detail">PowerElementDetailActivity</string>
+    <string name="msg_permissions_required">All the permissions are required for the app to function properly. Please grant all the required Permissions.</string>
+    <string name="opengridmap">Open Grid Map</string>
+    <string name="permissions">Permissions</string>
+    <string name="msg_request_permissions">We need some permissions for the app to work properly. Touch next to continue</string>
+    <string name="title_activity_launcher">Launcher</string>
+
+    <string name="desc_transformer">A transformer is an electrical device that transfers electrical energy between two or more circuits through electromagnetic induction. Electromagnetic induction produces an electromotive force within a conductor which is exposed to time varying magnetic fields. Transformers are used to increase or decrease the alternating voltages in electric power applications.</string>
+    <string name="desc_substation">A substation is a part of an electrical generation, transmission, and distribution system. Substations transform voltage from high to low, or the reverse, or perform any of several other important functions. Between the generating station and consumer, electric power may flow through several substations at different voltage levels.</string>
+    <string name="desc_generator">A power station, also referred to as a generating station, power plant, powerhouse, or generating plant, is an industrial facility for the generation of electric power. Most power stations contain one or more generators, a rotating machine that converts mechanical power into electrical power. The relative motion between a magnetic field and a conductor creates an electrical current. The energy source harnessed to turn the generator varies widely. Most power stations in the world burn fossil fuels such as coal, oil, and natural gas to generate electricity. Others use nuclear power, but there is an increasing use of cleaner renewable sources such as solar, wind, wave and hydroelectric.</string>
+    <string name="desc_wind_farm">A wind farm or wind park is a group of wind turbines in the same location used to produce electricity. A large wind farm may consist of several hundred individual wind turbines and cover an extended area of hundreds of square miles, but the land between the turbines may be used for agricultural or other purposes. A wind farm can also be located offshore.</string>
+    <string name="desc_solar_panels">Solar panel refers to a panel designed to absorb the sun\'s rays as a source of energy for generating electricity or heating. A photovoltaic (in short PV) module is a packaged, connected assembly of typically 6×10 solar cells. Solar Photovoltaic panels constitute the solar array of a photovoltaic system that generates and supplies solar electricity in commercial and residential applications.</string>
+    <string name="label_device_type">Device Type</string>
+    <string name="string_intro">We are an open community that crowdsources realistic power grid data to be used for research purposes. This app enables you to contribute power grid data to the platform.</string>
+
 </resources>

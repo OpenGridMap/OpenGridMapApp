@@ -22,16 +22,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
-        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
-
-        for (Submission submission: submissions) {
-            Log.d(TAG, String.valueOf(submission.getId()));
-        }
+//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
+//        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
+//
+//        for (Submission submission: submissions) {
+//            Log.d(TAG, String.valueOf(submission.getId()));
+//        }
 
         setContentView(R.layout.activity_main);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -67,13 +66,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onUserLeaveHint() {
-        getMainActivityFragment().onUserLeaveHint();
+        MainActivityFragment mainActivityFragment = getMainActivityFragment();
+        if (mainActivityFragment != null) {
+            mainActivityFragment.onUserLeaveHint();
+        }
     }
 
     private MainActivityFragment getMainActivityFragment() {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        return (MainActivityFragment) fragmentManager.findFragmentById(
-                R.id.fragment);
+        return (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
     }
 
     @Override

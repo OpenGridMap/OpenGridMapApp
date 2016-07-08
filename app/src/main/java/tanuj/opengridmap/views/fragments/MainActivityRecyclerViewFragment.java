@@ -1,7 +1,10 @@
 package tanuj.opengridmap.views.fragments;
 
+import android.annotation.TargetApi;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,18 +14,25 @@ import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.util.Pair;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -31,20 +41,21 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.io.File;
 
+import tanuj.opengridmap.PowerElementDetailActivity;
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.views.activities.SubmitActivity;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.utils.LocationUtils;
 import tanuj.opengridmap.utils.ServiceUtils;
-import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
+import tanuj.opengridmap.views.activities.SubmitActivity;
+import tanuj.opengridmap.views.adapters.PowerElementsRecyclerViewAdapter;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
-import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
-public class MainActivityFragment extends Fragment implements
+public class MainActivityRecyclerViewFragment extends Fragment implements
+        PowerElementsRecyclerViewAdapter.OnItemClickListener,
         ResultCallback<LocationSettingsResult> {
-    public static final String TAG = MainActivityFragment.class.getSimpleName();
+    private static final String TAG = MainActivityRecyclerViewFragment.class.getSimpleName();
 
     private static final short STATE_DEFAULT = 0;
 
@@ -98,11 +109,24 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
-    public MainActivityFragment() {}
+    private RecyclerView recyclerView;
+    private StaggeredGridLayoutManager staggeredGridLayoutManager;
+    private PowerElementsRecyclerViewAdapter adapter;
+    private Toolbar toolbar;
+
+    public MainActivityRecyclerViewFragment() {
+        // Required empty public constructor
+    }
+
+    public static MainActivityRecyclerViewFragment newInstance() {
+        MainActivityRecyclerViewFragment fragment = new MainActivityRecyclerViewFragment();
+        return fragment;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         Context context = getActivity();
 
 //        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
@@ -120,22 +144,74 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        final Context context = getActivity();
+        View view = inflater.inflate(R.layout.fragment_main_recycler_view, container, false);
 
-        GridView gridView = (GridView) rootView.findViewById(R.id.main_gridview);
-        gridView.setAdapter(new PowerElementsGridAdapter(context,
-                PowerElementsSeedData.powerElements));
-        gridView.setOnItemClickListener(onItemClickListener);
+        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+        setUpActionBar();
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(getString(
-                R.string.key_power_element_id))) {
-            powerElementId = savedInstanceState.getLong(getString(R.string.key_power_element_id));
-        }
+        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                StaggeredGridLayoutManager.VERTICAL);
+        recyclerView = (RecyclerView) view.findViewById(R.id.grid);
+        adapter = new PowerElementsRecyclerViewAdapter(getActivity());
+
+        recyclerView.setLayoutManager(staggeredGridLayoutManager);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setAdapter(adapter);
+
+        adapter.setOnItemClickListener(this);
 
         bindLocationService();
 
-        return rootView;
+        return view;
+    }
+
+    @Override
+    public void onItemClick(View view, int position) {
+        powerElementId = PowerElementsSeedData.powerElements.get(position).getId();
+        state = STATE_CAMERA_LAUNCH_CHECK;
+
+        process();
+    }
+
+    @Override
+    public void onInfoClick(View v, int position) {
+        Intent transitionIntent = new Intent(getActivity(), PowerElementDetailActivity.class);
+        transitionIntent.putExtra(PowerElementDetailActivity.EXTRA_PARAM_ID, position);
+        ImageView placeImage = (ImageView) v.findViewById(R.id.powerElementImage);
+        LinearLayout placeNameHolder = (LinearLayout) v.findViewById(R.id.powerElementNameHolder);
+
+        View navigationBar = getActivity().findViewById(android.R.id.navigationBarBackground);
+        View statusBar = getActivity().findViewById(android.R.id.statusBarBackground);
+
+        Pair<View, String> imagePair = Pair.create((View) placeImage, "tImage");
+        Pair<View, String> holderPair = Pair.create((View) placeNameHolder, "tNameHolder");
+        Pair<View, String> navPair = Pair.create(navigationBar,
+                Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME);
+        Pair<View, String> statusPair = Pair.create(statusBar,
+                Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
+//        Pair<View, String> toolbarPair = Pair.create((View) toolbar, "tActionBar");
+
+        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                getActivity(), imagePair, holderPair, navPair, statusPair);
+        ActivityCompat.startActivity(getActivity(), transitionIntent, options.toBundle());
+    }
+
+    private void setUpActionBar() {
+        if (toolbar != null) {
+            Activity activity = getActivity();
+            if (activity != null) {
+                ActionBar actionBar = activity.getActionBar();
+
+                if (actionBar != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        activity.setActionBar(toolbar);
+                        activity.getActionBar().setElevation(7);
+                    }
+                    actionBar.setDisplayHomeAsUpEnabled(false);
+                    actionBar.setDisplayShowTitleEnabled(true);
+                }
+            }
+        }
     }
 
     @Override
@@ -177,19 +253,21 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onPause() {
         getActivity().unregisterReceiver(locationUpdateBroadcastReceiver);
+        unbindLocationService();
         super.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        bindLocationService();
         getActivity().registerReceiver(locationUpdateBroadcastReceiver,
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
     }
 
     @Override
     public void onDestroy() {
-        unbindLocationService();
+//        unbindLocationService();
         super.onDestroy();
     }
 
