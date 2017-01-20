@@ -1,33 +1,24 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.fragments;
 
-import android.graphics.drawable.Animatable;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.support.v7.graphics.Palette;
 import android.transition.Fade;
 import android.transition.Transition;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
-
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.models.PowerElement;
+import tanuj.opengridmap.views.activities.PowerElementDetailActivity;
 
 /**
  * A placeholder fragment containing a simple view.

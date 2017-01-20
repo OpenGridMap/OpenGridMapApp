@@ -12,6 +12,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -20,7 +22,9 @@ import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.util.Pair;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
@@ -32,7 +36,7 @@ import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-import android.widget.Toolbar;
+import android.support.v7.widget.Toolbar;
 
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -40,8 +44,12 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.io.File;
+import java.util.List;
 
-import tanuj.opengridmap.PowerElementDetailActivity;
+import tanuj.opengridmap.BuildConfig;
+import tanuj.opengridmap.utils.FileUtils;
+import tanuj.opengridmap.views.activities.MainActivity;
+import tanuj.opengridmap.views.activities.PowerElementDetailActivity;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.services.LocationService;
@@ -105,7 +113,7 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra("location");
 
-            Log.v(TAG, location.toString());
+//            Log.v(TAG, location.toString());
         }
     };
 
@@ -196,15 +204,17 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
         ActivityCompat.startActivity(getActivity(), transitionIntent, options.toBundle());
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setUpActionBar() {
         if (toolbar != null) {
-            Activity activity = getActivity();
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
             if (activity != null) {
                 ActionBar actionBar = activity.getActionBar();
 
                 if (actionBar != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        activity.setActionBar(toolbar);
+                        activity.setSupportActionBar(toolbar);
+//                        activity.setActionBar(toolbar);
                         activity.getActionBar().setElevation(7);
                     }
                     actionBar.setDisplayHomeAsUpEnabled(false);
@@ -301,6 +311,7 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
 //                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
                         locationResult = locationService.getLocation();
                         state = STATE_SUBMIT;
+                        Toast.makeText(context, "Hello", Toast.LENGTH_SHORT).show();
                         process();
                         break;
                     }
@@ -402,11 +413,21 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
 
     private void launchCamera() {
 //        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
-        Uri fileUri = getOutputMediaFileUri();
-        Log.d(TAG, fileUri.toString());
+
+        Activity activity = getActivity();
+        Uri fileUri = FileUtils.getOutputMediaFileUri(activity,
+                FileUtils.getOutputMediaFile(activity));
+//        Log.d(TAG, fileUri.toString());
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+
+        List<ResolveInfo> resolvedIntentActivities = activity.getPackageManager().queryIntentActivities(cameraIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo resolvedIntentInfo : resolvedIntentActivities) {
+            String packageName = resolvedIntentInfo.activityInfo.packageName;
+
+            activity.grantUriPermission(packageName, fileUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
 
         locationService.handleExternalIntent();
         locationStart = locationService.getLocation();
@@ -431,7 +452,10 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
     }
 
     private Uri getOutputMediaFileUri(){
-        return Uri.fromFile(getOutputMediaFile());
+//        return Uri.fromFile(getOutputMediaFile());
+        return FileProvider.getUriForFile(getActivity(),
+                BuildConfig.APPLICATION_ID + ".provider",
+                getOutputMediaFile());
     }
 
     private File getOutputMediaFile(){

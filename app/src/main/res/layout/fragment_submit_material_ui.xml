@@ -8,15 +8,18 @@
     tools:context=".views.activities.SubmitActivity"
     android:orientation="vertical"
     android:clipChildren="false"
-    android:id="@+id/layout"
-    >
+    android:id="@+id/layout">
 
-    <ImageView
-        android:id="@+id/image_preview"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="3.5"
-        android:scaleType="centerCrop" />
+        android:layout_weight="3.5">
+        <ImageView
+            android:id="@+id/image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -27,19 +30,17 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <!--Google FAB-->
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/retry_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_cached_black_24dp"
+            android:src="@drawable/ic_sync_black_24dp"
             app:rippleColor="@color/fab_ripple"
             app:elevation="@dimen/fab_elevation"
             app:borderWidth="0dp"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="@dimen/fab_margin"
-            android:layout_marginTop="@dimen/fab_top_margin"
-            />
+            android:layout_marginTop="@dimen/fab_top_margin"/>
 
 
 
@@ -50,7 +51,7 @@
             android:layout_alignParentRight="true"
             android:layout_marginRight="@dimen/fab_margin"
             android:layout_marginTop="@dimen/fab_top_margin"
-            >
+            app:finalIcon="@drawable/ic_done">
 
             <!--Google FAB-->
             <android.support.design.widget.FloatingActionButton
@@ -60,8 +61,7 @@
                 android:src="@drawable/ic_backup_black_24dp"
                 app:rippleColor="@color/fab_ripple"
                 app:elevation="@dimen/fab_elevation"
-                app:borderWidth="0dp"
-                />
+                app:borderWidth="0dp"/>
 
         </com.github.jorgecastilloprz.FABProgressCircle>
 
@@ -111,9 +111,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text=" : Transformer"/>
-
                 </LinearLayout>
-
             </LinearLayout>
         </LinearLayout>
 

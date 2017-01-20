@@ -168,5 +168,6 @@
     <string name="desc_solar_panels">Solar panel refers to a panel designed to absorb the sun\'s rays as a source of energy for generating electricity or heating. A photovoltaic (in short PV) module is a packaged, connected assembly of typically 6×10 solar cells. Solar Photovoltaic panels constitute the solar array of a photovoltaic system that generates and supplies solar electricity in commercial and residential applications.</string>
     <string name="label_device_type">Device Type</string>
     <string name="string_intro">We are an open community that crowdsources realistic power grid data to be used for research purposes. This app enables you to contribute power grid data to the platform.</string>
+    <string name="response_status_error">error</string>
 
 </resources>

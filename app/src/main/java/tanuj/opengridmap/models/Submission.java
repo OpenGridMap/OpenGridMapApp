@@ -210,10 +210,10 @@ public class Submission {
     }
 
     public void confirmSubmission(Context context) {
-        if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
+//        if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
+//            this.addToUploadQueue(context);
             updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
-            this.addToUploadQueue(context);
-        }
+//        }
     }
 
     public boolean addToUploadQueue(Context context) {

@@ -16,6 +16,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.plus.Plus;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -173,6 +174,16 @@ public class UploadSubmissionService extends IntentService implements
             }
 
             @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                super.onSuccess(statusCode, headers, response);
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                super.onSuccess(statusCode, headers, responseString);
+            }
+
+            @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
 //                Log.d(TAG, response.toString());
 
@@ -181,6 +192,10 @@ public class UploadSubmissionService extends IntentService implements
                             response.getString(getString(R.string.response_key_status))
                                     .equals(getString(R.string.response_status_ok))) {
                         handleSuccess();
+                    } else if (response.has(getString(R.string.response_key_status)) &&
+                            response.getString(getString(R.string.response_key_status))
+                                    .equals(getString(R.string.response_status_error))) {
+                            handleFailure();
                     } else {
                         handleFailure();
                     }
@@ -215,15 +230,29 @@ public class UploadSubmissionService extends IntentService implements
         if (throwable instanceof IOException)
             broadcastUpdate(NO_INTERNET_CONNECTIVITY);
 
+        Log.d(TAG, "hf1");
         Log.d(TAG, response);
 
 //        handleFailure();
     }
 
     private void handleFailure(Throwable throwable, JSONObject response) {
-        if (throwable instanceof IOException)
-            broadcastUpdate(NO_INTERNET_CONNECTIVITY);
+        try {
+            if (response.has(getString(R.string.response_key_status)) &&
+                    response.getString(getString(R.string.response_key_status))
+                            .equals(getString(R.string.response_status_error))) {
+                broadcastUpdate(UPLOAD_STATUS_FAIL);
+            } else {
+                if (throwable instanceof IOException)
+                    broadcastUpdate(NO_INTERNET_CONNECTIVITY);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
+
+
+        Log.d(TAG, "hf2");
         Log.d(TAG, response.toString());
 //        handleFailure();
     }

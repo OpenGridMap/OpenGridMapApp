@@ -11,7 +11,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import tanuj.opengridmap.R;
-
 public class Launcher extends AppCompatActivity {
 
     @Override

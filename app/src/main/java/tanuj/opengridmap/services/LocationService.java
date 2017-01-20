@@ -138,7 +138,7 @@ public class LocationService extends Service implements
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.v(TAG, "Location Updated, location : " + location.toString());
+//        Log.v(TAG, "Location Updated, location : " + location.toString());
         this.location = location;
         sendLocationBroadcast(location);
         resolveServiceShutdown();
@@ -277,18 +277,18 @@ public class LocationService extends Service implements
             Log.d(TAG, "Initiating Service Shutdown Check");
             resolvingShutDown = true;
 
-            new Timer().schedule(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        if (bindingsCount == 0) {
-                            shutdownService();
-                        } else {
-                            Log.d(TAG, "Service Shutdown Cancelled");
+                new Timer().schedule(
+                    new TimerTask() {
+                        @Override
+                        public void run() {
+                            if (bindingsCount == 0) {
+                                shutdownService();
+                            } else {
+                                Log.d(TAG, "Service Shutdown Cancelled");
+                            }
+                            resolvingShutDown = false;
                         }
-                        resolvingShutDown = false;
-                    }
-                }, 10000);
+                    }, 10000);
         }
     }
 

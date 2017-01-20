@@ -21,14 +21,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
-//        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
-//
-//        for (Submission submission: submissions) {
-//            Log.d(TAG, String.valueOf(submission.getId()));
-//        }
-
         setContentView(R.layout.activity_main);
     }
 
@@ -79,7 +71,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        getMainActivityFragment().onActivityResult(requestCode, resultCode, data);
+        MainActivityFragment fragment = getMainActivityFragment();
+
+        if (fragment != null)
+            fragment.onActivityResult(requestCode, resultCode, data);
+
         super.onActivityResult(requestCode, resultCode, data);
     }
 }

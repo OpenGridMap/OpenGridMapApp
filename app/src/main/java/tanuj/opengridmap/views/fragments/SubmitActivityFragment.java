@@ -147,6 +147,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         powerElementId = intent.getLongExtra(getString(R.string.key_power_element_id), -1);
         imageSrc = intent.getStringExtra(getString(R.string.key_image_src));
 
+        Toast.makeText(locationService, imageSrc, Toast.LENGTH_SHORT).show();
+
         submitButton.setOnClickListener(this);
         retryButton.setOnClickListener(this);
 

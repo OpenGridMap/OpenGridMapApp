@@ -15,7 +15,7 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
 /**
  * Created by Tanuj on 14/8/2015.
  */
-public class UploadQueueItem extends Submission{
+public class UploadQueueItem extends Submission {
     private static final String TAG = UploadQueueItem.class.getSimpleName();
 
     public static final int STATUS_UPLOAD_CANCELLED = -2;

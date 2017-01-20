@@ -39,7 +39,8 @@ public class BackgroundUploadService extends Service {
 
     @Override
     public void onCreate() {
-        getApplicationContext().registerReceiver(uploadBroadcastReceiver, new IntentFilter(UploadSubmissionService.UPLOAD_UPDATE_BROADCAST));
+        getApplicationContext().registerReceiver(uploadBroadcastReceiver,
+                new IntentFilter(UploadSubmissionService.UPLOAD_UPDATE_BROADCAST));
     }
 
     @Override
@@ -73,7 +74,7 @@ public class BackgroundUploadService extends Service {
     private void processPendingUploads() throws InterruptedException {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
 
-        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
+        List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_SUBMISSION_CONFIRMED);
 
         for (Submission submission: submissions) {
             long submissionId = submission.getId();

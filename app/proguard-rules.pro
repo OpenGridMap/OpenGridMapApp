@@ -19,6 +19,10 @@
 -dontwarn com.squareup.**
 
 -dontwarn android.support.v4.**
+-dontwarn android.support.v7.**
+-keep class android.support.v7.** { *; }
+-keep class  android.support.v7.widget.AppCompatDrawableManage
+-keep interface android.support.v7.** { *; }
 -keep public class com.google.android.gms.* { public *; }
 -dontwarn com.google.android.gms.**
 

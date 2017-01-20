@@ -28,6 +28,8 @@ public class SubmitActivity extends AppCompatActivity {
 //                R.id.fragment);
         SubmitMaterialUIFragment fragment = (SubmitMaterialUIFragment) fragmentManager.findFragmentById(
                 R.id.fragment);
-        fragment.onUserLeaveHint();
+
+        if (fragment != null)
+            fragment.onUserLeaveHint();
     }
 }
