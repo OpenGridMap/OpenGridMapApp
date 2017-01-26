@@ -18,7 +18,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -26,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -37,6 +37,13 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -60,7 +67,7 @@ import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
  * A simple {@link Fragment} subclass.
  */
 public class SubmitMaterialUIFragment extends Fragment implements View.OnClickListener,
-        ResultCallback<LocationSettingsResult>, FABProgressListener {
+        ResultCallback<LocationSettingsResult>, FABProgressListener, OnMapReadyCallback, GoogleMap.OnCameraChangeListener {
     private static final String TAG = SubmitMaterialUIFragment.class.getSimpleName();
 
     private static final int LOCATION_STATUS_NOT_AVAILABLE = -1;
@@ -81,6 +88,12 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
 
     private TextView feedbackTextView;
 
+    private FrameLayout mapContainer;
+
+    private MapView mapView;
+
+    private GoogleMap map;
+
     private ProgressBar locationQualityIndicator;
 
     private FABProgressCircle fabProgressCircle;
@@ -88,6 +101,8 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
     private FloatingActionButton submitButton;
 
     private FloatingActionButton retryButton;
+
+    private FloatingActionButton imageConfirmationButton;
 
     private static LocationService locationService;
 
@@ -154,11 +169,13 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
 
         imageView = (ImageView) view.findViewById(R.id.image_preview);
         feedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
+        mapView = (MapView) view.findViewById(R.id.map);
+        mapContainer = (FrameLayout) view.findViewById(R.id.map_container);
         locationQualityIndicator = (ProgressBar) view.findViewById(R.id.location_quality_indicator);
         submitButton = (FloatingActionButton) view.findViewById(R.id.submit_button);
         retryButton = (FloatingActionButton) view.findViewById(R.id.retry_button);
+        imageConfirmationButton = (FloatingActionButton) view.findViewById(R.id.image_confirm_button);
         fabProgressCircle = (FABProgressCircle) view.findViewById(R.id.circular_progress_bar);
-
 
         Intent intent = getActivity().getIntent();
 
@@ -193,6 +210,24 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                 return false;
             }
         });
+        imageConfirmationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                imageView.setVisibility(View.GONE);
+                mapContainer.setVisibility(View.VISIBLE);
+                imageConfirmationButton.hide();
+                imageConfirmationButton.setVisibility(View.GONE);
+                submitButton.setVisibility(View.VISIBLE);
+
+                showMapTutorial();
+            }
+        });
+
+        mapView.onCreate(savedInstanceState);
+
+        if (mapView != null)
+            mapView.getMapAsync(this);
+
 
         fabProgressCircle.attachListener(this);
         fabProgressCircle.setOnClickListener(this);
@@ -221,7 +256,7 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        showTutorial();
+        showIntroTutorial();
     }
 
     @Override
@@ -242,6 +277,11 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         Context context = getActivity();
         context.unregisterReceiver(locationUpdateBroadcastReceiver);
         context.unregisterReceiver(uploadUpdateBroadcastReceiver);
+
+        if (mapView != null) {
+            mapView.onPause();
+        }
+
         super.onPause();
     }
 
@@ -254,6 +294,30 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
         context.registerReceiver(uploadUpdateBroadcastReceiver,
                 new IntentFilter(UploadSubmissionService.UPLOAD_UPDATE_BROADCAST));
+
+        if (mapView != null) {
+            mapView.onResume();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mapView != null) {
+            try {
+                mapView.onDestroy();
+            } catch (NullPointerException e) {
+                Log.e(TAG, "Error while attempting MapView.onDestroy(), ignoring exception", e);
+            }
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (mapView != null) {
+            mapView.onLowMemory();
+        }
     }
 
     @Override
@@ -261,6 +325,10 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         super.onSaveInstanceState(outState);
         outState.putLong(getString(R.string.key_power_element_id), powerElementId);
         outState.putLong(getString(R.string.key_submission_id), submissionId);
+
+        if (mapView != null) {
+            mapView.onSaveInstanceState(outState);
+        }
     }
 
     @Override
@@ -509,6 +577,8 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         if (!uploadRunning) {
             fabProgressCircle.show();
             retryButton.hide();
+            disableMap();
+
 
             Context context = getActivity();
 
@@ -616,7 +686,7 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         }
     }
 
-    private void showTutorial() {
+    private void showIntroTutorial() {
         final Activity activity = getActivity();
         ShowcaseConfig config = new ShowcaseConfig();
         config.setDelay(300);
@@ -646,6 +716,42 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                 new MaterialShowcaseView.Builder(activity)
                         .setTarget(submitButton)
                         .setDismissText("Got It")
+                        .setContentText("Click here to confirm the image")
+                        .build()
+        );
+
+        sequence.start();
+    }
+
+    private void showMapTutorial() {
+        final Activity activity = getActivity();
+        ShowcaseConfig config = new ShowcaseConfig();
+        config.setDelay(300);
+
+        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(activity, "submit_activity_map_intro");
+
+        sequence.setConfig(config);
+
+        sequence.addSequenceItem(
+                new MaterialShowcaseView.Builder(activity)
+                        .setTarget(mapView)
+                        .setDismissText("Got It")
+                        .setContentText("You can see the point on the map.")
+                        .build()
+        );
+
+        sequence.addSequenceItem(
+                new MaterialShowcaseView.Builder(activity)
+                        .setTarget(mapView)
+                        .setDismissText("Got It")
+                        .setContentText("You can also edit the location by dragging the map.")
+                        .build()
+        );
+
+        sequence.addSequenceItem(
+                new MaterialShowcaseView.Builder(activity)
+                        .setTarget(submitButton)
+                        .setDismissText("Got It")
                         .setContentText("Click here to submit the point")
                         .build()
         );
@@ -661,6 +767,7 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
 //                .setAction("Action", null)
 //                .show();
 
+
         new Timer().schedule(
             new TimerTask() {
                 @Override
@@ -668,5 +775,40 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                     finish();
                 }
             }, 1500);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        map = googleMap;
+        map.setOnCameraChangeListener(this);
+
+        LatLng point;
+        if (location != null) {
+            point = new LatLng(location.getLatitude(), location.getLongitude());
+        } else {
+            point = new LatLng(48, 11);
+        }
+
+        map.moveCamera(CameraUpdateFactory.newLatLng(point));
+    }
+
+    @Override
+    public void onCameraChange(CameraPosition cameraPosition) {
+        Location location = new Location("");
+        location.setLatitude(cameraPosition.target.latitude);
+        location.setLongitude(cameraPosition.target.longitude);
+        location.setAccuracy(5);
+
+        setLocationFeedback();
+
+        this.location = location;
+    }
+
+    private void disableMap() {
+        UiSettings uiSettings = map.getUiSettings();
+        uiSettings.setScrollGesturesEnabled(false);
+        uiSettings.setZoomGesturesEnabled(false);
+        uiSettings.setZoomControlsEnabled(false);
+        uiSettings.setRotateGesturesEnabled(false);
     }
 }

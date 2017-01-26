@@ -263,7 +263,7 @@ public class LocationService extends Service implements
                     shutdownService();
                 }
             }
-        }, 40000);
+        }, 10000);
     }
 
     public void handleExternalIntentResult() {
@@ -288,12 +288,12 @@ public class LocationService extends Service implements
                             }
                             resolvingShutDown = false;
                         }
-                    }, 10000);
+                    }, 1000);
         }
     }
 
     private void shutdownService() {
-//        stopLocationUpdates();
+        stopLocationUpdates();
         Log.d(TAG, "Shutting down Service");
         stopSelf();
         Log.d(TAG, "Service Shutdown Successfully");

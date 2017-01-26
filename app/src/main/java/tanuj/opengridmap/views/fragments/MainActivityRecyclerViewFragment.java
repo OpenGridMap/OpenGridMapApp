@@ -311,13 +311,11 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
 //                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
                         locationResult = locationService.getLocation();
                         state = STATE_SUBMIT;
-                        Toast.makeText(context, "Hello", Toast.LENGTH_SHORT).show();
                         process();
                         break;
                     }
                     case Activity.RESULT_CANCELED: {
                         state = STATE_DEFAULT;
-                        Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show();
                         break;
                     }
                     default: {

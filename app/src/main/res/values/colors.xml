@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="primary">#4CAF50</color>
+    <color name="primary_dark">#388E3C</color>
+    <color name="primary_light">#C8E6C9</color>
+    <color name="accent">#536DFE</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#BDBDBD</color>
     <!--<color name="primary">#009688</color>-->
     <!--<color name="primary_dark">#00796B</color>-->
-    <color name="primary_light">#B2DFDB</color>
-    <color name="accent">#03A9F4</color>
-    <color name="primary_text">#212121</color>
-    <color name="secondary_text">#727272</color>
-    <color name="icons">#FFFFFF</color>
-    <color name="divider">#B6B6B6</color>
+    <!--<color name="primary_light">#B2DFDB</color>-->
+    <!--<color name="accent">#03A9F4</color>-->
+    <!--<color name="primary_text">#212121</color>-->
+    <!--<color name="secondary_text">#727272</color>-->
+    <!--<color name="icons">#FFFFFF</color>-->
+    <!--<color name="divider">#B6B6B6</color>-->
 
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
@@ -78,8 +86,8 @@
     <color name="green_a400">#00E676</color>
     <color name="green_a700">#00C853</color>
 
-    <color name="primary">#5e546b</color>
-    <color name="primary_dark">#5e546b</color>
+    <!--<color name="primary">#5e546b</color>-->
+    <!--<color name="primary_dark">#5e546b</color>-->
     <color name="toolbar_text_color">#FFFFFF</color>
     <color name="fab_primary">#5869b2</color>
     <color name="fab_primary_pressed">#3951b7</color>
