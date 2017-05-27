@@ -45,28 +45,12 @@ public class PowerElementsRecyclerViewAdapter extends
 
         holder.powerElementName.setText(powerElement.getName());
         Picasso.with(context).load(powerElement.getImageId()).into(holder.powerElementImage);
-//        Bitmap photo = BitmapFactory.decodeResource(context.getResources(),
-//                powerElement.getImageId());
-
-//        Palette.generateAsync(photo, new Palette.PaletteAsyncListener() {
-//            @Override
-//            public void onGenerated(Palette palette) {
-//                int mutedLight = palette.getLightMutedColor(
-//                        context.getResources().getColor(R.color.black));
-//                holder.powerElementNameHolder.setBackgroundColor(mutedLight);
-//            }
-//        });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             holder.powerElementNameHolder.setBackgroundColor(context.getColor(R.color.teal_400));
         } else {
             holder.powerElementNameHolder.setBackgroundColor(context.getResources().
                     getColor(R.color.teal_400));
-        }
-
-
-        if (powerElement.getId() == 6) {
-            holder.infoButton.setVisibility(View.GONE);
         }
     }
 
@@ -75,12 +59,11 @@ public class PowerElementsRecyclerViewAdapter extends
         return PowerElementsSeedData.powerElements.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        public LinearLayout powerElementHolder;
-        public LinearLayout powerElementNameHolder;
-        public TextView powerElementName;
-        public ImageView powerElementImage;
-        public ImageButton infoButton;
+    class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        private LinearLayout powerElementHolder;
+        private LinearLayout powerElementNameHolder;
+        private TextView powerElementName;
+        private ImageView powerElementImage;
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -90,28 +73,20 @@ public class PowerElementsRecyclerViewAdapter extends
             powerElementNameHolder = (LinearLayout) itemView.findViewById(
                     R.id.powerElementNameHolder);
             powerElementImage = (ImageView) itemView.findViewById(R.id.powerElementImage);
-            infoButton = (ImageButton) itemView.findViewById(R.id.btn_info);
 
             powerElementHolder.setOnClickListener(this);
-            infoButton.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
             if (itemClickListener != null) {
-                if (v.getClass().getSimpleName().equals(LinearLayout.class.getSimpleName())) {
-                    itemClickListener.onItemClick(itemView, getAdapterPosition());
-                } else {
-                    itemClickListener.onInfoClick(itemView, getAdapterPosition());
-                }
+                itemClickListener.onItemClick(itemView, getAdapterPosition());
             }
         }
     }
 
     public interface OnItemClickListener {
-//        void onItemClick(View view, View itemView, int position);
         void onItemClick(View view, int position);
-        void onInfoClick(View view, int position);
     }
 
     public void setOnItemClickListener(final OnItemClickListener itemClickListener) {

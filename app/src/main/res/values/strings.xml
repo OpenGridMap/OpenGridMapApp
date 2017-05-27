@@ -142,7 +142,7 @@
     <string name="location_accuracy_good">Good data…Try again for better location accuracy?</string>
     <string name="location_accuracy_excellent">Nice Work!!!…Excellent accuracy</string>
     <string name="accuracy">Accuracy</string>
-    <string name="colon">"  : "</string>
+    <string name="colon">" : "</string>
     <string name="meter">m</string>
     <string name="newline">\n</string>
     <string name="upload_complete">Upload Complete\n</string>

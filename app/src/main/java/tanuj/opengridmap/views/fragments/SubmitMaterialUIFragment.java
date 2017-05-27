@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -52,7 +53,9 @@ import java.util.TimerTask;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
+import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.models.Image;
+import tanuj.opengridmap.models.PowerElement;
 import tanuj.opengridmap.models.Submission;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.services.UploadSubmissionService;
@@ -101,8 +104,6 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
     private FloatingActionButton submitButton;
 
     private FloatingActionButton retryButton;
-
-    private FloatingActionButton imageConfirmationButton;
 
     private static LocationService locationService;
 
@@ -164,17 +165,16 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_submit_material_ui, container, false);
 
         imageView = (ImageView) view.findViewById(R.id.image_preview);
         feedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
+        TextView deviceTypeTextView = (TextView) view.findViewById(R.id.device_type_text_view);
         mapView = (MapView) view.findViewById(R.id.map);
         mapContainer = (FrameLayout) view.findViewById(R.id.map_container);
         locationQualityIndicator = (ProgressBar) view.findViewById(R.id.location_quality_indicator);
         submitButton = (FloatingActionButton) view.findViewById(R.id.submit_button);
         retryButton = (FloatingActionButton) view.findViewById(R.id.retry_button);
-        imageConfirmationButton = (FloatingActionButton) view.findViewById(R.id.image_confirm_button);
         fabProgressCircle = (FABProgressCircle) view.findViewById(R.id.circular_progress_bar);
 
         Intent intent = getActivity().getIntent();
@@ -184,7 +184,6 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         if (location == null) {
             location = intent.getParcelableExtra(getString(R.string.key_location_result));
             checkLocationSettings();
-//            LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
         }
 
         powerElementId = intent.getLongExtra(getString(R.string.key_power_element_id), -1);
@@ -210,18 +209,6 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                 return false;
             }
         });
-        imageConfirmationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                imageView.setVisibility(View.GONE);
-                mapContainer.setVisibility(View.VISIBLE);
-                imageConfirmationButton.hide();
-                imageConfirmationButton.setVisibility(View.GONE);
-                submitButton.setVisibility(View.VISIBLE);
-
-                showMapTutorial();
-            }
-        });
 
         mapView.onCreate(savedInstanceState);
 
@@ -240,14 +227,13 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
             }
         });
 
+        if (powerElementId > 0) {
+            String powerElementName = getString(R.string.colon) +
+                    PowerElementsSeedData.powerElements.get((int) (powerElementId - 1)).getName();
+            deviceTypeTextView.setText(powerElementName);
 
-
-//        submitButton.setIndeterminateProgressMode(true);
-
-        Picasso.with(getActivity())
-                .load(new File(imageSrc))
-                .into(imageView);
-//        setOptimizedImageBitmap(imageSrc);
+        }
+        setOptimizedImageBitmap(imageSrc);
         setLocationFeedback();
 
         return view;
@@ -394,10 +380,6 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                     location = locationService.getLocation();
 
                 setOptimizedImageBitmap(imageSrc);
-//                Picasso
-//                        .with(getActivity())
-//                        .load(imageSrc)
-//                        .into(imageView);
 
                 setLocationFeedback();
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -573,6 +555,13 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
         imageView.setImageBitmap(bitmap);
     }
 
+//    private void loadImage(String imageSrc, ImageView imageView) {
+//        imageView.setImageDrawable(null);
+//        Picasso.with(getActivity())
+//                .load(new File(imageSrc))
+//                .into(imageView);
+//    }
+
     private void submit() {
         if (!uploadRunning) {
             fabProgressCircle.show();
@@ -631,8 +620,8 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
 
     private String getNewFileName() {
         File from = new File(imageSrc);
-        File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
-        File to = new File(storageDir.getPath() + File.separator +
+        File storageDir = new File(FileUtils.getStorageDir(getActivity()), "images");
+        File to = new File(storageDir.getPath(),
                 String.valueOf(System.currentTimeMillis()) + ".jpg");
 
         String path = null;
@@ -695,11 +684,20 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
 
         sequence.setConfig(config);
 
+//        sequence.addSequenceItem(
+//                new MaterialShowcaseView.Builder(activity)
+//                        .setTarget(imageView)
+//                        .setDismissText("Got It")
+//                        .setContentText("You can see the preview of the image you took")
+//                        .build()
+//        );
+
         sequence.addSequenceItem(
                 new MaterialShowcaseView.Builder(activity)
-                        .setTarget(imageView)
+                        .setTarget(mapView)
                         .setDismissText("Got It")
-                        .setContentText("You can see the preview of the image you took")
+                        .setContentText("You can see the point on the map.")
+                        .setDismissOnTouch(true)
                         .build()
         );
 
@@ -709,50 +707,44 @@ public class SubmitMaterialUIFragment extends Fragment implements View.OnClickLi
                         .setDismissText("Got It")
                         .setContentText("This bar indicates the location accuracy")
                         .withRectangleShape(true)
+                        .setDismissOnTouch(true)
                         .build()
         );
 
-        sequence.addSequenceItem(
-                new MaterialShowcaseView.Builder(activity)
-                        .setTarget(submitButton)
-                        .setDismissText("Got It")
-                        .setContentText("Click here to confirm the image")
-                        .build()
-        );
-
-        sequence.start();
-    }
-
-    private void showMapTutorial() {
-        final Activity activity = getActivity();
-        ShowcaseConfig config = new ShowcaseConfig();
-        config.setDelay(300);
-
-        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(activity, "submit_activity_map_intro");
-
-        sequence.setConfig(config);
-
-        sequence.addSequenceItem(
-                new MaterialShowcaseView.Builder(activity)
-                        .setTarget(mapView)
-                        .setDismissText("Got It")
-                        .setContentText("You can see the point on the map.")
-                        .build()
-        );
+        if (retryButton.getVisibility() == View.VISIBLE) {
+            sequence.addSequenceItem(
+                    new MaterialShowcaseView.Builder(activity)
+                            .setTarget(retryButton)
+                            .setDismissText("Got It")
+                            .setContentText("Click here to retake picture.")
+                            .setDismissOnTouch(true)
+                            .build()
+            );
+        }
 
         sequence.addSequenceItem(
                 new MaterialShowcaseView.Builder(activity)
                         .setTarget(mapView)
                         .setDismissText("Got It")
                         .setContentText("You can also edit the location by dragging the map.")
+                        .setDismissOnTouch(true)
                         .build()
         );
+
+//        sequence.addSequenceItem(
+//                new MaterialShowcaseView.Builder(activity)
+//                        .setTarget(submitButton)
+//                        .setDismissText("Got It")
+//                        .setContentText("Click here to confirm the image")
+//                        .build()
+//        );
 
         sequence.addSequenceItem(
                 new MaterialShowcaseView.Builder(activity)
                         .setTarget(submitButton)
                         .setDismissText("Got It")
                         .setContentText("Click here to submit the point")
+                        .setDismissOnTouch(true)
                         .build()
         );
 

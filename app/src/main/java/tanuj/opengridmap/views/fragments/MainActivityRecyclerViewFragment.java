@@ -20,10 +20,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.FileProvider;
-import android.support.v4.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
@@ -31,10 +28,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.support.v7.widget.Toolbar;
 
@@ -48,8 +42,6 @@ import java.util.List;
 
 import tanuj.opengridmap.BuildConfig;
 import tanuj.opengridmap.utils.FileUtils;
-import tanuj.opengridmap.views.activities.MainActivity;
-import tanuj.opengridmap.views.activities.PowerElementDetailActivity;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.services.LocationService;
@@ -179,29 +171,6 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
         state = STATE_CAMERA_LAUNCH_CHECK;
 
         process();
-    }
-
-    @Override
-    public void onInfoClick(View v, int position) {
-        Intent transitionIntent = new Intent(getActivity(), PowerElementDetailActivity.class);
-        transitionIntent.putExtra(PowerElementDetailActivity.EXTRA_PARAM_ID, position);
-        ImageView placeImage = (ImageView) v.findViewById(R.id.powerElementImage);
-        LinearLayout placeNameHolder = (LinearLayout) v.findViewById(R.id.powerElementNameHolder);
-
-        View navigationBar = getActivity().findViewById(android.R.id.navigationBarBackground);
-        View statusBar = getActivity().findViewById(android.R.id.statusBarBackground);
-
-        Pair<View, String> imagePair = Pair.create((View) placeImage, "tImage");
-        Pair<View, String> holderPair = Pair.create((View) placeNameHolder, "tNameHolder");
-        Pair<View, String> navPair = Pair.create(navigationBar,
-                Window.NAVIGATION_BAR_BACKGROUND_TRANSITION_NAME);
-        Pair<View, String> statusPair = Pair.create(statusBar,
-                Window.STATUS_BAR_BACKGROUND_TRANSITION_NAME);
-//        Pair<View, String> toolbarPair = Pair.create((View) toolbar, "tActionBar");
-
-        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                getActivity(), imagePair, holderPair, navPair, statusPair);
-        ActivityCompat.startActivity(getActivity(), transitionIntent, options.toBundle());
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -410,12 +379,13 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
     }
 
     private void launchCamera() {
-//        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
-
         Activity activity = getActivity();
-        Uri fileUri = FileUtils.getOutputMediaFileUri(activity,
-                FileUtils.getOutputMediaFile(activity));
-//        Log.d(TAG, fileUri.toString());
+        File file = FileUtils.getTempMediaFile(activity);
+        Uri fileUri = FileUtils.getOutputMediaFileUri(activity, file);
+
+        if (file != null && file.exists()) {
+            file.delete();
+        }
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
@@ -434,14 +404,16 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
     }
 
     private void submit() {
-        Intent intent = new Intent(getActivity(), SubmitActivity.class);
+        Activity activity = getActivity();
+        Intent intent = new Intent(activity, SubmitActivity.class);
+        String imageSrc = FileUtils.getTempMediaFile(activity).getAbsolutePath();
 
         Log.d(TAG, "Power Element ID : " + powerElementId);
 
         intent.putExtra(getString(R.string.key_location_start), locationStart);
         intent.putExtra(getString(R.string.key_location_result), locationResult);
         intent.putExtra(getString(R.string.key_power_element_id), powerElementId);
-        intent.putExtra(getString(R.string.key_image_src), getOutputMediaFile().getAbsolutePath());
+        intent.putExtra(getString(R.string.key_image_src), imageSrc);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         powerElementId = -1;
@@ -450,23 +422,23 @@ public class MainActivityRecyclerViewFragment extends Fragment implements
     }
 
     private Uri getOutputMediaFileUri(){
-//        return Uri.fromFile(getOutputMediaFile());
-        return FileProvider.getUriForFile(getActivity(),
-                BuildConfig.APPLICATION_ID + ".provider",
-                getOutputMediaFile());
+        Activity activity = getActivity();
+
+        return FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".provider",
+                FileUtils.getTempMediaFile(activity));
     }
 
-    private File getOutputMediaFile(){
-        File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
-
-        if (!storageDir.exists()){
-            if (!storageDir.mkdirs()){
-                return null;
-            }
-        }
-
-        return new File(storageDir.getPath() + File.separator + "TEMP_IMG.jpg");
-    }
+//    private File getTempMediaFile(){
+//        File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
+//
+//        if (!storageDir.exists()){
+//            if (!storageDir.mkdirs()){
+//                return null;
+//            }
+//        }
+//
+//        return new File(storageDir.getPath() + File.separator + "TEMP_IMG.jpg");
+//    }
 
     protected void bindLocationService() {
         if (!locationServiceBindingStatus) {
