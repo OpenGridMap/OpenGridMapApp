@@ -4,10 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!--<include-->
-        <!--android:id="@+id/toolbar"-->
-        <!--layout="@layout/toolbar" />-->
-
     <TextView
         android:id="@+id/intro"
         android:layout_width="0dp"
@@ -16,7 +12,7 @@
         android:gravity="center"/>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/grid"
+        android:id="@+id/submissions_grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#f8f8f8"

@@ -32,6 +32,7 @@ public class FileUtils {
             }
         }
 
-        return new File(storageDir.getPath() + File.separator + "TEMP_IMG.jpg");
+//        return new File(storageDir.getPath() + File.separator + "TEMP_IMG.jpg");
+        return new File(storageDir.getPath() + File.separator + String.valueOf(System.currentTimeMillis()) + ".jpg");
     }
 }

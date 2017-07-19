@@ -279,6 +279,36 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
         return submissions;
     }
 
+    public List<Submission> getPendingSubmissions() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.query(SubmissionEntry.TABLE_NAME, submissionColumns, SubmissionEntry.COLUMN_STATUS
+                + " <= ?", new String[] {Integer.toString(Submission.STATUS_SUBMITTED_PENDING_REVIEW)}, null, null,
+                SubmissionEntry.COLUMN_CREATED_TIMESTAMP + DESC);
+
+        List<Submission> submissions = new ArrayList<Submission>();
+
+        Submission submission;
+
+        if (cursor.moveToFirst()) {
+            do {
+                submission = getSubmissionFromCursor(cursor);
+
+                submissions.add(submission);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+
+        for (Submission sub : submissions) {
+            sub.setImages(this.getImagesBySubmissionId(sub.getId()));
+            sub.setPowerElements(this.getPowerElementsBySubmissionId(sub));
+        }
+
+        return submissions;
+    }
+
     private Submission getSubmissionFromCursor(Cursor cursor) {
         long id = cursor.getLong(0);
         int status = cursor.getInt(1);

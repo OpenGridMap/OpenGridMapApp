@@ -33,6 +33,13 @@
     <string name="title_section2">Images</string>
     <string name="title_section3">Tags</string>
     <string name="title_section4">Map</string>
+    <string name="title_activity_submission_status">Submission Details</string>
+    <string name="type_format">Type : %1$s</string>
+    <string name="location_format">Coordinates : %1$s</string>
+    <string name="accuracy_format">Location Accuracy : %1$.2fm</string>
+    <string name="power_tags_format">Power Tags : %1$s</string>
+    <string name="date_format">Date and Time : %1$s</string>
+    <string name="status_format">Status : %1$s</string>
 
     <!-- Tag Selection Activity -->
     <string name="title_activity_tag_selection">Select any additional tags if any</string>
@@ -47,6 +54,7 @@
     <!-- Activity extras -->
     <string name="key_power_element_id" translatable="false">power_element_id</string>
     <string name="key_submission_id" translatable="false">submission_id</string>
+    <string name="key_upload_queue_id" translatable="false">upload_queue_id</string>
     <string name="key_upload_completion" translatable="false">upload_completion</string>
 
     <!-- Upload Service -->
@@ -93,7 +101,8 @@
     <string name="submission_status_confirmed">Submission Confirmed</string>
     <string name="submission_status_upload_pending">Submission Confirmed, Upload pending</string>
     <string name="submission_status_upload_in_progress">Upload in Progress</string>
-    <string name="submission_status_submitted_pending_review">Submission Uploaded Successfully, Pending review</string>
+    <!--<string name="submission_status_submitted_pending_review">Submission Uploaded Successfully, Pending review</string>-->
+    <string name="submission_status_submitted_pending_review">Submission Uploaded Successfully</string>
     <string name="submission_status_submitted_approved">Submission Approved</string>
     <string name="submission_status_submitted_rejected">Submission Rejected</string>
 
@@ -148,12 +157,11 @@
     <string name="upload_complete">Upload Complete\n</string>
     <string name="upload_failed">Upload Failed\n</string>
     <string name="upload_submission_error">Error Saving Submission\n</string>
-    <string name="upload_in_progress">Uploading…\n</string>
+    <string name="upload_in_progress">Point will be submitted now.</string>
+    <string name="upload_in_progress_wifi_only">Point will be submitted when the device connects to WiFi.</string>
     <string name="no_internet">No Internet Connectivity\n</string>
     <string name="upload_later">Upload later</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_power_element_detail">PowerElementDetailActivity</string>
     <string name="msg_permissions_required">All the permissions are required for the app to function properly. Please grant all the required Permissions.</string>
     <string name="opengridmap">Open Grid Map</string>
@@ -169,5 +177,7 @@
     <string name="label_device_type">Device Type</string>
     <string name="string_intro">We are an open community that crowdsources realistic power grid data to be used for research purposes. This app enables you to contribute power grid data to the platform.</string>
     <string name="response_status_error">error</string>
+
+    <string name="section_format">Hello World from section: %1$d</string>
 
 </resources>

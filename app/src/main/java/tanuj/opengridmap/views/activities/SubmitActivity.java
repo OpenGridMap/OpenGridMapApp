@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.views.fragments.SubmitActivityFragment;
-import tanuj.opengridmap.views.fragments.SubmitMaterialUIFragment;
 
 public class SubmitActivity extends AppCompatActivity {
     private static final String TAG = SubmitActivity.class.getSimpleName();
@@ -24,9 +23,7 @@ public class SubmitActivity extends AppCompatActivity {
     @Override
     protected void onUserLeaveHint() {
         FragmentManager fragmentManager = getSupportFragmentManager();
-//        SubmitActivityFragment fragment = (SubmitActivityFragment) fragmentManager.findFragmentById(
-//                R.id.fragment);
-        SubmitMaterialUIFragment fragment = (SubmitMaterialUIFragment) fragmentManager.findFragmentById(
+        SubmitActivityFragment fragment = (SubmitActivityFragment) fragmentManager.findFragmentById(
                 R.id.fragment);
 
         if (fragment != null)

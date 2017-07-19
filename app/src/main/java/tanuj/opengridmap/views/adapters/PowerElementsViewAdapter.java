@@ -1,15 +1,11 @@
 package tanuj.opengridmap.views.adapters;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -23,12 +19,12 @@ import tanuj.opengridmap.models.PowerElement;
 /**
  * Created by Tanuj on 10/6/2016.
  */
-public class PowerElementsRecyclerViewAdapter extends
-        RecyclerView.Adapter<PowerElementsRecyclerViewAdapter.ViewHolder> {
+public class PowerElementsViewAdapter extends
+        RecyclerView.Adapter<PowerElementsViewAdapter.ViewHolder> {
     private Context context;
     private OnItemClickListener itemClickListener;
 
-    public PowerElementsRecyclerViewAdapter(Context context) {
+    public PowerElementsViewAdapter(Context context) {
         this.context = context;
     }
 
@@ -65,7 +61,7 @@ public class PowerElementsRecyclerViewAdapter extends
         private TextView powerElementName;
         private ImageView powerElementImage;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
 
             powerElementHolder = (LinearLayout) itemView.findViewById(R.id.mainHolder);

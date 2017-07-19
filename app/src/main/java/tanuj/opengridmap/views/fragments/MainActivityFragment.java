@@ -1,7 +1,10 @@
 package tanuj.opengridmap.views.fragments;
 
+import android.annotation.TargetApi;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,20 +12,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
 
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -30,21 +37,23 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.io.File;
+import java.util.List;
 
+import tanuj.opengridmap.utils.FileUtils;
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.views.activities.SubmitActivity;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.utils.LocationUtils;
 import tanuj.opengridmap.utils.ServiceUtils;
-import tanuj.opengridmap.views.adapters.PowerElementsGridAdapter;
+import tanuj.opengridmap.views.activities.SubmitActivity;
+import tanuj.opengridmap.views.adapters.PowerElementsViewAdapter;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
-import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
 public class MainActivityFragment extends Fragment implements
+        PowerElementsViewAdapter.OnItemClickListener,
         ResultCallback<LocationSettingsResult> {
-    public static final String TAG = MainActivityFragment.class.getSimpleName();
+    private static final String TAG = MainActivityFragment.class.getSimpleName();
 
     private static final short STATE_DEFAULT = 0;
 
@@ -70,6 +79,8 @@ public class MainActivityFragment extends Fragment implements
 
     private long powerElementId = -1;
 
+    private String imageSrc;
+
     private ServiceConnection locationServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -94,18 +105,29 @@ public class MainActivityFragment extends Fragment implements
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra("location");
 
-            Log.v(TAG, location.toString());
+//            Log.v(TAG, location.toString());
         }
     };
 
-    public MainActivityFragment() {}
+    private RecyclerView recyclerView;
+    private StaggeredGridLayoutManager staggeredGridLayoutManager;
+    private PowerElementsViewAdapter adapter;
+    private Toolbar toolbar;
+
+    public MainActivityFragment() {
+        // Required empty public constructor
+    }
+
+    public static MainActivityFragment newInstance() {
+        MainActivityFragment fragment = new MainActivityFragment();
+        return fragment;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Context context = getActivity();
 
-//        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
+        Context context = getActivity();
 
         if (!ServiceUtils.isMyServiceRunning((ActivityManager)
                 context.getSystemService(Context.ACTIVITY_SERVICE))) {
@@ -120,22 +142,53 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        final Context context = getActivity();
+        View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        GridView gridView = (GridView) rootView.findViewById(R.id.main_gridview);
-        gridView.setAdapter(new PowerElementsGridAdapter(context,
-                PowerElementsSeedData.powerElements));
-        gridView.setOnItemClickListener(onItemClickListener);
+        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+        setUpActionBar();
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(getString(
-                R.string.key_power_element_id))) {
-            powerElementId = savedInstanceState.getLong(getString(R.string.key_power_element_id));
-        }
+        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                StaggeredGridLayoutManager.VERTICAL);
+        recyclerView = (RecyclerView) view.findViewById(R.id.grid);
+        adapter = new PowerElementsViewAdapter(getActivity());
+
+        recyclerView.setLayoutManager(staggeredGridLayoutManager);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setAdapter(adapter);
+
+        adapter.setOnItemClickListener(this);
 
         bindLocationService();
 
-        return rootView;
+        return view;
+    }
+
+    @Override
+    public void onItemClick(View view, int position) {
+        powerElementId = PowerElementsSeedData.powerElements.get(position).getId();
+        state = STATE_CAMERA_LAUNCH_CHECK;
+
+        process();
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void setUpActionBar() {
+        if (toolbar != null) {
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
+            if (activity != null) {
+                ActionBar actionBar = activity.getActionBar();
+
+                if (actionBar != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        activity.setSupportActionBar(toolbar);
+//                        activity.setActionBar(toolbar);
+                        activity.getActionBar().setElevation(7);
+                    }
+                    actionBar.setDisplayHomeAsUpEnabled(false);
+                    actionBar.setDisplayShowTitleEnabled(true);
+                }
+            }
+        }
     }
 
     @Override
@@ -177,19 +230,21 @@ public class MainActivityFragment extends Fragment implements
     @Override
     public void onPause() {
         getActivity().unregisterReceiver(locationUpdateBroadcastReceiver);
+        unbindLocationService();
         super.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        bindLocationService();
         getActivity().registerReceiver(locationUpdateBroadcastReceiver,
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
     }
 
     @Override
     public void onDestroy() {
-        unbindLocationService();
+//        unbindLocationService();
         super.onDestroy();
     }
 
@@ -228,7 +283,6 @@ public class MainActivityFragment extends Fragment implements
                     }
                     case Activity.RESULT_CANCELED: {
                         state = STATE_DEFAULT;
-                        Toast.makeText(context, "Cancelled", Toast.LENGTH_SHORT).show();
                         break;
                     }
                     default: {
@@ -323,12 +377,27 @@ public class MainActivityFragment extends Fragment implements
     }
 
     private void launchCamera() {
-//        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(getActivity());
-        Uri fileUri = getOutputMediaFileUri();
-        Log.d(TAG, fileUri.toString());
+        Activity activity = getActivity();
+        File file = FileUtils.getTempMediaFile(activity);
+        Uri fileUri = FileUtils.getOutputMediaFileUri(activity, file);
+
+        if (file != null) {
+            imageSrc = file.getAbsolutePath();
+        }
+
+//        if (file != null && file.exists()) {
+//            file.delete();
+//        }
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+
+        List<ResolveInfo> resolvedIntentActivities = activity.getPackageManager().queryIntentActivities(cameraIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo resolvedIntentInfo : resolvedIntentActivities) {
+            String packageName = resolvedIntentInfo.activityInfo.packageName;
+
+            activity.grantUriPermission(packageName, fileUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
 
         locationService.handleExternalIntent();
         locationStart = locationService.getLocation();
@@ -337,35 +406,21 @@ public class MainActivityFragment extends Fragment implements
     }
 
     private void submit() {
-        Intent intent = new Intent(getActivity(), SubmitActivity.class);
+        Activity activity = getActivity();
+        Intent intent = new Intent(activity, SubmitActivity.class);
+//        String imageSrc = FileUtils.getTempMediaFile(activity).getAbsolutePath();
 
         Log.d(TAG, "Power Element ID : " + powerElementId);
 
         intent.putExtra(getString(R.string.key_location_start), locationStart);
         intent.putExtra(getString(R.string.key_location_result), locationResult);
         intent.putExtra(getString(R.string.key_power_element_id), powerElementId);
-        intent.putExtra(getString(R.string.key_image_src), getOutputMediaFile().getAbsolutePath());
+        intent.putExtra(getString(R.string.key_image_src), imageSrc);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         powerElementId = -1;
 
         startActivity(intent);
-    }
-
-    private Uri getOutputMediaFileUri(){
-        return Uri.fromFile(getOutputMediaFile());
-    }
-
-    private File getOutputMediaFile(){
-        File storageDir = new File(getActivity().getExternalFilesDir(""), "images");
-
-        if (!storageDir.exists()){
-            if (!storageDir.mkdirs()){
-                return null;
-            }
-        }
-
-        return new File(storageDir.getPath() + File.separator + "TEMP_IMG.jpg");
     }
 
     protected void bindLocationService() {

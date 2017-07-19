@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.List;
@@ -63,7 +62,7 @@ public class BackgroundUploadService extends Service {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                processPendingUploads();
+                processUploadQueue();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -71,7 +70,7 @@ public class BackgroundUploadService extends Service {
         }
     }
 
-    private void processPendingUploads() throws InterruptedException {
+    private void processUploadQueue() throws InterruptedException {
         OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(getApplicationContext());
 
         List<Submission> submissions = dbHelper.getSubmissions(Submission.STATUS_SUBMISSION_CONFIRMED);

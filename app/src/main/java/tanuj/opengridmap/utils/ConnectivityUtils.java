@@ -41,12 +41,16 @@ public class ConnectivityUtils {
     }
 
     public static boolean isConnectionPermitted(final Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
-        boolean wifiOnly = preferences.getBoolean(context.getString(
-                R.string.pref_key_sync_wifi_only), false);
+        boolean wifiOnly = isWifiOnly(context);
 
         return (!wifiOnly && isInternetConnected(context)) ||
                 (wifiOnly && isWifiConnected(context));
+    }
+
+    public static boolean isWifiOnly(Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+        return preferences.getBoolean(context.getString(
+                R.string.pref_key_sync_wifi_only), false);
     }
 }

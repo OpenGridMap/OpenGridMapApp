@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
@@ -220,25 +221,25 @@ public class UploadSubmissionService extends IntentService implements
     private void handleFailure() {
         broadcastUpdate(UPLOAD_STATUS_FAIL);
 
-//        Context context = getApplicationContext();
-//        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-//        dbHelper.getSubmission(submissionId).deleteSubmission(context);
-//        dbHelper.close();
+        Context context = getApplicationContext();
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        Submission submission = dbHelper.getSubmission(submissionId);
+        dbHelper.close();
+
+        submission.uploadFailed(context);
     }
 
     private void handleFailure(Throwable throwable, String response) {
         if (throwable instanceof IOException)
             broadcastUpdate(NO_INTERNET_CONNECTIVITY);
 
-        Log.d(TAG, "hf1");
         Log.d(TAG, response);
-
-//        handleFailure();
+        handleFailure();
     }
 
     private void handleFailure(Throwable throwable, JSONObject response) {
         try {
-            if (response.has(getString(R.string.response_key_status)) &&
+            if (response!= null && response.has(getString(R.string.response_key_status)) &&
                     response.getString(getString(R.string.response_key_status))
                             .equals(getString(R.string.response_status_error))) {
                 broadcastUpdate(UPLOAD_STATUS_FAIL);
@@ -249,20 +250,13 @@ public class UploadSubmissionService extends IntentService implements
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-
-
-        Log.d(TAG, "hf2");
+        
         Log.d(TAG, response.toString());
-//        handleFailure();
+        handleFailure();
     }
 
     private void handleSuccess() {
-        Context context = getApplicationContext();
         broadcastUpdate(UPLOAD_STATUS_SUCCESS);
-        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-        dbHelper.getSubmission(submissionId).deleteSubmission(context);
-        dbHelper.close();
         Log.d(TAG, "Submission " + submissionId + " successfully uploaded");
     }
 

@@ -183,8 +183,25 @@ public class Submission {
         this.images = images;
     }
 
+    public Image getImage() {
+        return images.get(0);
+    }
+
     public Image getImage(int index) {
         return images.get(index);
+    }
+
+    public String getImageSrc() {
+        return getImage().getSrc();
+    }
+
+    public String getImageSrc(int index) {
+        return getImage(index).getSrc();
+    }
+
+    public String getLocationString(final Context context) {
+        String[] coordinates = getImage().getLocationInDegrees(context);
+        return coordinates[0] + " " + coordinates[1];
     }
 
     private void updateStatus(Context context, int newStatus) {
@@ -213,6 +230,7 @@ public class Submission {
 //        if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
 //            this.addToUploadQueue(context);
             updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
+            this.addToUploadQueue(context);
 //        }
     }
 
@@ -305,12 +323,22 @@ public class Submission {
         return json;
     }
 
-    public void uploadComplete(Context context) {
-//        if (status == STATUS_UPLOAD_IN_PROGRESS) {
-//            updateStatus(context, STATUS_SUBMITTED_PENDING_REVIEW);
+    public void uploadInProgess(Context context) {
+        if (status == STATUS_UPLOAD_PENDING) {
+            updateStatus(context, STATUS_UPLOAD_IN_PROGRESS);
+        }
+    }
 
-            deleteSubmission(context);
-//        }
+    public void uploadComplete(Context context) {
+        if (status == STATUS_UPLOAD_IN_PROGRESS) {
+            updateStatus(context, STATUS_SUBMITTED_PENDING_REVIEW);
+        }
+    }
+
+    public void uploadFailed(Context context) {
+        if (status == STATUS_UPLOAD_IN_PROGRESS) {
+            updateStatus(context, STATUS_UPLOAD_PENDING);
+        }
     }
 
     public void deleteSubmission(Context context) {

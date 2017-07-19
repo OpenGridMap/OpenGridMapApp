@@ -223,7 +223,7 @@ public class Image {
                 width, height);
     }
 
-    private File getThumbnailFile(Context context, int type) {
+    public File getThumbnailFile(Context context, int type) {
         File thumbnailFile = null;
         File file = new File(src);
         String fileName = file.getName();

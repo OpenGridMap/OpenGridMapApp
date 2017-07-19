@@ -16,8 +16,8 @@ public class WifiStateReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (ConnectivityUtils.isConnectionPermitted(context)) {
-            Intent serviceIntent = new Intent(context, BackgroundUploadService.class);
-            context.startService(serviceIntent);
+//            Intent serviceIntent = new Intent(context, BackgroundUploadService.class);
+//            context.startService(serviceIntent);
         }
     }
 }

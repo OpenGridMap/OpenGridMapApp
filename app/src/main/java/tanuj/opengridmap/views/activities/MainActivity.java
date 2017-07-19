@@ -1,18 +1,14 @@
 package tanuj.opengridmap.views.activities;
 
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import java.util.List;
-
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
-import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.SubmissionsActivity;
 import tanuj.opengridmap.views.fragments.MainActivityFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,14 +30,18 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
+            case R.id.action_submissions: {
+                startActivity(SubmissionsActivity.class);
+                break;
+            }
             case R.id.action_map: {
                 startActivity(MapActivity.class);
                 break;
             }
-//            case R.id.action_settings: {
-//                startActivity(SettingsActivity.class);
-//                break;
-//            }
+            case R.id.action_settings: {
+                startActivity(SettingsActivity.class);
+                break;
+            }
             case R.id.action_about: {
                 startActivity(AboutActivity.class);
                 break;
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private MainActivityFragment getMainActivityFragment() {
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentManager fragmentManager = getFragmentManager();
         return (MainActivityFragment) fragmentManager.findFragmentById(R.id.fragment);
     }
 

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    android:layout_height="match_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
+
+    <!--<include-->
+        <!--android:id="@+id/toolbar"-->
+        <!--layout="@layout/toolbar" />-->
 
     <TextView
         android:id="@+id/intro"
@@ -12,15 +15,12 @@
         android:layout_gravity="center"
         android:gravity="center"/>
 
-    <GridView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/main_gridview"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:numColumns="2"
-        android:verticalSpacing="10dp"
-        android:horizontalSpacing="10dp"
-        android:stretchMode="columnWidth"
-        android:gravity="center|center_horizontal"
-        android:layout_gravity="center|center_horizontal"
-        android:padding="7dp" />
+        android:background="#f8f8f8"
+        android:divider="@null"
+        android:listSelector="@android:color/transparent"/>
+
 </LinearLayout>
