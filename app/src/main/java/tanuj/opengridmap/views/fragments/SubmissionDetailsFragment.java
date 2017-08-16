@@ -1,13 +1,19 @@
 package tanuj.opengridmap.views.fragments;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -18,10 +24,12 @@ import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
 
 
-public class SubmissionDetailsFragment extends Fragment {
+public class SubmissionDetailsFragment extends Fragment implements View.OnClickListener, DialogInterface.OnClickListener {
     private static final String KEY_SUBMISSION_ID = "submission_id";
 
     private ImageView imagePreview;
+
+    private FloatingActionButton deleteButton;
 
     private TextView powerElementTypeTextView;
 
@@ -34,6 +42,8 @@ public class SubmissionDetailsFragment extends Fragment {
     private TextView dateTextView;
 
     private TextView statusTextView;
+
+    private AlertDialog alertDialog;
 
     private Submission submission;
 
@@ -64,17 +74,30 @@ public class SubmissionDetailsFragment extends Fragment {
         submission = dbHelper.getSubmission(getArguments().getLong(KEY_SUBMISSION_ID));
         dbHelper.close();
 
-        imagePreview = (ImageView) view.findViewById(R.id.image_preview);
-        powerElementTypeTextView = (TextView) view.findViewById(R.id.type);
-        locationTextView = (TextView) view.findViewById(R.id.location);
-        accuracyTextView = (TextView) view.findViewById(R.id.accuracy);
-        dateTextView = (TextView) view.findViewById(R.id.date);
-        statusTextView = (TextView) view.findViewById(R.id.status);
-        powerTagsTextView = (TextView) view.findViewById(R.id.power_tags);
+        imagePreview = view.findViewById(R.id.image_preview);
+        deleteButton = view.findViewById(R.id.delete_button);
+        powerElementTypeTextView = view.findViewById(R.id.power_element_type);
+        locationTextView = view.findViewById(R.id.location);
+        accuracyTextView = view.findViewById(R.id.accuracy);
+        dateTextView = view.findViewById(R.id.date);
+        statusTextView = view.findViewById(R.id.status);
+        powerTagsTextView = view.findViewById(R.id.power_tags);
 
         populateSubmissionDetails();
 
+        deleteButton.setOnClickListener(this);
+
+        buildAlertDialog();
+
         return view;
+    }
+
+    private void buildAlertDialog() {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(getContext(), R.style.Theme_AppCompat_Light_Dialog_Alert);
+        alertBuilder.setMessage("Are you sure you want to delete this submission?");
+        alertBuilder.setPositiveButton("Yes", this);
+        alertBuilder.setNegativeButton("No", this);
+        alertDialog = alertBuilder.create();
     }
 
     private void populateSubmissionDetails() {
@@ -92,6 +115,34 @@ public class SubmissionDetailsFragment extends Fragment {
             statusTextView.setText(getString(R.string.status_format, submission.getSubmissionStatus(context)));
             powerTagsTextView.setText(getString(R.string.power_tags_format,
                     submission.getPowerElements().get(0).getOsmTags()));
+        }
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.delete_button: {
+                alertDialog.show();
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onClick(DialogInterface dialogInterface, int i) {
+        Log.d("Hello", String.valueOf(i));
+        switch (i) {
+            case DialogInterface.BUTTON_POSITIVE: {
+                final Activity activity = getActivity();
+                if (submission != null)
+                    submission.deleteSubmission(activity);
+                activity.finish();
+                break;
+            }
+            case DialogInterface.BUTTON_NEGATIVE: {
+                dialogInterface.dismiss();
+                break;
+            }
         }
     }
 }

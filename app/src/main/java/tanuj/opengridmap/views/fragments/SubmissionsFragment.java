@@ -4,29 +4,28 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import java.util.List;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.SubmissionStatusActivity;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.models.Submission;
-import tanuj.opengridmap.services.UploadSubmissionService;
+import tanuj.opengridmap.services.UploadService;
+import tanuj.opengridmap.views.activities.SubmissionStatusActivity;
 import tanuj.opengridmap.views.adapters.SubmissionsViewAdapter;
 
 public class SubmissionsFragment extends Fragment implements SubmissionsViewAdapter.OnItemClickListener {
     private static final String TAG = SubmissionsFragment.class.getSimpleName();
+
+    private static final int SUBMISSION_DETAILS = -1;
 
     private RecyclerView recyclerView;
 
@@ -41,10 +40,7 @@ public class SubmissionsFragment extends Fragment implements SubmissionsViewAdap
     private BroadcastReceiver uploadUpdateBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            processUploadUpdate(
-                    intent.getLongExtra(getString(R.string.key_submission_id), -1),
-                    intent.getShortExtra(getString(R.string.key_upload_completion), (short) -1)
-            );
+            processSubmissionsUpdate();
         }
     };
 
@@ -65,8 +61,8 @@ public class SubmissionsFragment extends Fragment implements SubmissionsViewAdap
 
         staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                 StaggeredGridLayoutManager.VERTICAL);
-        submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
-        recyclerView = (RecyclerView) view.findViewById(R.id.submissions_grid);
+        submissions = getSubmissions();
+        recyclerView = view.findViewById(R.id.submissions_grid);
         adapter = new SubmissionsViewAdapter(context, submissions);
 
         recyclerView.setLayoutManager(staggeredGridLayoutManager);
@@ -76,6 +72,10 @@ public class SubmissionsFragment extends Fragment implements SubmissionsViewAdap
         adapter.setOnItemClickLietener(this);
 
         return view;
+    }
+
+    private List<Submission> getSubmissions() {
+        return dbHelper.getSubmissions(Submission.STATUS_INVALID);
     }
 
     @Override
@@ -96,8 +96,10 @@ public class SubmissionsFragment extends Fragment implements SubmissionsViewAdap
     public void onResume() {
         super.onResume();
 
+        processSubmissionsUpdate();
+
         getActivity().registerReceiver(uploadUpdateBroadcastReceiver,
-                new IntentFilter(UploadSubmissionService.UPLOAD_UPDATE_BROADCAST));
+                new IntentFilter(UploadService.UPLOAD_UPDATE_BROADCAST));
     }
 
     @Override
@@ -110,7 +112,7 @@ public class SubmissionsFragment extends Fragment implements SubmissionsViewAdap
         startActivity(intent);
     }
 
-    private void processUploadUpdate(long submissionId, short uploadCompletion) {
+    private void processSubmissionsUpdate() {
         submissions = dbHelper.getSubmissions(Submission.STATUS_INVALID);
         adapter.setSubmissions(submissions);
         adapter.notifyDataSetChanged();

@@ -21,7 +21,7 @@ public class AboutActivityFragment extends Fragment{
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_about, container, false);
 
-        TextView aboutTextView = (TextView) rootView.findViewById(R.id.text_view_about);
+        TextView aboutTextView = rootView.findViewById(R.id.text_view_about);
         aboutTextView.setMovementMethod(LinkMovementMethod.getInstance());
 
         return rootView;

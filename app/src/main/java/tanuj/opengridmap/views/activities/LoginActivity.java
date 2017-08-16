@@ -9,6 +9,7 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -18,53 +19,22 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.plus.People;
 import com.google.android.gms.plus.Plus;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import tanuj.opengridmap.R;
 
 public class LoginActivity extends AppCompatActivity implements
         View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        GoogleApiClient.ServerAuthCodeCallbacks, ResultCallback<People.LoadPeopleResult> {
-
+        GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = LoginActivity.class.getSimpleName();
 
     private static final int STATE_DEFAULT = 0;
     private static final int STATE_SIGN_IN = 1;
     private static final int STATE_IN_PROGRESS = 2;
-
     private static final int RC_SIGN_IN = 0;
 
     private static final String KEY_SAVED_PROGRESS = "sign_in_progress";
-
-    private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
-
-    private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
-
-    private static final String EXCHANGE_TOKEN_URL = SERVER_BASE_URL + "/";
-
-    private static final String SELECT_SCOPES_URL = SERVER_BASE_URL + "selectscopes";
 
     private int signInProgress;
 
@@ -98,7 +68,8 @@ public class LoginActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_login);
         getSupportActionBar().hide();
 
-        signInButton = (SignInButton) findViewById(R.id.plus_sign_in_button);
+        signInButton = findViewById(R.id.plus_sign_in_button);
+        signInButton.setSize(SignInButton.SIZE_STANDARD);
         signInButton.setOnClickListener(this);
 
         if (savedInstanceState != null) {
@@ -107,8 +78,8 @@ public class LoginActivity extends AppCompatActivity implements
 
         googleApiClient = buildGoogleApiClient();
 
-        signInSection = (LinearLayout) findViewById(R.id.sign_in_section);
-        spinnerSection = (LinearLayout) findViewById(R.id.spinner_section);
+        signInSection = findViewById(R.id.sign_in_section);
+        spinnerSection = findViewById(R.id.spinner_section);
     }
 
     @Override
@@ -169,8 +140,6 @@ public class LoginActivity extends AppCompatActivity implements
                 .addApi(Plus.API, Plus.PlusOptions.builder().build())
                 .addScope(Plus.SCOPE_PLUS_LOGIN);
 
-//        builder = builder.requestServerAuthCode(WEB_CLIENT_ID, this);
-
         return builder.build();
     }
 
@@ -197,7 +166,7 @@ public class LoginActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         showSignInSection();
         int errorCode = connectionResult.getErrorCode();
         Log.e(TAG, "onConnectionFailed: ErrorCode : " + errorCode);
@@ -213,9 +182,9 @@ public class LoginActivity extends AppCompatActivity implements
             }
         }
 
-//        if (!googleApiClient.isConnected()) {
+        if (!googleApiClient.isConnected()) {
             googleApiClient.connect();
-//        }
+        }
     }
 
     private void showSignInSection() {
@@ -228,61 +197,61 @@ public class LoginActivity extends AppCompatActivity implements
         spinnerSection.setVisibility(View.VISIBLE);
     }
 
-    @Override
-    public CheckResult onCheckServerAuthorization(String idToken, Set<Scope> set) {
-        Log.i(TAG, "Checking Server's Authorizations");
-
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet(SELECT_SCOPES_URL);
-        HashSet<Scope> serverScopeSet = new HashSet<Scope>();
-
-        try {
-            HttpResponse httpResponse = httpClient.execute(httpGet);
-            int responseCode = httpResponse.getStatusLine().getStatusCode();
-            String responseBody = EntityUtils.toString(httpResponse.getEntity());
-
-            if (responseCode == 200) {
-                String[] scopeStrings = responseBody.split(" ");
-                for (String scope : scopeStrings) {
-                    Log.i(TAG, "Server Scope: " + scope);
-                    serverScopeSet.add(new Scope(scope));
-                }
-            } else {
-                Log.e(TAG, "Error in getting server scopes: " + responseCode);
-            }
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return CheckResult.newAuthRequiredResult(serverScopeSet);
-    }
-
-    @Override
-    public boolean onUploadServerAuthCode(String idToken, String serverAuthCode) {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(EXCHANGE_TOKEN_URL);
-
-        try {
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-            nameValuePairs.add(new BasicNameValuePair("serverAuthCode", serverAuthCode));
-            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-            HttpResponse response = httpClient.execute(httpPost);
-            int statusCode = response.getStatusLine().getStatusCode();
-            final String responseBody = EntityUtils.toString(response.getEntity());
-            Log.i(TAG, "Code: " + statusCode);
-            Log.i(TAG, "Resp: " + responseBody);
-
-            return (statusCode == 200);
-        } catch (ClientProtocolException e) {
-            Log.e(TAG, "Error in auth code exchange.", e);
-            return false;
-        } catch (IOException e) {
-            Log.e(TAG, "Error in auth code exchange.", e);
-            return false;
-        }
-    }
+//    @Override
+//    public CheckResult onCheckServerAuthorization(String idToken, Set<Scope> set) {
+//        Log.i(TAG, "Checking Server's Authorizations");
+//
+//        HttpClient httpClient = new DefaultHttpClient();
+//        HttpGet httpGet = new HttpGet(SELECT_SCOPES_URL);
+//        HashSet<Scope> serverScopeSet = new HashSet<Scope>();
+//
+//        try {
+//            HttpResponse httpResponse = httpClient.execute(httpGet);
+//            int responseCode = httpResponse.getStatusLine().getStatusCode();
+//            String responseBody = EntityUtils.toString(httpResponse.getEntity());
+//
+//            if (responseCode == 200) {
+//                String[] scopeStrings = responseBody.split(" ");
+//                for (String scope : scopeStrings) {
+//                    Log.i(TAG, "Server Scope: " + scope);
+//                    serverScopeSet.add(new Scope(scope));
+//                }
+//            } else {
+//                Log.e(TAG, "Error in getting server scopes: " + responseCode);
+//            }
+//        } catch (ClientProtocolException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return CheckResult.newAuthRequiredResult(serverScopeSet);
+//    }
+//
+//    @Override
+//    public boolean onUploadServerAuthCode(String idToken, String serverAuthCode) {
+//        HttpClient httpClient = new DefaultHttpClient();
+//        HttpPost httpPost = new HttpPost(EXCHANGE_TOKEN_URL);
+//
+//        try {
+//            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+//            nameValuePairs.add(new BasicNameValuePair("serverAuthCode", serverAuthCode));
+//            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+//
+//            HttpResponse response = httpClient.execute(httpPost);
+//            int statusCode = response.getStatusLine().getStatusCode();
+//            final String responseBody = EntityUtils.toString(response.getEntity());
+//            Log.i(TAG, "Code: " + statusCode);
+//            Log.i(TAG, "Resp: " + responseBody);
+//
+//            return (statusCode == 200);
+//        } catch (ClientProtocolException e) {
+//            Log.e(TAG, "Error in auth code exchange.", e);
+//            return false;
+//        } catch (IOException e) {
+//            Log.e(TAG, "Error in auth code exchange.", e);
+//            return false;
+//        }
+//    }
 
     private void resolveSignInError() {
         if (signInIntent != null) {
@@ -326,10 +295,5 @@ public class LoginActivity extends AppCompatActivity implements
                         }
                     }).create();
         }
-    }
-
-    @Override
-    public void onResult(People.LoadPeopleResult loadPeopleResult) {
-
     }
 }

@@ -34,12 +34,12 @@
     <string name="title_section3">Tags</string>
     <string name="title_section4">Map</string>
     <string name="title_activity_submission_status">Submission Details</string>
-    <string name="type_format">Type : %1$s</string>
-    <string name="location_format">Coordinates : %1$s</string>
-    <string name="accuracy_format">Location Accuracy : %1$.2fm</string>
-    <string name="power_tags_format">Power Tags : %1$s</string>
-    <string name="date_format">Date and Time : %1$s</string>
-    <string name="status_format">Status : %1$s</string>
+    <string name="type_format" formatted="false">Power Element Type : %1$s</string>
+    <string name="location_format" formatted="false">Coordinates : %1$s</string>
+    <string name="accuracy_format" formatted="false">Location Accuracy : %1$.2fm</string>
+    <string name="power_tags_format" formatted="false">Power Tags : %1$s</string>
+    <string name="date_format" formatted="false">Date and Time : %1$s</string>
+    <string name="status_format" formatted="false">Status : %1$s</string>
 
     <!-- Tag Selection Activity -->
     <string name="title_activity_tag_selection">Select any additional tags if any</string>
@@ -122,6 +122,7 @@
     <!-- Misc -->
     <string name="ok">OK</string>
     <string name="close">Close</string>
+    <string name="coordinates_format" formatted="false">%1$s° %2$s\' %3$.5s\" %4$s</string>
     <string name="degree" translatable="false">°</string>
     <string name="minute" translatable="false">\'</string>
     <string name="seconds" translatable="false">\"</string>
@@ -157,8 +158,8 @@
     <string name="upload_complete">Upload Complete\n</string>
     <string name="upload_failed">Upload Failed\n</string>
     <string name="upload_submission_error">Error Saving Submission\n</string>
-    <string name="upload_in_progress">Point will be submitted now.</string>
-    <string name="upload_in_progress_wifi_only">Point will be submitted when the device connects to WiFi.</string>
+    <string name="upload_in_progress">Thank You!..The point will be submitted now.</string>
+    <string name="upload_in_progress_wifi_only">Thank You!..The point will be submitted when the device connects to WiFi.</string>
     <string name="no_internet">No Internet Connectivity\n</string>
     <string name="upload_later">Upload later</string>
 
@@ -179,5 +180,6 @@
     <string name="response_status_error">error</string>
 
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="map_center_marker">Map center marker</string>
 
 </resources>

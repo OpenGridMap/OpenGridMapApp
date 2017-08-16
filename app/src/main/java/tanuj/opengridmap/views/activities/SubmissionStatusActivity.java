@@ -1,4 +1,4 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +11,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
+import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.views.fragments.SubmissionDetailsFragment;
 import tanuj.opengridmap.views.fragments.SubmissionMapFragment;

@@ -30,7 +30,7 @@ public class MapActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map_activity, container, false);
 
-        WebView mapWebView = (WebView) view.findViewById(R.id.map_web_view);
+        WebView mapWebView = view.findViewById(R.id.map_web_view);
 
         mapWebView.getSettings().setJavaScriptEnabled(true);
         mapWebView.getSettings().setSupportZoom(true);

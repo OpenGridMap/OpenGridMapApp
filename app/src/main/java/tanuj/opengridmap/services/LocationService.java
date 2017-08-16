@@ -1,11 +1,15 @@
 package tanuj.opengridmap.services;
 
+import android.Manifest;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -17,7 +21,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.plus.Plus;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -63,11 +66,6 @@ public class LocationService extends Service implements
     public void onCreate() {
         super.onCreate();
 
-//        if (!LocationUtils.isLocationEnabled(getApplicationContext())) {
-//            stopSelf();
-//        }
-
-
         if (isGooglePlayServicesAvailable()) {
             Log.d(TAG, "Google Play Services Available");
         } else {
@@ -76,7 +74,6 @@ public class LocationService extends Service implements
 
         createLocationRequest();
         buildGoogleApiClient();
-
         buildLocationSettingsRequest();
 
         intent = new Intent(LOCATION_UPDATE_BROADCAST);
@@ -138,14 +135,13 @@ public class LocationService extends Service implements
 
     @Override
     public void onLocationChanged(Location location) {
-//        Log.v(TAG, "Location Updated, location : " + location.toString());
         this.location = location;
         sendLocationBroadcast(location);
         resolveServiceShutdown();
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "Connection Failed : " + connectionResult.toString());
     }
 
@@ -189,6 +185,8 @@ public class LocationService extends Service implements
     public void startLocationUpdates() {
         if (googleApiClient != null && googleApiClient.isConnected() &&
                 LocationUtils.isLocationEnabled(this) && !receivingLocationUpdates) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                return;
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest,
                     this);
             Log.d(TAG, "Starting Location Updates");
@@ -214,7 +212,6 @@ public class LocationService extends Service implements
     private void buildGoogleApiClient() {
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addApi(Plus.API, Plus.PlusOptions.builder().build())
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
@@ -226,11 +223,6 @@ public class LocationService extends Service implements
 
     public class LocalBinder extends Binder {
         public LocationService getServiceInstance() {
-//            if (locationService == null) {
-//                locationService = LocationService.this;
-//            }
-//
-//            return locationService;
             return LocationService.this;
         }
     }

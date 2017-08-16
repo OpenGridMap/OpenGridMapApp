@@ -9,11 +9,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.ServiceConnection;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -23,22 +20,15 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.jorgecastilloprz.FABProgressCircle;
-import com.github.jorgecastilloprz.listeners.FABProgressListener;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.gcm.GcmNetworkManager;
-import com.google.android.gms.gcm.OneoffTask;
-import com.google.android.gms.gcm.Task;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -54,14 +44,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import tanuj.opengridmap.R;
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.data.PowerElementsSeedData;
 import tanuj.opengridmap.models.Image;
 import tanuj.opengridmap.models.Submission;
-import tanuj.opengridmap.services.BackgroundUploadService;
 import tanuj.opengridmap.services.LocationService;
 import tanuj.opengridmap.services.UploadService;
-import tanuj.opengridmap.services.UploadSubmissionService;
 import tanuj.opengridmap.utils.ConnectivityUtils;
 import tanuj.opengridmap.utils.FileUtils;
 import tanuj.opengridmap.utils.LocationUtils;
@@ -69,11 +56,10 @@ import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
-/**
- * A simple {@link Fragment} subclass.
- */
+
+
 public class SubmitActivityFragment extends Fragment implements View.OnClickListener,
-        ResultCallback<LocationSettingsResult>, FABProgressListener, OnMapReadyCallback, GoogleMap.OnCameraChangeListener {
+        ResultCallback<LocationSettingsResult>, OnMapReadyCallback, GoogleMap.OnCameraChangeListener, GoogleMap.OnCameraMoveListener {
     private static final String TAG = SubmitActivityFragment.class.getSimpleName();
 
     private static final int LOCATION_STATUS_NOT_AVAILABLE = -1;
@@ -86,45 +72,33 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private Location location;
 
-//    private GcmNetworkManager gcmNetworkManager;
-
     private long powerElementId;
 
     private String imageSrc;
-
-    private ImageView imageView;
-
-    private TextView feedbackTextView;
-
-    private FrameLayout mapContainer;
 
     private MapView mapView;
 
     private GoogleMap map;
 
-    private ProgressBar locationQualityIndicator;
+    private TextView locationFeedbackTextView;
 
-    private FABProgressCircle fabProgressCircle;
+    private TextView locationAccuracyTextView;
+
+    private TextView locationTextView;
 
     private FloatingActionButton submitButton;
 
     private FloatingActionButton retryButton;
 
-    private static LocationService locationService;
+    private ProgressBar locationQualityIndicator;
 
-    private Submission submission;
+    private static LocationService locationService;
 
     private GcmNetworkManager gcmNetworkManager;
 
     private boolean locationServiceBindingStatus = false;
 
-    private long submissionId;
-
-    private boolean uploadComplete = false;
-
-    private boolean uploadRunning = false;
-
-    private boolean uploadFail = false;
+    private boolean uploadConfirmed = false;
 
     private boolean cameraRunning = false;
 
@@ -150,23 +124,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                 location = intent.getParcelableExtra("location");
                 setLocationFeedback();
             }
-
-//            Log.v(TAG, location.toString());
-        }
-    };
-
-    private BroadcastReceiver uploadUpdateBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            processUploadUpdate(intent.getLongExtra(getString(R.string.key_submission_id), -1),
-                    intent.getShortExtra(getString(R.string.key_upload_completion), (short) -1));
         }
     };
 
 
-    public SubmitActivityFragment() {
-        // Required empty public constructor
-    }
+    public SubmitActivityFragment() {}
 
 
     @Override
@@ -174,15 +136,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_submit, container, false);
 
-        imageView = (ImageView) view.findViewById(R.id.image_preview);
-        feedbackTextView = (TextView) view.findViewById(R.id.location_feedback);
-        TextView deviceTypeTextView = (TextView) view.findViewById(R.id.device_type_text_view);
-        mapView = (MapView) view.findViewById(R.id.map);
-        mapContainer = (FrameLayout) view.findViewById(R.id.map_container);
-        locationQualityIndicator = (ProgressBar) view.findViewById(R.id.location_quality_indicator);
-        submitButton = (FloatingActionButton) view.findViewById(R.id.submit_button);
-        retryButton = (FloatingActionButton) view.findViewById(R.id.retry_button);
-        fabProgressCircle = (FABProgressCircle) view.findViewById(R.id.circular_progress_bar);
+        mapView = view.findViewById(R.id.map);
+        locationFeedbackTextView = view.findViewById(R.id.location_feedback);
+        locationAccuracyTextView = view.findViewById(R.id.accuracy);
+        locationTextView = view.findViewById(R.id.location);
+        TextView powerElementTypeTextView = view.findViewById(R.id.power_element_type);
+        submitButton = view.findViewById(R.id.submit_button);
+        retryButton = view.findViewById(R.id.retry_button);
+        locationQualityIndicator = view.findViewById(R.id.location_quality_indicator);
 
         Intent intent = getActivity().getIntent();
 
@@ -193,56 +154,24 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             checkLocationSettings();
         }
 
+        setLocationFeedback();
+
         powerElementId = intent.getLongExtra(getString(R.string.key_power_element_id), -1);
         imageSrc = intent.getStringExtra(getString(R.string.key_image_src));
 
         submitButton.setOnClickListener(this);
-        submitButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                    submitButton.callOnClick();
-                }
-                return false;
-            }
-        });
         retryButton.setOnClickListener(this);
-        retryButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                    retryButton.callOnClick();
-                }
-                return false;
-            }
-        });
 
         mapView.onCreate(savedInstanceState);
 
         if (mapView != null)
             mapView.getMapAsync(this);
 
-
-        fabProgressCircle.attachListener(this);
-        fabProgressCircle.setOnClickListener(this);
-
-        view.findViewById(R.id.layout).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (uploadComplete)
-                    finish();
-            }
-        });
-
         if (powerElementId > 0) {
-            String powerElementName = getString(R.string.colon) +
-                    PowerElementsSeedData.powerElements.get((int) (powerElementId - 1)).getName();
-            deviceTypeTextView.setText(powerElementName);
-
+            String powerElementName = PowerElementsSeedData.powerElements.get(
+                    (int) (powerElementId - 1)).getName();
+            powerElementTypeTextView.setText(getString(R.string.type_format, powerElementName));
         }
-
-        setOptimizedImageBitmap(imageSrc);
-        setLocationFeedback();
 
         gcmNetworkManager = GcmNetworkManager.getInstance(getContext());
 
@@ -258,7 +187,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     @Override
     public void onStart() {
         super.onStart();
-//        bindLocationService();
+        bindLocationService();
     }
 
     @Override
@@ -272,7 +201,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         unbindLocationService();
         Context context = getActivity();
         context.unregisterReceiver(locationUpdateBroadcastReceiver);
-        context.unregisterReceiver(uploadUpdateBroadcastReceiver);
+//        context.unregisterReceiver(uploadUpdateBroadcastReceiver);
 
         if (mapView != null) {
             mapView.onPause();
@@ -288,8 +217,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         Context context = getActivity();
         context.registerReceiver(locationUpdateBroadcastReceiver,
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
-        context.registerReceiver(uploadUpdateBroadcastReceiver,
-                new IntentFilter(UploadSubmissionService.UPLOAD_UPDATE_BROADCAST));
+//        context.registerReceiver(uploadUpdateBroadcastReceiver,
+//                new IntentFilter(UploadService.UPLOAD_UPDATE_BROADCAST));
 
         if (mapView != null) {
             mapView.onResume();
@@ -320,7 +249,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putLong(getString(R.string.key_power_element_id), powerElementId);
-        outState.putLong(getString(R.string.key_submission_id), submissionId);
+        outState.putLong(getString(R.string.key_power_element_id), powerElementId);
+        outState.putString(getString(R.string.key_image_src), imageSrc);
 
         if (mapView != null) {
             mapView.onSaveInstanceState(outState);
@@ -329,40 +259,15 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onClick(View v) {
-        Log.d(TAG, v.getClass().getSimpleName());
-
         switch (v.getId()) {
             case R.id.submit_button: {
-                if (!uploadComplete) {
-                    if (ConnectivityUtils.isInternetConnected(getActivity()))
-                        submit();
-                    else {
-                        feedbackTextView.setText(R.string.no_internet);
-                        fabProgressCircle.hide();
-                        retryButton.show();
-                        uploadFail = true;
-
-                        Toast.makeText(getActivity(), R.string.no_internet, Toast.LENGTH_SHORT).show();
-                    }
-                }
-                else finish();
+                submit();
                 break;
             }
             case R.id.retry_button: {
-                if (uploadFail) {
-                    finish();
-                    return;
-                }
-                if (!uploadComplete) {
-                    location = null;
-                    launchCamera();
-                }
-                else finish();
+                launchCamera();
                 break;
             }
-            case R.id.circular_progress_bar:
-                if (uploadComplete) finish();
-                break;
         }
     }
 
@@ -376,8 +281,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             if (resultCode == Activity.RESULT_OK) {
                 if (location != null)
                     location = locationService.getLocation();
-
-                setOptimizedImageBitmap(imageSrc);
 
                 setLocationFeedback();
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -415,6 +318,16 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             locationService.resolveServiceShutdown();
     }
 
+    public void onFinish() {
+        if (uploadConfirmed)
+            return;
+
+        File file = new File(imageSrc);
+        boolean deleted = file.delete();
+
+        Log.d(TAG, "File " + imageSrc + " deleted : " + deleted);
+    }
+
     private int getLocationStatus(Location location) {
         if (location == null)
             return LOCATION_STATUS_NOT_AVAILABLE;
@@ -434,43 +347,32 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     private String getLocationFeedbackMsg(Location location) {
         int locationStatus = getLocationStatus(location);
-        String msg = "";
-        if (locationStatus > LOCATION_STATUS_NOT_AVAILABLE) {
-            msg += getString(R.string.accuracy) + getString(R.string.colon) + String.format("%.2f",
-                    location.getAccuracy()) + getString(R.string.meter) +
-                    getString(R.string.newline);
-        }
 
         switch (locationStatus) {
-            case LOCATION_STATUS_NOT_AVAILABLE: {
-                msg += getString(R.string.location_not_available);
-                break;
-            }
-            case LOCATION_STATUS_NOT_ACCEPTABLE: {
-                msg += getString(R.string.location_accuracy_not_acceptable);
-                break;
-            }
-            case LOCATION_STATUS_OK: {
-                msg += getString(R.string.location_accuracy_not_ideal);
-                break;
+            case LOCATION_STATUS_EXCELLENT: {
+                return getString(R.string.location_accuracy_excellent);
             }
             case LOCATION_STATUS_GOOD: {
-                msg += getString(R.string.location_accuracy_good);
-                break;
+                return getString(R.string.location_accuracy_good);
             }
-            case LOCATION_STATUS_EXCELLENT: {
-                msg += getString(R.string.location_accuracy_excellent);
-                break;
+            case LOCATION_STATUS_OK: {
+                return getString(R.string.location_accuracy_not_ideal);
+            }
+            case LOCATION_STATUS_NOT_ACCEPTABLE: {
+                return getString(R.string.location_accuracy_not_acceptable);
+            }
+            default: {
+                return getString(R.string.location_not_available);
             }
         }
-        return msg;
     }
 
     private void setLocationFeedback() {
-        String locationFeedback = getLocationFeedbackMsg(location);
         int locationStatus = getLocationStatus(location);
 
-        feedbackTextView.setText(locationFeedback);
+        locationFeedbackTextView.setText(getLocationFeedbackMsg(location));
+        locationAccuracyTextView.setText(getString(R.string.accuracy_format, location.getAccuracy()));
+        locationTextView.setText(getString(R.string.location_format, LocationUtils.toLocationStringInDegrees(location, getContext())));
 
         if (locationStatus > LOCATION_STATUS_NOT_ACCEPTABLE) {
             submitButton.show();
@@ -486,133 +388,48 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         setLocationQualityIndicator();
     }
 
-    private void processUploadUpdate(long submissionId, short uploadCompletion) {
-        if (this.submissionId != submissionId) return;
-
-        switch (uploadCompletion) {
-            case UploadSubmissionService.UPLOAD_STATUS_SUCCESS: {
-                retryButton.hide();
-
-                uploadRunning = false;
-                uploadComplete = true;
-                break;
-            }
-            case UploadSubmissionService.UPLOAD_STATUS_FAIL: {
-                submitButton.show();
-                retryButton.hide();
-
-                uploadRunning = false;
-                break;
-            }
-            case UploadSubmissionService.SUBMISSION_NOT_FOUND: {
-                feedbackTextView.setText(R.string.upload_submission_error);
-                submitButton.hide();
-                retryButton.show();
-
-                uploadRunning = false;
-                break;
-            }
-            case UploadSubmissionService.NO_INTERNET_CONNECTIVITY: {
-                submitButton.show();
-                fabProgressCircle.hide();
-
-                uploadFail = true;
-                uploadRunning = false;
-                break;
-            }
-            case UploadSubmissionService.LOW_MEMORY: {
-                submitButton.show();
-
-                uploadRunning = false;
-                break;
-            }
-        }
-    }
-
-    public void setOptimizedImageBitmap(String src) {
-        File file = new File(src);
-        Bitmap bitmap = null;
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 8;
-        options.inDensity = 1;
-
-        if (file.exists()) {
-            bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
-        }
-
-        imageView.setImageBitmap(bitmap);
-    }
-
     private void submit() {
-        if (!uploadRunning) {
-            fabProgressCircle.show();
-            retryButton.hide();
-            disableMap();
+        if (uploadConfirmed)
+            return;
 
+        retryButton.hide();
+        submitButton.hide();
+        disableMap();
 
-            Context context = getActivity();
+        Context context = getActivity();
 
-            if (submission == null) {
-                submission = new Submission(context);
-                submission.addPowerElementById(context, powerElementId);
-                submission.addImage(context, new Image(getNewFileName(), location));
-                submission.confirmSubmission(context);
-                submissionId = submission.getId();
-            } else if (submissionId > 0) {
-                OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
-                submission = dbHelper.getSubmission(submissionId);
-                dbHelper.close();
-            }
+        Submission submission = new Submission(context);
+        submission.addPowerElementById(context, powerElementId);
+        submission.addImage(context, new Image(getNewFileName(), location));
+        submission.confirmSubmission(context);
 
-            Log.d(TAG, "Submission ID : " + submission.getId());
-            Log.d(TAG, String.valueOf(submission.getImages()));
+        Log.d(TAG, "Submission ID : " + submission.getId());
+        Log.d(TAG, String.valueOf(submission.getImages()));
 
-//            UploadSubmissionService.
-//                    startUpload(context, submission.getId());
-
-            UploadService.scheduleUpload(submission.getId(), gcmNetworkManager, context);
-            fabProgressCircle.beginFinalAnimation();
-
-            uploadRunning = true;
-        }
+        UploadService.scheduleUpload(submission.getId(), gcmNetworkManager, context);
+        showOnConfirmMessage();
+        uploadConfirmed = true;
     }
 
     private void launchCamera() {
-        if (!cameraRunning) {
-            if (submission != null)
-                submission.getImage(0).delete(getActivity());
+        if (cameraRunning)
+            return;
 
-//        submitButton.setProgress(0);
-            fabProgressCircle.hide();
+        Uri fileUri = FileUtils.getOutputMediaFileUri(getActivity(), new File(imageSrc));
+        Log.d(TAG, fileUri.toString());
 
-            Uri fileUri = FileUtils.getOutputMediaFileUri(getActivity(), new File(imageSrc));
-            Log.d(TAG, fileUri.toString());
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
-            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+        locationService.handleExternalIntent();
+        location = locationService.getLocation();
 
-            locationService.handleExternalIntent();
-            location = locationService.getLocation();
-
-            startActivityForResult(cameraIntent, 100);
-
-            cameraRunning = true;
-        }
+        startActivityForResult(cameraIntent, 100);
+        cameraRunning = true;
     }
 
     private String getNewFileName() {
-        File from = new File(imageSrc);
-        File storageDir = new File(FileUtils.getStorageDir(getActivity()), "images");
-        File to = new File(storageDir.getPath(),
-                String.valueOf(System.currentTimeMillis()) + ".jpg");
-
-        String path = null;
-        if (from.exists()) {
-            path = from.renameTo(to)? to.getPath() : from.getPath();
-        }
-
-//        return path;
-        return from.getAbsolutePath();
+        return imageSrc;
     }
 
     private void setLocationQualityIndicator() {
@@ -644,13 +461,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
         switch (status.getStatusCode()) {
             case LocationSettingsStatusCodes.SUCCESS: {
-//                process();
                 break;
             }
             case LocationSettingsStatusCodes.RESOLUTION_REQUIRED: {
                 try {
                     status.startResolutionForResult(getActivity(), REQUEST_CHECK_SETTINGS);
-                } catch (IntentSender.SendIntentException e) {}
+                } catch (IntentSender.SendIntentException e) {
+                    e.printStackTrace();
+                }
                 break;
             }
             case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE: {
@@ -667,14 +485,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(activity, "submit_activity_intro");
 
         sequence.setConfig(config);
-
-//        sequence.addSequenceItem(
-//                new MaterialShowcaseView.Builder(activity)
-//                        .setTarget(imageView)
-//                        .setDismissText("Got It")
-//                        .setContentText("You can see the preview of the image you took")
-//                        .build()
-//        );
 
         sequence.addSequenceItem(
                 new MaterialShowcaseView.Builder(activity)
@@ -715,14 +525,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                         .build()
         );
 
-//        sequence.addSequenceItem(
-//                new MaterialShowcaseView.Builder(activity)
-//                        .setTarget(submitButton)
-//                        .setDismissText("Got It")
-//                        .setContentText("Click here to confirm the image")
-//                        .build()
-//        );
-
         sequence.addSequenceItem(
                 new MaterialShowcaseView.Builder(activity)
                         .setTarget(submitButton)
@@ -735,15 +537,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         sequence.start();
     }
 
-    @Override
-    public void onFABProgressAnimationEnd() {
-//        feedbackTextView.setText(R.string.upload_complete);
-//        submitButton.setActivated(true);
-
+    public void showOnConfirmMessage() {
         int statusStringId = ConnectivityUtils.isWifiOnly(getContext()) ?
                 R.string.upload_in_progress_wifi_only : R.string.upload_in_progress;
 
-        Snackbar.make(fabProgressCircle, statusStringId, Snackbar.LENGTH_INDEFINITE)
+        Snackbar.make(submitButton, statusStringId, Snackbar.LENGTH_INDEFINITE)
                 .setAction("Done", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -759,13 +557,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
                 public void run() {
                     finish();
                 }
-            }, 2500);
+            }, 3000);
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
         map.setOnCameraChangeListener(this);
+        map.setOnCameraMoveListener(this);
 
         LatLng point;
         if (location != null) {
@@ -779,10 +578,25 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
+        Log.d(TAG, "onCameraChange");
+        handleMapPositionChange(cameraPosition);
+    }
+
+    @Override
+    public void onCameraMove() {
+        Log.d(TAG, "onCameraMove");
+        handleMapPositionChange();
+    }
+
+    private void handleMapPositionChange() {
+        handleMapPositionChange(map.getCameraPosition());
+    }
+
+    private void handleMapPositionChange(CameraPosition cameraPosition) {
         Location location = new Location("");
         location.setLatitude(cameraPosition.target.latitude);
         location.setLongitude(cameraPosition.target.longitude);
-        location.setAccuracy(5);
+        location.setAccuracy(8);
 
         setLocationFeedback();
 

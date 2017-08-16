@@ -1,13 +1,14 @@
 package tanuj.opengridmap.services;
 
-import android.accounts.Account;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.gcm.GcmNetworkManager;
@@ -15,7 +16,6 @@ import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.OneoffTask;
 import com.google.android.gms.gcm.Task;
 import com.google.android.gms.gcm.TaskParams;
-import com.google.android.gms.plus.Plus;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -61,8 +61,6 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
 
     private static final String TOKEN_URL = SERVER_BASE_URL + "/submissions/create";
 
-    private OpenGridMapDbHelper dbHelper;
-
     private GoogleApiClient googleApiClient;
 
     private static int noOfFailedAttempts;
@@ -106,17 +104,21 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
         final Context context = getApplicationContext();
 
         googleApiClient = buildGoogleApiClient();
-        dbHelper = new OpenGridMapDbHelper(context);
         intent = new Intent(UPLOAD_UPDATE_BROADCAST);
         noOfFailedAttempts = 0;
     }
 
     private GoogleApiClient buildGoogleApiClient() {
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(WEB_CLIENT_ID)
+                .requestEmail()
+                .build();
+
+
         GoogleApiClient.Builder builder = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(Plus.API, Plus.PlusOptions.builder().build())
-                .addScope(Plus.SCOPE_PLUS_LOGIN);
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso);
 
         return builder.build();
     }
@@ -125,7 +127,6 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!googleApiClient.isConnected()) {
             googleApiClient.connect();
-//            googleApiClient.blockingConnect();
         }
 
         return super.onStartCommand(intent, flags, startId);
@@ -137,7 +138,9 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
         Context context = getApplicationContext();
         long submissionId = taskParams.getExtras().getLong(UPLOAD_SUBMISSION_KEY, -1);
         Log.d(TAG, "Submission ID " + submissionId);
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
         Submission submission = dbHelper.getSubmission(submissionId);
+        dbHelper.close();
 
         if (submission == null)
             return GcmNetworkManager.RESULT_FAILURE;
@@ -176,17 +179,20 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
     @Override
     public void onInitializeTasks() {
         super.onInitializeTasks();
-        List<Submission> submissions = dbHelper.getPendingSubmissions();
         Context context = getApplicationContext();
+        OpenGridMapDbHelper dbHelper = new OpenGridMapDbHelper(context);
+        List<Submission> submissions = dbHelper.getPendingSubmissions();
         GcmNetworkManager gcmNetworkManager = GcmNetworkManager.getInstance(context);
 
-        for (Submission submission : submissions)
+        for (Submission submission : submissions) {
             UploadService.scheduleUpload(submission.getId(), gcmNetworkManager, context);
+        }
+
+        dbHelper.close();
     }
 
     @Override
     public void onDestroy() {
-        dbHelper.close();
         if (googleApiClient.isConnected()) {
             googleApiClient.disconnect();
             Log.d(TAG, "Disconnected from Google Play Services");
@@ -206,7 +212,7 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         int errorCode = connectionResult.getErrorCode();
         Log.e(TAG, "onConnectionFailed: ErrorCode : " + errorCode);
 
@@ -216,22 +222,24 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
     }
 
     private String getIdToken() {
-        if (!googleApiClient.isConnected())
-            googleApiClient.blockingConnect();
-
-        String accountName = Plus.AccountApi.getAccountName(googleApiClient);
-        Account account = new Account(accountName, GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-        String scopes = "audience:server:client_id:" + WEB_CLIENT_ID;
-        String token = null;
-        final Context context = getApplicationContext();
+        String idToken = null;
 
         try {
-            token = GoogleAuthUtil.getToken(context, account, scopes);
-        } catch (IOException | GoogleAuthException e) {
-            e.printStackTrace();
-            Log.e(TAG, "Error Retrieving ID Token : " + e);
+            ConnectionResult result = googleApiClient.blockingConnect();
+
+            if (result.isSuccess()) {
+                GoogleSignInResult googleSignInResult = Auth.GoogleSignInApi.silentSignIn(googleApiClient).await();
+                idToken = googleSignInResult.getSignInAccount().getIdToken();
+            }
         }
-        return token;
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            googleApiClient.disconnect();
+        }
+
+        return idToken;
     }
 
     private short handlePayload(Context context, HttpClient httpClient, Submission submission)
@@ -245,10 +253,8 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
             HttpResponse httpResponse = sendPayload(context, httpClient, payload,
                     MAX_UPLOAD_ATTEMPTS);
 
-            String response = getResponseStringFromHttpResponse(httpResponse);
-            Log.d(TAG, response);
-
             if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() ==  200) {
+                String response = getResponseStringFromHttpResponse(httpResponse);
                 try {
                     JSONObject responseJSON = new JSONObject(response);
 
@@ -312,16 +318,12 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
     }
 
     private String getResponseStringFromHttpResponse(HttpResponse httpResponse) {
-        if (httpResponse == null) {
-            return null;
-        }
-
         try {
             return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     private void broadcastUpdate(short uploadCompletion, Submission submission) {

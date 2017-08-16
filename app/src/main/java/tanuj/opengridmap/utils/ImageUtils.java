@@ -35,4 +35,18 @@ public class ImageUtils {
 
         return bitmap;
     }
+
+    public static void setOptimizedImageBitmap(String src, ImageView imageView) {
+        File file = new File(src);
+        Bitmap bitmap = null;
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = 8;
+        options.inDensity = 1;
+
+        if (file.exists()) {
+            bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+        }
+
+        imageView.setImageBitmap(bitmap);
+    }
 }

@@ -200,8 +200,7 @@ public class Submission {
     }
 
     public String getLocationString(final Context context) {
-        String[] coordinates = getImage().getLocationInDegrees(context);
-        return coordinates[0] + " " + coordinates[1];
+        return getImage().getLocationInDegrees(context);
     }
 
     private void updateStatus(Context context, int newStatus) {
@@ -227,11 +226,8 @@ public class Submission {
     }
 
     public void confirmSubmission(Context context) {
-//        if (status == STATUS_IMAGE_CAPTURE_IN_PROGRESS) {
-//            this.addToUploadQueue(context);
-            updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
-            this.addToUploadQueue(context);
-//        }
+        updateStatus(context, STATUS_SUBMISSION_CONFIRMED);
+        this.addToUploadQueue(context);
     }
 
     public boolean addToUploadQueue(Context context) {
@@ -280,13 +276,7 @@ public class Submission {
         JSONObject tags = new JSONObject();
         JSONArray powerElementsTags = new JSONArray();
 
-//        Log.d(TAG, "OSM Power elements : " + getPowerElements().get(0).getOsmTags());
-
         String[] powerElementTags = getPowerElements().get(0).getOsmTags().split(";");
-
-//        for (PowerElement powerElement : this.powerElementsTags) {
-//            powerElementsTags.put(powerElement.getName());
-//        }
 
         for (String powerElementTag: powerElementTags) {
             powerElementsTags.put(powerElementTag);

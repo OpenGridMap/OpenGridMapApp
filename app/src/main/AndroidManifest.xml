@@ -10,7 +10,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- <uses-permission android:name="android.permission.GET_ACCOUNTS" /> -->
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -71,20 +70,20 @@
                 android:value=".views.activities.MainActivity" />
         </activity>
         <activity
-            android:name=".SubmissionsActivity"
+            android:name=".views.activities.SubmissionsActivity"
             android:label="@string/action_submissions">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".views.activities.MainActivity" />
         </activity>
         <activity
-            android:name=".SubmissionStatusActivity"
+            android:name=".views.activities.SubmissionStatusActivity"
             android:label="@string/title_activity_submission_status"
-            android:parentActivityName=".SubmissionsActivity"
+            android:parentActivityName=".views.activities.SubmissionsActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="tanuj.opengridmap.SubmissionsActivity" />
+                android:value="tanuj.opengridmap.views.activities.SubmissionsActivity" />
         </activity>
 
         <receiver

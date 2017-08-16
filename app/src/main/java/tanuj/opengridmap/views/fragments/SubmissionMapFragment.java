@@ -55,7 +55,7 @@ public class SubmissionMapFragment extends Fragment implements OnMapReadyCallbac
         submission = dbHelper.getSubmission(getArguments().getLong(KEY_SUBMISSION_ID));
         dbHelper.close();
 
-        mapView = (MapView) view.findViewById(R.id.map);
+        mapView = view.findViewById(R.id.map);
 
         mapView.onCreate(savedInstanceState);
 

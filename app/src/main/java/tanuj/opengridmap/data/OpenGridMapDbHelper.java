@@ -564,7 +564,7 @@ public class OpenGridMapDbHelper extends SQLiteOpenHelper {
                 long id = cursor.getLong(0);
                 String name = cursor.getString(1);
                 String osmTags = cursor.getString(3);
-                System.out.println(osmTags);
+
                 powerElements.add(new PowerElement(id, name, osmTags));
             } while (cursor.moveToNext());
         }

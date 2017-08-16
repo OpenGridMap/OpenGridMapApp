@@ -18,6 +18,7 @@ import java.util.Date;
 import tanuj.opengridmap.R;
 import tanuj.opengridmap.data.OpenGridMapDbHelper;
 import tanuj.opengridmap.exceptions.MemoryLowException;
+import tanuj.opengridmap.utils.LocationUtils;
 
 /**
  * Created by Tanuj on 09-06-2015.
@@ -296,29 +297,8 @@ public class Image {
         return getBase64EncodedImage(jpegCompression, 0);
     }
 
-    public String[] getLocationInDegrees(final Context context) {
-        String[] coords = {null, null};
-
-        Double latitude = location.getLatitude();
-        Double longitude = location.getLongitude();
-
-        coords[0] = Location.convert(latitude, Location.FORMAT_SECONDS);
-        coords[1] = Location.convert(longitude, Location.FORMAT_SECONDS);
-
-        for (int i = 0; i < 2; i++) {
-            String[] crds = coords[i].split(":");
-
-            coords[i] = crds[0] + context.getString(R.string.degree) + " " + crds[1] +
-                    context.getString(R.string.minute) + " " + crds[2] +
-                    context.getString(R.string.seconds) + " ";
-        }
-
-        coords[0] += latitude >= 0 ? context.getString(R.string.north) : context.getString(
-                R.string.south);
-        coords[1] += longitude >= 0 ? context.getString(R.string.east) : context.getString(
-                R.string.west);
-
-        return coords;
+    public String getLocationInDegrees(final Context context) {
+        return LocationUtils.toLocationStringInDegrees(location, context);
     }
 
     public void delete(Context context) {

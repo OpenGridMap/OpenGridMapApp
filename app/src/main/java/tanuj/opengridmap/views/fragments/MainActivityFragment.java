@@ -48,6 +48,7 @@ import tanuj.opengridmap.utils.ServiceUtils;
 import tanuj.opengridmap.views.activities.SubmitActivity;
 import tanuj.opengridmap.views.adapters.PowerElementsViewAdapter;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
 public class MainActivityFragment extends Fragment implements
@@ -109,9 +110,6 @@ public class MainActivityFragment extends Fragment implements
         }
     };
 
-    private RecyclerView recyclerView;
-    private StaggeredGridLayoutManager staggeredGridLayoutManager;
-    private PowerElementsViewAdapter adapter;
     private Toolbar toolbar;
 
     public MainActivityFragment() {
@@ -144,13 +142,13 @@ public class MainActivityFragment extends Fragment implements
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        toolbar = (Toolbar) view.findViewById(R.id.toolbar);
+        toolbar = view.findViewById(R.id.toolbar);
         setUpActionBar();
 
-        staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+        StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                 StaggeredGridLayoutManager.VERTICAL);
-        recyclerView = (RecyclerView) view.findViewById(R.id.grid);
-        adapter = new PowerElementsViewAdapter(getActivity());
+        RecyclerView recyclerView = view.findViewById(R.id.grid);
+        PowerElementsViewAdapter adapter = new PowerElementsViewAdapter(getActivity());
 
         recyclerView.setLayoutManager(staggeredGridLayoutManager);
         recyclerView.setHasFixedSize(true);
@@ -209,8 +207,23 @@ public class MainActivityFragment extends Fragment implements
 
         View view = getActivity().findViewById(R.id.intro);
 
-        sequence.addSequenceItem(view, "Select the device you see", "Got it!");
-        sequence.addSequenceItem(view, "Now we will launch the camera and you can capture an Image", "Got it!");
+        sequence.addSequenceItem(
+                new MaterialShowcaseView.Builder(activity)
+                        .setTarget(view)
+                        .setDismissText("Got It")
+                        .setContentText("Select the device you see")
+                        .setDismissOnTouch(true)
+                        .build()
+        );
+
+        sequence.addSequenceItem(
+                new MaterialShowcaseView.Builder(activity)
+                        .setTarget(view)
+                        .setDismissText("Got It")
+                        .setContentText("Now we will launch the camera and you can capture an Image")
+                        .setDismissOnTouch(true)
+                        .build()
+        );
 
         sequence.start();
     }
@@ -384,10 +397,6 @@ public class MainActivityFragment extends Fragment implements
         if (file != null) {
             imageSrc = file.getAbsolutePath();
         }
-
-//        if (file != null && file.exists()) {
-//            file.delete();
-//        }
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);

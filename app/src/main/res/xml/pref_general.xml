@@ -2,5 +2,6 @@
     <SwitchPreference
         android:key="@string/pref_key_sync_wifi_only"
         android:title="@string/pref_title_sync_wifi_only"
+        android:summary="Upload points only when connected to Wi-Fi."
         android:defaultValue="false" />
 </PreferenceScreen>

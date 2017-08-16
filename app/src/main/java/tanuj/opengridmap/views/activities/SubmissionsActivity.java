@@ -1,13 +1,9 @@
-package tanuj.opengridmap;
+package tanuj.opengridmap.views.activities;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 
-import java.util.List;
-
-import tanuj.opengridmap.data.OpenGridMapDbHelper;
-import tanuj.opengridmap.models.Submission;
+import tanuj.opengridmap.R;
 
 public class SubmissionsActivity extends AppCompatActivity {
     private static final String TAG = SubmissionsActivity.class.getSimpleName();

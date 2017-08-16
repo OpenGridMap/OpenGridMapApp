@@ -30,8 +30,7 @@ public class IntroActivity extends AppIntro2 {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.ACCESS_NETWORK_STATE,
-            Manifest.permission.INTERNET,
-            Manifest.permission.GET_ACCOUNTS
+            Manifest.permission.INTERNET
     };
 
     @Override
