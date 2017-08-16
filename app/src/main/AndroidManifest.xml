@@ -86,21 +86,9 @@
                 android:value="tanuj.opengridmap.views.activities.SubmissionsActivity" />
         </activity>
 
-        <receiver
-            android:name=".broadcastreceivers.WifiStateReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            </intent-filter>
-        </receiver>
-
         <service
             android:name=".services.LocationService"
             android:enabled="true"
-            android:exported="false" />
-        <service
-            android:name=".services.UploadSubmissionService"
             android:exported="false" />
         <service
             android:name=".services.UploadService"
