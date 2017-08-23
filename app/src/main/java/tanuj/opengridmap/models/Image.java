@@ -80,6 +80,9 @@ public class Image {
 
         this.location = location;
         this.src = src;
+
+        Log.d("Image", "Accuracy : " + location.getAccuracy());
+        Log.d("Image", "Provider : " + location.getAccuracy());
     }
 
     public Image(Timestamp createdTimestamp, Timestamp updatedTimestamp) {
@@ -173,9 +176,7 @@ public class Image {
         for (int type : types) {
             file = getThumbnailFile(context, type);
 
-            if (file.exists()) {
-                Log.d(TAG, "Thumbnail Already exists");
-            } else {
+            if (!file.exists()) {
                 generateThumbnail(file, type);
                 Log.d(TAG, "Thumbnail Generated");
             }

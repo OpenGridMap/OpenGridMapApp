@@ -57,7 +57,6 @@ import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 
 
-
 public class SubmitActivityFragment extends Fragment implements View.OnClickListener,
         ResultCallback<LocationSettingsResult>, OnMapReadyCallback, GoogleMap.OnCameraChangeListener, GoogleMap.OnCameraMoveListener {
     private static final String TAG = SubmitActivityFragment.class.getSimpleName();
@@ -187,7 +186,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     @Override
     public void onStart() {
         super.onStart();
-        bindLocationService();
+//        bindLocationService();
     }
 
     @Override
@@ -198,10 +197,9 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onPause() {
-        unbindLocationService();
         Context context = getActivity();
         context.unregisterReceiver(locationUpdateBroadcastReceiver);
-//        context.unregisterReceiver(uploadUpdateBroadcastReceiver);
+        unbindLocationService();
 
         if (mapView != null) {
             mapView.onPause();
@@ -217,8 +215,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         Context context = getActivity();
         context.registerReceiver(locationUpdateBroadcastReceiver,
                 new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
-//        context.registerReceiver(uploadUpdateBroadcastReceiver,
-//                new IntentFilter(UploadService.UPLOAD_UPDATE_BROADCAST));
 
         if (mapView != null) {
             mapView.onResume();
@@ -371,8 +367,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         int locationStatus = getLocationStatus(location);
 
         locationFeedbackTextView.setText(getLocationFeedbackMsg(location));
-        locationAccuracyTextView.setText(getString(R.string.accuracy_format, location.getAccuracy()));
-        locationTextView.setText(getString(R.string.location_format, LocationUtils.toLocationStringInDegrees(location, getContext())));
+
+        if (location != null) {
+            locationAccuracyTextView.setText(getString(R.string.accuracy_format, location.getAccuracy()));
+            locationTextView.setText(getString(R.string.location_format, LocationUtils.toLocationStringInDegrees(location, getContext())));
+        }
 
         if (locationStatus > LOCATION_STATUS_NOT_ACCEPTABLE) {
             submitButton.show();
@@ -593,14 +592,15 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void handleMapPositionChange(CameraPosition cameraPosition) {
-        Location location = new Location("");
-        location.setLatitude(cameraPosition.target.latitude);
-        location.setLongitude(cameraPosition.target.longitude);
-        location.setAccuracy(8);
+        Location mapLocation = new Location("ManualLocationSelection");
+        mapLocation.setLatitude(cameraPosition.target.latitude);
+        mapLocation.setLongitude(cameraPosition.target.longitude);
+        mapLocation.setAccuracy(8);
 
         setLocationFeedback();
 
-        this.location = location;
+        if (mapLocation.distanceTo(this.location) > 2)
+            this.location = mapLocation;
     }
 
     private void disableMap() {

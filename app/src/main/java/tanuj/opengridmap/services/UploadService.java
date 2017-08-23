@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
@@ -57,7 +58,7 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
 
     private static final String SERVER_BASE_URL = "http://vmjacobsen39.informatik.tu-muenchen.de";
 
-    private static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
+    public static final String WEB_CLIENT_ID = "498377614550-0q8d0e0fott6qm0rvgovd4o04f8krhdb.apps.googleusercontent.com";
 
     private static final String TOKEN_URL = SERVER_BASE_URL + "/submissions/create";
 
@@ -76,7 +77,7 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
 
         OneoffTask.Builder taskBuilder = new OneoffTask.Builder()
                 .setService(UploadService.class)
-                .setExecutionWindow(0, 180)
+                .setExecutionWindow(0, 30)
                 .setTag(UploadService.getTag(submissionId))
                 .setUpdateCurrent(false)
                 .setRequiresCharging(false)
@@ -142,38 +143,38 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
         Submission submission = dbHelper.getSubmission(submissionId);
         dbHelper.close();
 
-        if (submission == null)
+        if (submission == null || submission.getStatus() >= Submission.STATUS_SUBMITTED_PENDING_REVIEW) {
+            Log.d(TAG, "Upload failed, " + (submission == null ? "Submission not found" : "Already uploaded"));
             return GcmNetworkManager.RESULT_FAILURE;
-
-        if (submission.getStatus() < Submission.STATUS_SUBMITTED_PENDING_REVIEW) {
-            submission.uploadInProgess(context);
-            broadcastUpdate(UPLOAD_STATUS_IN_PROCESS, submission);
-
-            try {
-                HttpClient httpClient = new DefaultHttpClient();
-                short res = handlePayload(context, httpClient, submission);
-
-                switch (res) {
-                    case UPLOAD_STATUS_SUCCESSFUL: {
-                        submission.uploadComplete(context);
-                        Log.d(TAG, "Upload Successful");
-                        broadcastUpdate(UPLOAD_STATUS_SUCCESSFUL, submission);
-                        return GcmNetworkManager.RESULT_SUCCESS;
-                    }
-                    case UPLOAD_STATUS_FAILED: {
-                        submission.uploadFailed(context);
-                        broadcastUpdate(UPLOAD_STATUS_FAILED, submission);
-                        Log.d(TAG, "Upload Failed : Reschedule");
-                        return GcmNetworkManager.RESULT_RESCHEDULE;
-                    }
-                }
-            } catch (MemoryLowException e) {
-                e.printStackTrace();
-                submission.uploadFailed(context);
-            }
         }
 
-        return GcmNetworkManager.RESULT_SUCCESS;
+        submission.uploadInProgess(context);
+        broadcastUpdate(UPLOAD_STATUS_IN_PROCESS, submission);
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            short res = handlePayload(context, httpClient, submission);
+
+            switch (res) {
+                case UPLOAD_STATUS_SUCCESSFUL: {
+                    submission.uploadComplete(context);
+                    Log.d(TAG, "Upload Successful");
+                    broadcastUpdate(UPLOAD_STATUS_SUCCESSFUL, submission);
+                    return GcmNetworkManager.RESULT_SUCCESS;
+                }
+                case UPLOAD_STATUS_FAILED: {
+                    submission.uploadFailed(context);
+                    broadcastUpdate(UPLOAD_STATUS_FAILED, submission);
+                    Log.d(TAG, "Upload Failed : Reschedule");
+                    return GcmNetworkManager.RESULT_RESCHEDULE;
+                }
+            }
+        } catch (MemoryLowException | NullPointerException e) {
+            e.printStackTrace();
+            submission.uploadFailed(context);
+        }
+
+        return GcmNetworkManager.RESULT_RESCHEDULE;
     }
 
     @Override
@@ -223,55 +224,59 @@ public class UploadService extends GcmTaskService implements GoogleApiClient.Con
 
     private String getIdToken() {
         String idToken = null;
+        ConnectionResult result = googleApiClient.blockingConnect();
 
-        try {
-            ConnectionResult result = googleApiClient.blockingConnect();
+        if (result.isSuccess()) {
+            GoogleSignInResult googleSignInResult = Auth.GoogleSignInApi.silentSignIn(googleApiClient).await();
+            GoogleSignInAccount googleSignInAccount = googleSignInResult.getSignInAccount();
 
-            if (result.isSuccess()) {
-                GoogleSignInResult googleSignInResult = Auth.GoogleSignInApi.silentSignIn(googleApiClient).await();
-                idToken = googleSignInResult.getSignInAccount().getIdToken();
-            }
+            if (googleSignInAccount == null)
+                return null;
+
+            idToken = googleSignInResult.getSignInAccount().getIdToken();
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            googleApiClient.disconnect();
-        }
+
+        googleApiClient.disconnect();
 
         return idToken;
     }
 
     private short handlePayload(Context context, HttpClient httpClient, Submission submission)
-            throws MemoryLowException {
+            throws MemoryLowException, NullPointerException {
         Log.v(TAG, "Starting Upload for Payload of Submission " + submission.getId());
 
         String idToken = getIdToken();
+
+        if (idToken == null)
+            throw new NullPointerException("Idtoken could not be retrieved");
+
         Payload payload = submission.getUploadPayload(context, idToken, 0);
 
-        if (submission.getStatus() < Submission.STATUS_SUBMITTED_PENDING_REVIEW) {
-            HttpResponse httpResponse = sendPayload(context, httpClient, payload,
-                    MAX_UPLOAD_ATTEMPTS);
 
-            if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() ==  200) {
-                String response = getResponseStringFromHttpResponse(httpResponse);
-                try {
-                    JSONObject responseJSON = new JSONObject(response);
+        HttpResponse httpResponse = sendPayload(context, httpClient, payload, MAX_UPLOAD_ATTEMPTS);
 
-                    if (responseJSON.has(getString(R.string.response_key_status)) &&
-                            responseJSON.getString(getString(R.string.response_key_status)).equals(
-                                    getString(R.string.response_status_ok))) {
+        if (httpResponse == null)
+            return UPLOAD_STATUS_FAILED;
 
-                        return UPLOAD_STATUS_SUCCESSFUL;
-                    } else {
-                        Log.d(TAG, "Invalid Response");
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+        if(httpResponse.getStatusLine().getStatusCode() == 500) {
+            String response = getResponseStringFromHttpResponse(httpResponse);
+            Log.d(TAG, response);
+        } else if (httpResponse.getStatusLine().getStatusCode() ==  200) {
+            String response = getResponseStringFromHttpResponse(httpResponse);
+            try {
+                JSONObject responseJSON = new JSONObject(response);
+
+                if (responseJSON.has(getString(R.string.response_key_status)) &&
+                        responseJSON.getString(getString(R.string.response_key_status)).equals(
+                                getString(R.string.response_status_ok))) {
+
+                    return UPLOAD_STATUS_SUCCESSFUL;
+                } else {
+                    Log.d(TAG, "Invalid Response");
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        } else {
-            Log.v(TAG, "Payload Already Uploaded");
         }
         return UPLOAD_STATUS_FAILED;
     }

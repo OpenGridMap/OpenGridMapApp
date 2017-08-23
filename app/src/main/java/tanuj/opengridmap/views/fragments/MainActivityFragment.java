@@ -105,15 +105,12 @@ public class MainActivityFragment extends Fragment implements
         @Override
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra("location");
-
-//            Log.v(TAG, location.toString());
         }
     };
 
     private Toolbar toolbar;
 
     public MainActivityFragment() {
-        // Required empty public constructor
     }
 
     public static MainActivityFragment newInstance() {
@@ -179,7 +176,6 @@ public class MainActivityFragment extends Fragment implements
                 if (actionBar != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         activity.setSupportActionBar(toolbar);
-//                        activity.setActionBar(toolbar);
                         activity.getActionBar().setElevation(7);
                     }
                     actionBar.setDisplayHomeAsUpEnabled(false);
@@ -229,18 +225,6 @@ public class MainActivityFragment extends Fragment implements
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-//        bindLocationService();
-    }
-
-    @Override
-    public void onStop() {
-//        unbindLocationService();
-        super.onStop();
-    }
-
-    @Override
     public void onPause() {
         getActivity().unregisterReceiver(locationUpdateBroadcastReceiver);
         unbindLocationService();
@@ -256,26 +240,10 @@ public class MainActivityFragment extends Fragment implements
     }
 
     @Override
-    public void onDestroy() {
-//        unbindLocationService();
-        super.onDestroy();
-    }
-
-    @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putLong(getString(R.string.key_power_element_id), powerElementId);
         super.onSaveInstanceState(outState);
     }
-
-    private AdapterView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            powerElementId = PowerElementsSeedData.powerElements.get(position).getId();
-            state = STATE_CAMERA_LAUNCH_CHECK;
-
-            process();
-        }
-    };
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -288,7 +256,6 @@ public class MainActivityFragment extends Fragment implements
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         checkLocationSettings();
-//                        LocationUtils.checkLocationSettingsOrLaunchSettingsIntent(context);
                         locationResult = locationService.getLocation();
                         state = STATE_SUBMIT;
                         process();
@@ -417,7 +384,6 @@ public class MainActivityFragment extends Fragment implements
     private void submit() {
         Activity activity = getActivity();
         Intent intent = new Intent(activity, SubmitActivity.class);
-//        String imageSrc = FileUtils.getTempMediaFile(activity).getAbsolutePath();
 
         Log.d(TAG, "Power Element ID : " + powerElementId);
 

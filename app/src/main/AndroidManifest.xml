@@ -29,7 +29,6 @@
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -97,6 +96,9 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.gcm.ACTION_TASK_READY"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.gcm.SERVICE_ACTION_EXECUTE_TASK"/>
             </intent-filter>
         </service>
 

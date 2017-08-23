@@ -10,23 +10,32 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.OptionalPendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.plus.Plus;
 
 import tanuj.opengridmap.R;
+import tanuj.opengridmap.services.UploadService;
 
 public class LoginActivity extends AppCompatActivity implements
         View.OnClickListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener, ResultCallback<GoogleSignInResult> {
     private static final String TAG = LoginActivity.class.getSimpleName();
 
     private static final int STATE_DEFAULT = 0;
@@ -80,94 +89,33 @@ public class LoginActivity extends AppCompatActivity implements
 
         signInSection = findViewById(R.id.sign_in_section);
         spinnerSection = findViewById(R.id.spinner_section);
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (!signedIn) {
-            googleApiClient.connect();
-        }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(KEY_SAVED_PROGRESS, signInProgress);
+        OptionalPendingResult<GoogleSignInResult> googleSignInResult = Auth.GoogleSignInApi.silentSignIn(googleApiClient);
+        googleSignInResult.setResultCallback(this);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (googleApiClient.isConnected()) {
+        if (googleApiClient != null && googleApiClient.isConnected()) {
             googleApiClient.disconnect();
         }
     }
 
-    @Override
-    public void onClick(View view) {
-        if (!googleApiClient.isConnecting()) {
-            switch (view.getId()) {
-                case R.id.plus_sign_in_button: {
-                    signInProgress = STATE_SIGN_IN;
-                    googleApiClient.connect();
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case RC_SIGN_IN: {
-                if (resultCode == RESULT_OK) {
-                    signInProgress = STATE_SIGN_IN;
-                } else {
-                    signInProgress = STATE_DEFAULT;
-                }
-
-                if (!googleApiClient.isConnecting()) {
-                    googleApiClient.connect();
-                }
-            }
-        }
-    }
-
     private GoogleApiClient buildGoogleApiClient() {
-        GoogleApiClient.Builder builder = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Plus.API, Plus.PlusOptions.builder().build())
-                .addScope(Plus.SCOPE_PLUS_LOGIN);
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(UploadService.WEB_CLIENT_ID)
+                .requestEmail()
+                .build();
 
-        return builder.build();
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        showSpinnerSection();
-
-        Log.i(TAG, "Connected to Google API Services");
-        signInProgress = STATE_DEFAULT;
-
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean(getString(R.string.pref_key_signed_in), true);
-        editor.apply();
-
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        startActivity(intent);
-        finish();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        googleApiClient.connect();
+        return new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        showSignInSection();
         int errorCode = connectionResult.getErrorCode();
         Log.e(TAG, "onConnectionFailed: ErrorCode : " + errorCode);
 
@@ -181,10 +129,70 @@ public class LoginActivity extends AppCompatActivity implements
                 resolveSignInError();
             }
         }
+    }
 
-        if (!googleApiClient.isConnected()) {
-            googleApiClient.connect();
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.plus_sign_in_button: {
+                signInProgress = STATE_IN_PROGRESS;
+                signIn();
+                break;
+            }
         }
+    }
+
+    private void signIn() {
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(googleApiClient);
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case RC_SIGN_IN: {
+                GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+                handleSignInResult(result);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onResult(@NonNull GoogleSignInResult googleSignInResult) {
+        handleSignInResult(googleSignInResult);
+    }
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d(TAG, "handleSignInResult:" + result.isSuccess());
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = preferences.edit();
+
+        if (result.isSuccess()) {
+            showSpinnerSection();
+            Log.i(TAG, "Connected to Google API Services");
+            signInProgress = STATE_DEFAULT;
+            editor.putBoolean(getString(R.string.pref_key_signed_in), true);
+
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            startActivity(intent);
+            finish();
+        } else {
+            showSignInSection();
+            signInProgress = STATE_DEFAULT;
+            editor.putBoolean(getString(R.string.pref_key_signed_in), false);
+        }
+        editor.apply();
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
     }
 
     private void showSignInSection() {
@@ -197,62 +205,6 @@ public class LoginActivity extends AppCompatActivity implements
         spinnerSection.setVisibility(View.VISIBLE);
     }
 
-//    @Override
-//    public CheckResult onCheckServerAuthorization(String idToken, Set<Scope> set) {
-//        Log.i(TAG, "Checking Server's Authorizations");
-//
-//        HttpClient httpClient = new DefaultHttpClient();
-//        HttpGet httpGet = new HttpGet(SELECT_SCOPES_URL);
-//        HashSet<Scope> serverScopeSet = new HashSet<Scope>();
-//
-//        try {
-//            HttpResponse httpResponse = httpClient.execute(httpGet);
-//            int responseCode = httpResponse.getStatusLine().getStatusCode();
-//            String responseBody = EntityUtils.toString(httpResponse.getEntity());
-//
-//            if (responseCode == 200) {
-//                String[] scopeStrings = responseBody.split(" ");
-//                for (String scope : scopeStrings) {
-//                    Log.i(TAG, "Server Scope: " + scope);
-//                    serverScopeSet.add(new Scope(scope));
-//                }
-//            } else {
-//                Log.e(TAG, "Error in getting server scopes: " + responseCode);
-//            }
-//        } catch (ClientProtocolException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return CheckResult.newAuthRequiredResult(serverScopeSet);
-//    }
-//
-//    @Override
-//    public boolean onUploadServerAuthCode(String idToken, String serverAuthCode) {
-//        HttpClient httpClient = new DefaultHttpClient();
-//        HttpPost httpPost = new HttpPost(EXCHANGE_TOKEN_URL);
-//
-//        try {
-//            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-//            nameValuePairs.add(new BasicNameValuePair("serverAuthCode", serverAuthCode));
-//            httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-//
-//            HttpResponse response = httpClient.execute(httpPost);
-//            int statusCode = response.getStatusLine().getStatusCode();
-//            final String responseBody = EntityUtils.toString(response.getEntity());
-//            Log.i(TAG, "Code: " + statusCode);
-//            Log.i(TAG, "Resp: " + responseBody);
-//
-//            return (statusCode == 200);
-//        } catch (ClientProtocolException e) {
-//            Log.e(TAG, "Error in auth code exchange.", e);
-//            return false;
-//        } catch (IOException e) {
-//            Log.e(TAG, "Error in auth code exchange.", e);
-//            return false;
-//        }
-//    }
-
     private void resolveSignInError() {
         if (signInIntent != null) {
             try {
@@ -263,7 +215,6 @@ public class LoginActivity extends AppCompatActivity implements
                 Log.e(TAG, "Could not send Sign In Intent");
                 signInProgress = STATE_SIGN_IN;
                 googleApiClient.connect();
-//                e.printStackTrace();
             }
         } else {
             createErrorDialog().show();
