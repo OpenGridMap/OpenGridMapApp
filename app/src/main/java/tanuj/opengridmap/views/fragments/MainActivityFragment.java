@@ -103,9 +103,7 @@ public class MainActivityFragment extends Fragment implements
 
     private BroadcastReceiver locationUpdateBroadcastReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            Location location = intent.getParcelableExtra("location");
-        }
+        public void onReceive(Context context, Intent intent) { }
     };
 
     private Toolbar toolbar;

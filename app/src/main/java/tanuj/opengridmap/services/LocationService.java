@@ -51,8 +51,6 @@ public class LocationService extends Service implements
 
     private int bindingsCount = 0;
 
-    private Intent intent;
-
     private boolean receivingLocationUpdates = false;
 
     private boolean resolvingShutDown = false;
@@ -75,8 +73,6 @@ public class LocationService extends Service implements
         createLocationRequest();
         buildGoogleApiClient();
         buildLocationSettingsRequest();
-
-        intent = new Intent(LOCATION_UPDATE_BROADCAST);
     }
 
     @Override
@@ -136,6 +132,7 @@ public class LocationService extends Service implements
     @Override
     public void onLocationChanged(Location location) {
         this.location = location;
+        Log.d(TAG, location.toString());
         sendLocationBroadcast(location);
         resolveServiceShutdown();
     }
@@ -228,6 +225,7 @@ public class LocationService extends Service implements
     }
 
     public void sendLocationBroadcast(Location location) {
+        Intent intent = new Intent(LOCATION_UPDATE_BROADCAST);
         intent.putExtra("location", location);
         sendBroadcast(intent);
     }

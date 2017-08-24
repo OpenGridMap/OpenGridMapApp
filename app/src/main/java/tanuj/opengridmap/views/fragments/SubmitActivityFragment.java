@@ -120,7 +120,8 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         @Override
         public void onReceive(Context context, Intent intent) {
             if (location == null) {
-                location = intent.getParcelableExtra("location");
+                Log.d(TAG, intent.getParcelableExtra("location").toString());
+                setLocation((Location) intent.getParcelableExtra("location"));
                 setLocationFeedback();
             }
         }
@@ -146,9 +147,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
         Intent intent = getActivity().getIntent();
 
-        location = intent.getParcelableExtra(getString(R.string.key_location_start));
+        if (intent.hasExtra(getString(R.string.key_location_start))) {
+            setLocation((Location) intent.getParcelableExtra(getString(R.string.key_location_start)));
+        }
 
-        if (location == null) {
+        if (location == null && intent.hasExtra(getString(R.string.key_location_result))) {
             location = intent.getParcelableExtra(getString(R.string.key_location_result));
             checkLocationSettings();
         }
@@ -184,15 +187,16 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-//        bindLocationService();
-    }
+    public void onResume() {
+        super.onResume();
+        bindLocationService();
+        Context context = getActivity();
+        context.registerReceiver(locationUpdateBroadcastReceiver,
+                new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
 
-    @Override
-    public void onStop() {
-//        unbindLocationService();
-        super.onStop();
+        if (mapView != null) {
+            mapView.onResume();
+        }
     }
 
     @Override
@@ -206,19 +210,6 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
 
         super.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        bindLocationService();
-        Context context = getActivity();
-        context.registerReceiver(locationUpdateBroadcastReceiver,
-                new IntentFilter(LocationService.LOCATION_UPDATE_BROADCAST));
-
-        if (mapView != null) {
-            mapView.onResume();
-        }
     }
 
     @Override
@@ -267,6 +258,14 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
     }
 
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         final Context context = getActivity();
@@ -276,7 +275,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
             cameraRunning = false;
             if (resultCode == Activity.RESULT_OK) {
                 if (location != null)
-                    location = locationService.getLocation();
+                    setLocation(locationService.getLocation());
 
                 setLocationFeedback();
             } else if (resultCode == Activity.RESULT_CANCELED) {
@@ -421,7 +420,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
         locationService.handleExternalIntent();
-        location = locationService.getLocation();
+        setLocation(locationService.getLocation());
 
         startActivityForResult(cameraIntent, 100);
         cameraRunning = true;
@@ -577,13 +576,11 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
 
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
-        Log.d(TAG, "onCameraChange");
         handleMapPositionChange(cameraPosition);
     }
 
     @Override
     public void onCameraMove() {
-        Log.d(TAG, "onCameraMove");
         handleMapPositionChange();
     }
 
@@ -592,15 +589,15 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
     }
 
     private void handleMapPositionChange(CameraPosition cameraPosition) {
-        Location mapLocation = new Location("ManualLocationSelection");
-        mapLocation.setLatitude(cameraPosition.target.latitude);
-        mapLocation.setLongitude(cameraPosition.target.longitude);
-        mapLocation.setAccuracy(8);
+        Location currentMapLocation = new Location("ManualLocationSelection");
+        currentMapLocation.setLatitude(cameraPosition.target.latitude);
+        currentMapLocation.setLongitude(cameraPosition.target.longitude);
+        currentMapLocation.setAccuracy(8);
 
         setLocationFeedback();
 
-        if (mapLocation.distanceTo(this.location) > 2)
-            this.location = mapLocation;
+        if (location == null || currentMapLocation.distanceTo(this.location) > 2)
+            setLocation(currentMapLocation);
     }
 
     private void disableMap() {
