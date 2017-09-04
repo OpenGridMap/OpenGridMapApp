@@ -385,8 +385,12 @@ public class MainActivityFragment extends Fragment implements
 
         Log.d(TAG, "Power Element ID : " + powerElementId);
 
-        intent.putExtra(getString(R.string.key_location_start), locationStart);
-        intent.putExtra(getString(R.string.key_location_result), locationResult);
+        if (locationStart != null)
+            intent.putExtra(getString(R.string.key_location_start), locationStart);
+
+        if (locationResult != null)
+            intent.putExtra(getString(R.string.key_location_result), locationResult);
+
         intent.putExtra(getString(R.string.key_power_element_id), powerElementId);
         intent.putExtra(getString(R.string.key_image_src), imageSrc);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

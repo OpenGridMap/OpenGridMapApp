@@ -152,7 +152,7 @@ public class SubmitActivityFragment extends Fragment implements View.OnClickList
         }
 
         if (location == null && intent.hasExtra(getString(R.string.key_location_result))) {
-            location = intent.getParcelableExtra(getString(R.string.key_location_result));
+            setLocation((Location) intent.getParcelableExtra(getString(R.string.key_location_result)));
             checkLocationSettings();
         }
 
